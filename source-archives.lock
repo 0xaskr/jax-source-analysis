@@ -1,0 +1,7 @@
+# category|path|url|sha256|strip_components|pinned_by
+#
+# Exact open-source archives that do not have a matching public Git ref.
+# Generated directories are intentionally ignored by the analysis repository;
+# rerun tools/fetch-source-archives.sh to reproduce them.
+
+gpu|upstream/gpu/nvshmem-3.1.7-source|https://developer.download.nvidia.com/compute/redist/nvshmem/3.1.7/source/nvshmem_src_3.1.7-1.txz|2146ff231d9aadd2b11f324c142582f89e3804775877735dc507b4dfd70c788b|1|xla/third_party/nvshmem/workspace.bzl

@@ -1,0 +1,308 @@
+[submodule "upstream/jax"]
+	path = upstream/jax
+	url = https://github.com/jax-ml/jax.git
+[submodule "upstream/xla"]
+	path = upstream/xla
+	url = https://github.com/openxla/xla.git
+[submodule "upstream/stablehlo"]
+	path = upstream/stablehlo
+	url = https://github.com/openxla/stablehlo.git
+[submodule "upstream/shardy"]
+	path = upstream/shardy
+	url = https://github.com/openxla/shardy.git
+[submodule "upstream/triton"]
+	path = upstream/triton
+	url = https://github.com/triton-lang/triton.git
+[submodule "upstream/llvm-project"]
+	path = upstream/llvm-project
+	url = https://github.com/llvm/llvm-project.git
+[submodule "upstream/cpu/compute-library"]
+	path = upstream/cpu/compute-library
+	url = https://github.com/ARM-software/ComputeLibrary.git
+[submodule "upstream/cpu/kleidiai"]
+	path = upstream/cpu/kleidiai
+	url = https://gitlab.arm.com/kleidi/kleidiai.git
+[submodule "upstream/cpu/onednn-3.7.3"]
+	path = upstream/cpu/onednn-3.7.3
+	url = https://github.com/oneapi-src/oneDNN.git
+[submodule "upstream/cpu/onednn-3.12.3"]
+	path = upstream/cpu/onednn-3.12.3
+	url = https://github.com/oneapi-src/oneDNN.git
+[submodule "upstream/cpu/onednn-acl-3.7"]
+	path = upstream/cpu/onednn-acl-3.7
+	url = https://github.com/oneapi-src/oneDNN.git
+[submodule "upstream/cpu/xnnpack"]
+	path = upstream/cpu/xnnpack
+	url = https://github.com/google/XNNPACK.git
+[submodule "upstream/cpu/cpuinfo"]
+	path = upstream/cpu/cpuinfo
+	url = https://github.com/pytorch/cpuinfo.git
+[submodule "upstream/cpu/pthreadpool"]
+	path = upstream/cpu/pthreadpool
+	url = https://github.com/google/pthreadpool.git
+[submodule "upstream/cpu/fp16"]
+	path = upstream/cpu/fp16
+	url = https://github.com/Maratyszcza/FP16.git
+[submodule "upstream/cpu/fxdiv"]
+	path = upstream/cpu/fxdiv
+	url = https://github.com/Maratyszcza/FXdiv.git
+[submodule "upstream/cpu/gemmlowp"]
+	path = upstream/cpu/gemmlowp
+	url = https://github.com/google/gemmlowp.git
+[submodule "upstream/cpu/eigen"]
+	path = upstream/cpu/eigen
+	url = https://gitlab.com/libeigen/eigen.git
+[submodule "upstream/cpu/ducc"]
+	path = upstream/cpu/ducc
+	url = https://gitlab.mpcdf.mpg.de/mtr/ducc.git
+[submodule "upstream/cpu/farmhash"]
+	path = upstream/cpu/farmhash
+	url = https://github.com/google/farmhash.git
+[submodule "upstream/cpu/highway"]
+	path = upstream/cpu/highway
+	url = https://github.com/google/highway.git
+[submodule "upstream/cpu/highwayhash"]
+	path = upstream/cpu/highwayhash
+	url = https://github.com/google/highwayhash.git
+[submodule "upstream/cpu/hwloc"]
+	path = upstream/cpu/hwloc
+	url = https://github.com/open-mpi/hwloc.git
+[submodule "upstream/cpu/slinky"]
+	path = upstream/cpu/slinky
+	url = https://github.com/dsharlet/slinky.git
+[submodule "upstream/runtime/dlpack"]
+	path = upstream/runtime/dlpack
+	url = https://github.com/dmlc/dlpack.git
+[submodule "upstream/runtime/gloo"]
+	path = upstream/runtime/gloo
+	url = https://github.com/facebookincubator/gloo.git
+[submodule "upstream/runtime/mpitrampoline"]
+	path = upstream/runtime/mpitrampoline
+	url = https://github.com/eschnett/mpitrampoline.git
+[submodule "upstream/runtime/oneccl"]
+	path = upstream/runtime/oneccl
+	url = https://github.com/uxlfoundation/oneCCL.git
+[submodule "upstream/runtime/oneccl-2022"]
+	path = upstream/runtime/oneccl-2022
+	url = https://github.com/uxlfoundation/oneCCL.git
+[submodule "upstream/runtime/nanobind"]
+	path = upstream/runtime/nanobind
+	url = https://github.com/wjakob/nanobind.git
+[submodule "upstream/runtime/implib-so"]
+	path = upstream/runtime/implib-so
+	url = https://github.com/yugr/Implib.so.git
+[submodule "upstream/runtime/riegeli"]
+	path = upstream/runtime/riegeli
+	url = https://github.com/google/riegeli.git
+[submodule "upstream/runtime/fmt"]
+	path = upstream/runtime/fmt
+	url = https://github.com/fmtlib/fmt.git
+[submodule "upstream/runtime/spdlog"]
+	path = upstream/runtime/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "upstream/runtime/zstd"]
+	path = upstream/runtime/zstd
+	url = https://github.com/facebook/zstd.git
+[submodule "upstream/runtime/brotli"]
+	path = upstream/runtime/brotli
+	url = https://github.com/google/brotli.git
+[submodule "upstream/runtime/libuv"]
+	path = upstream/runtime/libuv
+	url = https://github.com/libuv/libuv.git
+[submodule "upstream/runtime/robin-map"]
+	path = upstream/runtime/robin-map
+	url = https://github.com/Tessil/robin-map.git
+[submodule "upstream/runtime/sqlite"]
+	path = upstream/runtime/sqlite
+	url = https://github.com/sqlite/sqlite.git
+[submodule "upstream/runtime/nasm"]
+	path = upstream/runtime/nasm
+	url = https://github.com/netwide-assembler/nasm.git
+[submodule "upstream/gpu/cuda-tile"]
+	path = upstream/gpu/cuda-tile
+	url = https://github.com/NVIDIA/cuda-tile.git
+[submodule "upstream/gpu/tensor-ir"]
+	path = upstream/gpu/tensor-ir
+	url = https://github.com/NVIDIA/tensor-ir.git
+[submodule "upstream/gpu/cutlass-3.8.0"]
+	path = upstream/gpu/cutlass-3.8.0
+	url = https://github.com/NVIDIA/cutlass.git
+[submodule "upstream/gpu/cutlass-4.6.1"]
+	path = upstream/gpu/cutlass-4.6.1
+	url = https://github.com/NVIDIA/cutlass.git
+[submodule "upstream/gpu/cudnn-frontend"]
+	path = upstream/gpu/cudnn-frontend
+	url = https://github.com/NVIDIA/cudnn-frontend.git
+[submodule "upstream/gpu/nccl"]
+	path = upstream/gpu/nccl
+	url = https://github.com/NVIDIA/nccl.git
+[submodule "upstream/gpu/nvshmem"]
+	path = upstream/gpu/nvshmem
+	url = https://github.com/NVIDIA/nvshmem.git
+[submodule "upstream/gpu/nvtx"]
+	path = upstream/gpu/nvtx
+	url = https://github.com/NVIDIA/NVTX.git
+[submodule "upstream/gpu/cccl"]
+	path = upstream/gpu/cccl
+	url = https://github.com/NVIDIA/cccl.git
+[submodule "upstream/gpu/transformer-engine"]
+	path = upstream/gpu/transformer-engine
+	url = https://github.com/NVIDIA/TransformerEngine.git
+[submodule "upstream/gpu/tensorrt"]
+	path = upstream/gpu/tensorrt
+	url = https://github.com/NVIDIA/TensorRT.git
+[submodule "upstream/gpu/raft"]
+	path = upstream/gpu/raft
+	url = https://github.com/rapidsai/raft.git
+[submodule "upstream/gpu/rmm"]
+	path = upstream/gpu/rmm
+	url = https://github.com/rapidsai/rmm.git
+[submodule "upstream/gpu/rapids-logger"]
+	path = upstream/gpu/rapids-logger
+	url = https://github.com/rapidsai/rapids-logger.git
+[submodule "upstream/gpu/intel-xpu-triton"]
+	path = upstream/gpu/intel-xpu-triton
+	url = https://github.com/intel/intel-xpu-backend-for-triton.git
+[submodule "upstream/gpu/rocm-llvm-project"]
+	path = upstream/gpu/rocm-llvm-project
+	url = https://github.com/ROCm/llvm-project.git
+[submodule "upstream/gpu/level-zero"]
+	path = upstream/gpu/level-zero
+	url = https://github.com/oneapi-src/level-zero.git
+[submodule "upstream/python/ml-dtypes"]
+	path = upstream/python/ml-dtypes
+	url = https://github.com/jax-ml/ml_dtypes.git
+[submodule "upstream/python/numpy"]
+	path = upstream/python/numpy
+	url = https://github.com/numpy/numpy.git
+[submodule "upstream/python/scipy"]
+	path = upstream/python/scipy
+	url = https://github.com/scipy/scipy.git
+[submodule "upstream/python/opt-einsum"]
+	path = upstream/python/opt-einsum
+	url = https://github.com/dgasmith/opt_einsum.git
+[submodule "upstream/tooling/rules-ml-toolchain"]
+	path = upstream/tooling/rules-ml-toolchain
+	url = https://github.com/google-ml-infra/rules_ml_toolchain.git
+[submodule "upstream/tooling/abseil-cpp"]
+	path = upstream/tooling/abseil-cpp
+	url = https://github.com/abseil/abseil-cpp.git
+[submodule "upstream/tooling/protobuf"]
+	path = upstream/tooling/protobuf
+	url = https://github.com/protocolbuffers/protobuf.git
+[submodule "upstream/tooling/grpc"]
+	path = upstream/tooling/grpc
+	url = https://github.com/grpc/grpc.git
+[submodule "upstream/tooling/flatbuffers"]
+	path = upstream/tooling/flatbuffers
+	url = https://github.com/google/flatbuffers.git
+[submodule "upstream/tooling/googletest"]
+	path = upstream/tooling/googletest
+	url = https://github.com/google/googletest.git
+[submodule "upstream/tooling/benchmark"]
+	path = upstream/tooling/benchmark
+	url = https://github.com/google/benchmark.git
+[submodule "upstream/tooling/gutil"]
+	path = upstream/tooling/gutil
+	url = https://github.com/google/gutil.git
+[submodule "upstream/tooling/pybind11-abseil"]
+	path = upstream/tooling/pybind11-abseil
+	url = https://github.com/pybind/pybind11_abseil.git
+[submodule "upstream/tooling/pybind11-bazel"]
+	path = upstream/tooling/pybind11-bazel
+	url = https://github.com/pybind/pybind11_bazel.git
+[submodule "upstream/tooling/zlib"]
+	path = upstream/tooling/zlib
+	url = https://github.com/madler/zlib.git
+[submodule "upstream/tooling/snappy"]
+	path = upstream/tooling/snappy
+	url = https://github.com/google/snappy.git
+[submodule "upstream/tooling/re2"]
+	path = upstream/tooling/re2
+	url = https://github.com/google/re2.git
+[submodule "upstream/tooling/curl"]
+	path = upstream/tooling/curl
+	url = https://github.com/curl/curl.git
+[submodule "upstream/tooling/jsoncpp"]
+	path = upstream/tooling/jsoncpp
+	url = https://github.com/open-source-parsers/jsoncpp.git
+[submodule "upstream/tooling/or-tools"]
+	path = upstream/tooling/or-tools
+	url = https://github.com/google/or-tools.git
+[submodule "upstream/tooling/xprof"]
+	path = upstream/tooling/xprof
+	url = https://github.com/openxla/xprof.git
+[submodule "upstream/gpu/roc-mori"]
+	path = upstream/gpu/roc-mori
+	url = https://github.com/ROCm/mori.git
+[submodule "upstream/gpu/rdma-core"]
+	path = upstream/gpu/rdma-core
+	url = https://github.com/linux-rdma/rdma-core.git
+[submodule "upstream/gpu/libdrm"]
+	path = upstream/gpu/libdrm
+	url = https://gitlab.freedesktop.org/mesa/drm.git
+[submodule "upstream/cpu/llvm-project-10.0.1"]
+	path = upstream/cpu/llvm-project-10.0.1
+	url = https://github.com/llvm/llvm-project.git
+	shallow = true
+[submodule "upstream/tooling/bazel-central-registry"]
+	path = upstream/tooling/bazel-central-registry
+	url = https://github.com/bazelbuild/bazel-central-registry.git
+	shallow = true
+[submodule "upstream/runtime/envoy-api"]
+	path = upstream/runtime/envoy-api
+	url = https://github.com/envoyproxy/data-plane-api.git
+[submodule "upstream/tooling/pybind11-protobuf"]
+	path = upstream/tooling/pybind11-protobuf
+	url = https://github.com/pybind/pybind11_protobuf.git
+[submodule "upstream/runtime/boringssl"]
+	path = upstream/runtime/boringssl
+	url = https://github.com/google/boringssl.git
+[submodule "upstream/runtime/grpc-java"]
+	path = upstream/runtime/grpc-java
+	url = https://github.com/grpc/grpc-java.git
+[submodule "upstream/python/abseil-py"]
+	path = upstream/python/abseil-py
+	url = https://github.com/abseil/abseil-py.git
+[submodule "upstream/tooling/apple-support"]
+	path = upstream/tooling/apple-support
+	url = https://github.com/bazelbuild/apple_support.git
+[submodule "upstream/tooling/bazel-features"]
+	path = upstream/tooling/bazel-features
+	url = https://github.com/bazel-contrib/bazel_features.git
+[submodule "upstream/tooling/bazel-skylib"]
+	path = upstream/tooling/bazel-skylib
+	url = https://github.com/bazelbuild/bazel-skylib.git
+[submodule "upstream/tooling/platforms"]
+	path = upstream/tooling/platforms
+	url = https://github.com/bazelbuild/platforms.git
+[submodule "upstream/tooling/rules-cc"]
+	path = upstream/tooling/rules-cc
+	url = https://github.com/bazelbuild/rules_cc.git
+[submodule "upstream/tooling/rules-java"]
+	path = upstream/tooling/rules-java
+	url = https://github.com/bazelbuild/rules_java.git
+[submodule "upstream/tooling/rules-license"]
+	path = upstream/tooling/rules-license
+	url = https://github.com/bazelbuild/rules_license.git
+[submodule "upstream/tooling/rules-python"]
+	path = upstream/tooling/rules-python
+	url = https://github.com/bazel-contrib/rules_python.git
+[submodule "upstream/tooling/rules-shell"]
+	path = upstream/tooling/rules-shell
+	url = https://github.com/bazel-contrib/rules_shell.git
+[submodule "upstream/tooling/benchmark-1.9.4"]
+	path = upstream/tooling/benchmark-1.9.4
+	url = https://github.com/google/benchmark.git
+[submodule "upstream/tooling/gutil-20260309"]
+	path = upstream/tooling/gutil-20260309
+	url = https://github.com/google/gutil.git
+[submodule "upstream/tooling/pybind11-abseil-202402"]
+	path = upstream/tooling/pybind11-abseil-202402
+	url = https://github.com/pybind/pybind11_abseil.git
+[submodule "upstream/tooling/pybind11-bazel-2.13.6"]
+	path = upstream/tooling/pybind11-bazel-2.13.6
+	url = https://github.com/pybind/pybind11_bazel.git
+[submodule "upstream/cpu/libpfm-4.13.0"]
+	path = upstream/cpu/libpfm-4.13.0
+	url = https://github.com/wcohen/libpfm4.git

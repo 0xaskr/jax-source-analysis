@@ -1,0 +1,113 @@
+# category|path|git_url|ref|pinned_by|sparse_paths|checkout_policy
+#
+# Repositories are shallow-cloned, then detached at `ref`. Keep duplicate
+# versions when XLA consumes more than one revision of the same project.
+
+core|upstream/jax|https://github.com/jax-ml/jax.git|5832e866449a41c3eea6333416528039119a0fde|project baseline
+core|upstream/xla|https://github.com/openxla/xla.git|496bd4bd49db9ecbffd85da630b49c860b724604|jax/MODULE.bazel
+core|upstream/stablehlo|https://github.com/openxla/stablehlo.git|7b1b15781ccbd770f50c7eef4b0c3e03834649fd|xla/third_party/stablehlo/workspace.bzl
+core|upstream/shardy|https://github.com/openxla/shardy.git|eb23a98329aa70d991aa2d8a51a209af1f8df8fc|xla/third_party/shardy/workspace.bzl
+core|upstream/llvm-project|https://github.com/llvm/llvm-project.git|ab547095ead5464dc024d66264d9b8a987f429f3|xla/third_party/llvm/workspace.bzl
+core|upstream/triton|https://github.com/triton-lang/triton.git|23689d2aa356d3b8f6869e1867ef0e2576ea52bb|xla/third_party/triton/workspace.bzl
+
+cpu|upstream/cpu/compute-library|https://github.com/ARM-software/ComputeLibrary.git|v52.8.0|xla/third_party/compute_library/workspace.bzl
+cpu|upstream/cpu/kleidiai|https://gitlab.arm.com/kleidi/kleidiai.git|dce86647385ab2638aa5abebcb652f3e4271970d|xla/third_party/kleidiai/workspace.bzl
+cpu|upstream/cpu/onednn-3.7.3|https://github.com/oneapi-src/oneDNN.git|v3.7.3|xla/third_party/mkl_dnn/workspace.bzl
+cpu|upstream/cpu/onednn-3.12.3|https://github.com/oneapi-src/oneDNN.git|v3.12.3|xla/third_party/mkl_dnn/workspace.bzl
+cpu|upstream/cpu/onednn-acl-3.7|https://github.com/oneapi-src/oneDNN.git|v3.7|xla/third_party/mkl_dnn/workspace.bzl
+cpu|upstream/cpu/xnnpack|https://github.com/google/XNNPACK.git|8388bd78690515166d59f1b28e593a455a41d580|xla/third_party/xnnpack/workspace.bzl
+cpu|upstream/cpu/cpuinfo|https://github.com/pytorch/cpuinfo.git|8ce83db858065145192c97af90cb668ad72a12e9|xla/third_party/cpuinfo/workspace.bzl
+cpu|upstream/cpu/pthreadpool|https://github.com/google/pthreadpool.git|02460584c6092e527c8b89f7df4de143d70e801f|xla/third_party/pthreadpool/workspace.bzl
+cpu|upstream/cpu/fp16|https://github.com/Maratyszcza/FP16.git|4dfe081cf6bcd15db339cf2680b9281b8451eeb3|xla/third_party/FP16/workspace.bzl
+cpu|upstream/cpu/fxdiv|https://github.com/Maratyszcza/FXdiv.git|63058eff77e11aa15bf531df5dd34395ec3017c8|xla/third_party/fxdiv/workspace.bzl
+cpu|upstream/cpu/gemmlowp|https://github.com/google/gemmlowp.git|16e8662c34917be0065110bfcd9cc27d30f52fdf|xla/third_party/gemmlowp/workspace.bzl
+cpu|upstream/cpu/eigen|https://gitlab.com/libeigen/eigen.git|ea13a98decd497a8c5588fb5de71b57bcf10d864|xla/third_party/eigen3/workspace.bzl
+cpu|upstream/cpu/ducc|https://gitlab.mpcdf.mpg.de/mtr/ducc.git|aa46a4c21e440b3d416c16eca3c96df19c74f316|xla/third_party/ducc/workspace.bzl
+cpu|upstream/cpu/farmhash|https://github.com/google/farmhash.git|0d859a811870d10f53a594927d0d0b97573ad06d|xla/third_party/farmhash/workspace.bzl
+cpu|upstream/cpu/highway|https://github.com/google/highway.git|1.4.0|xla/MODULE.bazel
+cpu|upstream/cpu/highwayhash|https://github.com/google/highwayhash.git|c13d28517a4db259d738ea4886b1f00352a3cc33|xla/third_party/highwayhash/workspace.bzl
+cpu|upstream/cpu/hwloc|https://github.com/open-mpi/hwloc.git|hwloc-2.7.1|xla/third_party/hwloc/workspace.bzl
+cpu|upstream/cpu/slinky|https://github.com/dsharlet/slinky.git|ed97d801653a6680d4b558614f323f2a01d33413|xla/third_party/slinky/workspace.bzl
+cpu|upstream/cpu/llvm-project-10.0.1|https://github.com/llvm/llvm-project.git|llvmorg-10.0.1|xla/third_party/llvm_openmp/workspace.bzl (source is openmp/)|openmp
+
+runtime|upstream/runtime/dlpack|https://github.com/dmlc/dlpack.git|77aafa4d3b0f80feffce9ad4c718dd26751ee0e4|xla/third_party/dlpack/workspace.bzl
+runtime|upstream/runtime/gloo|https://github.com/facebookincubator/gloo.git|54cbae0d3a67fa890b4c3d9ee162b7860315e341|xla/third_party/gloo/workspace.bzl
+runtime|upstream/runtime/mpitrampoline|https://github.com/eschnett/mpitrampoline.git|25efb0f7a4cd00ed82bafb8b1a6285fc50d297ed|xla/third_party/mpitrampoline/workspace.bzl
+runtime|upstream/runtime/oneccl|https://github.com/uxlfoundation/oneCCL.git|4ceafd15c03ce46f11eeaf91781a92afebd3cecf|xla/third_party/oneccl/workspace.bzl
+runtime|upstream/runtime/oneccl-2022|https://github.com/uxlfoundation/oneCCL.git|2022.0.0|xla/third_party/oneccl/workspace.bzl
+runtime|upstream/runtime/nanobind|https://github.com/wjakob/nanobind.git|e2dc00f7a34f935c6cf91948776d59c4709e9fe6|xla/third_party/nanobind/workspace.bzl
+runtime|upstream/runtime/implib-so|https://github.com/yugr/Implib.so.git|2cce6cab8ff2c15f9da858ea0b68646a8d62aef2|xla/third_party/implib_so/workspace.bzl
+runtime|upstream/runtime/riegeli|https://github.com/google/riegeli.git|9f2744dc23e81d84c02f6f51244e9e9bb9802d57|xla/third_party/riegeli/workspace.bzl
+runtime|upstream/runtime/fmt|https://github.com/fmtlib/fmt.git|8.1.1|xla/third_party/fmt/workspace.bzl
+runtime|upstream/runtime/spdlog|https://github.com/gabime/spdlog.git|v1.15.2|xla/third_party/spdlog/workspace.bzl
+runtime|upstream/runtime/zstd|https://github.com/facebook/zstd.git|v1.5.7|xla/third_party/net_zstd/workspace.bzl
+runtime|upstream/runtime/brotli|https://github.com/google/brotli.git|v1.1.0|xla/third_party/brotli/workspace.bzl
+runtime|upstream/runtime/libuv|https://github.com/libuv/libuv.git|v1.38.0|xla/third_party/uv/workspace.bzl
+runtime|upstream/runtime/robin-map|https://github.com/Tessil/robin-map.git|v1.3.0|xla/third_party/robin_map/workspace.bzl
+runtime|upstream/runtime/sqlite|https://github.com/sqlite/sqlite.git|version-3.53.2|xla/third_party/sqlite/workspace.bzl
+runtime|upstream/runtime/nasm|https://github.com/netwide-assembler/nasm.git|nasm-2.14.02|xla/third_party/nasm/workspace.bzl
+runtime|upstream/runtime/boringssl|https://github.com/google/boringssl.git|0.20250818.0|xla/MODULE.bazel via Bazel Central Registry||lazy
+runtime|upstream/runtime/envoy-api|https://github.com/envoyproxy/data-plane-api.git|84e84367f2560cdb47b9bb78fd3e615feb80c3e4|jax/MODULE.bazel via Bazel Central Registry
+runtime-compat|upstream/runtime/grpc-java|https://github.com/grpc/grpc-java.git|v1.75.0|xla/MODULE.bazel compatibility dependency||lazy
+
+gpu|upstream/gpu/cuda-tile|https://github.com/NVIDIA/cuda-tile.git|af2417041cc939b87ef56d92cfdcf61737c5457e|xla/third_party/cuda_tile/workspace.bzl
+gpu|upstream/gpu/tensor-ir|https://github.com/NVIDIA/tensor-ir.git|63692d79629e6f32a1d8757695590a59e0adbafd|xla/third_party/tensor_ir/workspace.bzl
+gpu|upstream/gpu/cutlass-3.8.0|https://github.com/NVIDIA/cutlass.git|v3.8.0|xla/third_party/cutlass/workspace.bzl
+gpu|upstream/gpu/cutlass-4.6.1|https://github.com/NVIDIA/cutlass.git|v4.6.1|xla/third_party/cutlass_cutedsl_runtime/workspace.bzl
+gpu|upstream/gpu/cudnn-frontend|https://github.com/NVIDIA/cudnn-frontend.git|v1.22.1|xla/third_party/cudnn_frontend/workspace.bzl
+gpu|upstream/gpu/nccl|https://github.com/NVIDIA/nccl.git|v2.30.7-1|xla/third_party/nccl/workspace.bzl
+gpu-reference|upstream/gpu/nvshmem|https://github.com/NVIDIA/nvshmem.git|b0d9d3dc08fc3ee0840fdb6f3a2c11932d85a2e2|public Git snapshot; exact XLA 3.1.7 source is in source-archives.lock
+gpu|upstream/gpu/nvtx|https://github.com/NVIDIA/NVTX.git|v3.5.0|xla/third_party/nvtx/workspace.bzl
+gpu|upstream/gpu/cccl|https://github.com/NVIDIA/cccl.git|v3.2.0|xla/third_party/cccl/workspace.bzl
+gpu|upstream/gpu/transformer-engine|https://github.com/NVIDIA/TransformerEngine.git|v2.5|xla/third_party/transformer_engine/workspace.bzl
+gpu|upstream/gpu/tensorrt|https://github.com/NVIDIA/TensorRT.git|9ec6eb6db39188c9f3d25f49c8ee3a9721636b56|xla/third_party/tensorrt/workspace.bzl
+gpu|upstream/gpu/raft|https://github.com/rapidsai/raft.git|v26.02.00|xla/third_party/raft/workspace.bzl
+gpu|upstream/gpu/rmm|https://github.com/rapidsai/rmm.git|v26.02.00|xla/third_party/rmm/workspace.bzl
+gpu|upstream/gpu/rapids-logger|https://github.com/rapidsai/rapids-logger.git|v0.2.3|xla/third_party/rapids_logger/workspace.bzl
+gpu|upstream/gpu/intel-xpu-triton|https://github.com/intel/intel-xpu-backend-for-triton.git|07d2e3d3e250d0f6cd5b374514c28c3ae9e3afd4|xla/third_party/triton/intel_xpu/workspace.bzl
+gpu|upstream/gpu/rocm-llvm-project|https://github.com/ROCm/llvm-project.git|53996464fa8d94b182ac4aaa7dc3a109ab524f45|xla/third_party/rocm_device_libs/workspace.bzl
+gpu|upstream/gpu/roc-mori|https://github.com/ROCm/mori.git|9e6ca3817f16a83ea50bd0e935e2c56e092bf77f|xla/third_party/roc_mori/workspace.bzl
+gpu|upstream/gpu/rdma-core|https://github.com/linux-rdma/rdma-core.git|v48.0|xla/third_party/rdma_core/workspace.bzl
+gpu|upstream/gpu/libdrm|https://gitlab.freedesktop.org/mesa/drm.git|libdrm-2.4.120|xla/third_party/libdrm/workspace.bzl
+gpu|upstream/gpu/level-zero|https://github.com/oneapi-src/level-zero.git|v1.21.10|xla/third_party/gpus/sycl/level_zero.bzl
+
+
+python|upstream/python/ml-dtypes|https://github.com/jax-ml/ml_dtypes.git|00d98cd92ade342fef589c0470379abb27baebe9|xla/third_party/py/ml_dtypes/workspace.bzl
+python|upstream/python/numpy|https://github.com/numpy/numpy.git|v2.1.3|jax/build/requirements_lock_3_12.txt
+python|upstream/python/scipy|https://github.com/scipy/scipy.git|v1.18.1|jax/build/requirements_lock_3_12.txt
+python|upstream/python/opt-einsum|https://github.com/dgasmith/opt_einsum.git|v3.4.0|jax/build/requirements_lock_3_12.txt
+python|upstream/python/abseil-py|https://github.com/abseil/abseil-py.git|v2.1.0|xla/MODULE.bazel via Bazel Central Registry||lazy
+
+tooling|upstream/tooling/rules-ml-toolchain|https://github.com/google-ml-infra/rules_ml_toolchain.git|73cb731fed3ccf7551beac710bf1c5dbeb8be298|jax/MODULE.bazel
+tooling|upstream/tooling/abseil-cpp|https://github.com/abseil/abseil-cpp.git|20260526.0|jax/MODULE.bazel
+tooling|upstream/tooling/protobuf|https://github.com/protocolbuffers/protobuf.git|v32.1|jax/MODULE.bazel
+tooling|upstream/tooling/grpc|https://github.com/grpc/grpc.git|v1.81.0|jax/MODULE.bazel
+tooling|upstream/tooling/flatbuffers|https://github.com/google/flatbuffers.git|v25.2.10|jax/MODULE.bazel
+tooling|upstream/tooling/googletest|https://github.com/google/googletest.git|28e9d1f26771c6517c3b4be10254887673c94018|xla/MODULE.bazel
+tooling|upstream/tooling/benchmark|https://github.com/google/benchmark.git|f7547e29ccaed7b64ef4f7495ecfff1c9f6f3d03|xla/third_party/benchmark/workspace.bzl
+tooling|upstream/tooling/gutil|https://github.com/google/gutil.git|b498c8d364ac96c32194f71f8f719707a398e82b|xla/third_party/gutil/workspace.bzl
+tooling|upstream/tooling/pybind11-abseil|https://github.com/pybind/pybind11_abseil.git|13d4f99d5309df3d5afa80fe2ae332d7a2a64c6b|xla/third_party/pybind11_abseil/workspace.bzl
+tooling|upstream/tooling/pybind11-bazel|https://github.com/pybind/pybind11_bazel.git|v3.0.0|jax/MODULE.bazel
+tooling|upstream/tooling/zlib|https://github.com/madler/zlib.git|v1.3.2|jax/MODULE.bazel
+tooling|upstream/tooling/snappy|https://github.com/google/snappy.git|1.2.1|xla/MODULE.bazel
+tooling|upstream/tooling/re2|https://github.com/google/re2.git|2025-11-05|xla/MODULE.bazel
+tooling|upstream/tooling/curl|https://github.com/curl/curl.git|curl-8_12_0|xla/MODULE.bazel
+tooling|upstream/tooling/jsoncpp|https://github.com/open-source-parsers/jsoncpp.git|1.9.6|xla/MODULE.bazel
+tooling|upstream/tooling/or-tools|https://github.com/google/or-tools.git|v9.12|xla/MODULE.bazel
+tooling|upstream/tooling/apple-support|https://github.com/bazelbuild/apple_support.git|2.8.0|jax/MODULE.bazel via Bazel Central Registry||lazy
+tooling|upstream/tooling/bazel-features|https://github.com/bazel-contrib/bazel_features.git|v1.50.0|jax/MODULE.bazel selected over xla 1.43.0||lazy
+tooling|upstream/tooling/bazel-skylib|https://github.com/bazelbuild/bazel-skylib.git|1.9.0|jax/MODULE.bazel and xla/MODULE.bazel||lazy
+tooling|upstream/tooling/platforms|https://github.com/bazelbuild/platforms.git|1.1.0|jax/MODULE.bazel and xla/MODULE.bazel||lazy
+tooling|upstream/tooling/pybind11-protobuf|https://github.com/pybind/pybind11_protobuf.git|f02a2b7653bc50eb5119d125842a3870db95d251|xla/MODULE.bazel via Bazel Central Registry
+tooling|upstream/tooling/rules-cc|https://github.com/bazelbuild/rules_cc.git|0.2.20|jax/MODULE.bazel selected over xla 0.2.18||lazy
+tooling|upstream/tooling/rules-java|https://github.com/bazelbuild/rules_java.git|8.16.1|xla/MODULE.bazel via Bazel Central Registry||lazy
+tooling|upstream/tooling/rules-license|https://github.com/bazelbuild/rules_license.git|1.0.0|xla/MODULE.bazel via Bazel Central Registry||lazy
+tooling|upstream/tooling/rules-python|https://github.com/bazel-contrib/rules_python.git|2.2.0|jax/MODULE.bazel and xla/MODULE.bazel||lazy
+tooling|upstream/tooling/rules-shell|https://github.com/bazel-contrib/rules_shell.git|v0.8.0|xla/MODULE.bazel via Bazel Central Registry||lazy
+tooling|upstream/tooling/benchmark-1.9.4|https://github.com/google/benchmark.git|v1.9.4|xla/MODULE.bazel via Bazel Central Registry||lazy
+tooling|upstream/tooling/gutil-20260309|https://github.com/google/gutil.git|20260309.0|xla/MODULE.bazel via Bazel Central Registry||lazy
+tooling|upstream/tooling/pybind11-abseil-202402|https://github.com/pybind/pybind11_abseil.git|v202402.0|xla/MODULE.bazel via Bazel Central Registry||lazy
+tooling|upstream/tooling/pybind11-bazel-2.13.6|https://github.com/pybind/pybind11_bazel.git|v2.13.6|xla/third_party/pybind11_bazel/workspace.bzl||lazy
+cpu-compat|upstream/cpu/libpfm-4.13.0|https://github.com/wcohen/libpfm4.git|v4.13.0|xla/MODULE.bazel compatibility dependency||lazy
+tooling-reference|upstream/tooling/xprof|https://github.com/openxla/xprof.git|68dba1826c37986af41f6119930ec315592a51f6|optional JAX profiling extra
+tooling-reference|upstream/tooling/bazel-central-registry|https://github.com/bazelbuild/bazel-central-registry.git|422d87494e9ac34a36a6967d902d77d1b6f5d6e2|Bzlmod source provenance for jax/MODULE.bazel and xla/MODULE.bazel|modules/abseil-cpp modules/abseil-py modules/apple_support modules/bazel_features modules/bazel_skylib modules/boringssl modules/curl modules/eigen modules/envoy_api modules/flatbuffers modules/google_benchmark modules/googletest modules/grpc modules/grpc-java modules/gutil modules/highway modules/jsoncpp modules/libpfm modules/or-tools modules/platforms modules/protobuf modules/pybind11_abseil modules/pybind11_bazel modules/pybind11_protobuf modules/re2 modules/rules_cc modules/rules_java modules/rules_license modules/rules_python modules/rules_shell modules/snappy modules/zlib
