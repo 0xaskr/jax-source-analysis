@@ -7,6 +7,7 @@ requires-python = "==3.12.*"
 dependencies = [
   "jax",
   "jaxlib==0.11.1",
+  "marimo",
 ]
 
 [tool.uv]
@@ -15,3 +16,9 @@ required-version = "==0.12.9"
 
 [tool.uv.sources]
 jax = { path = "upstream/jax", editable = true }
+
+[dependency-groups]
+notebook = [
+    "ipywidgets>=8,<9",
+    "jupyterlab==4.6.2",
+]

@@ -1,0 +1,78 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "01 · jax.jit 的 CPU 执行路径",
+  "description": "从实验函数进入 JAX、Jaxpr、StableHLO、编译缓存和 PJRT CPU client，并运行可复现实验。",
+  "isPrimary": true,
+  "steps": [
+    {
+      "title": "开始：这是一条可执行的源码路线",
+      "description": "# `jax.jit` → CPU\n\n这个 Tour 不复制源码，而是直接打开仓库中锁定的 JAX 文件。使用 **Next/Previous** 在实现之间移动；遇到 `>>` 命令时，可以点击它在集成终端中运行。\n\n先确认 editable 安装实际加载的是本仓库源码：\n\n>> uv run python labs/001-jit-cpu/probe.py --stage env"
+    },
+    {
+      "title": "实验程序：被追踪的 Python 函数",
+      "file": "labs/001-jit-cpu/lab_core.py",
+      "pattern": "def make_affine\\(",
+      "description": "## 实验程序\n\n`make_affine` 产生本 Tour 使用的纯函数。`scale` 和 `bias` 被 Python 闭包捕获，数组 `x` 是动态参数。后面改变 shape 时，我们将看到新的抽象输入触发新的 tracing。\n\n这里是实验代码，不是对上游实现的复制；真正的入口在下一步。"
+    },
+    {
+      "title": "公共入口：jax.jit",
+      "file": "upstream/jax/jax/_src/api.py",
+      "line": 204,
+      "description": "## 用户 API：`jax.jit`\n\n这是两个 overload 声明之后的真实实现。它负责公开语义和参数校验，随后把工作交给 `pjit.make_jit`。\n\n阅读时先找函数末尾的 `return pjit.make_jit(...)`：这是从稳定公共 API 进入内部实现的边界。"
+    },
+    {
+      "title": "包装层：pjit.make_jit",
+      "file": "upstream/jax/jax/_src/pjit.py",
+      "pattern": "def make_jit\\(",
+      "description": "## 规范化 JIT 配置\n\n`make_jit` 把 sharding、静态参数、donation、device/backend 等配置整理成 `jit_info`，再交给 `_cpp_pjit`。\n\n注意：`jax.jit` 与 `pjit` 在这里共享了大量实现，因此分析 `jit` 很快就进入 `pjit.py`。"
+    },
+    {
+      "title": "Tracing cache miss：_trace_for_jit",
+      "file": "upstream/jax/jax/_src/pjit.py",
+      "pattern": "def _trace_for_jit\\(",
+      "description": "## 真正发生 tracing 的入口\n\n只有 cache miss 才需要进入这里。第一行 `util.test_event(\"infer_params_cache_miss\")` 已经暴露了这个语义。函数继续处理静态参数、abstract values、sharding，并构造供后续 lowering 使用的参数。\n\n运行三次调用，直接观察相同 shape 和新 shape 的差异：\n\n>> uv run python labs/001-jit-cpu/probe.py --stage run"
+    },
+    {
+      "title": "可观察产物：Jaxpr",
+      "file": "labs/001-jit-cpu/lab_core.py",
+      "pattern": "def jaxpr_text\\(",
+      "description": "## 用 Jaxpr 验证 tracing 结果\n\n`jax.make_jaxpr` 把同一个函数的类型化中间表示暴露出来。对 `affine`，核心等式应是 `mul` 和 `add`；shape 会进入变量的 abstract value。\n\n>> uv run python labs/001-jit-cpu/probe.py --stage jaxpr --size 4\n\n这一步把“源码入口”连接到了“实际生成的 IR”。"
+    },
+    {
+      "title": "Lowering：Jaxpr 进入 MLIR",
+      "file": "upstream/jax/jax/_src/interpreters/mlir.py",
+      "pattern": "def lower_jaxpr_to_module\\(",
+      "description": "## `lower_jaxpr_to_module`\n\n这个边界把 Jaxpr lowering 成 MLIR module，并携带平台、sharding、effects、debug info 等上下文。它不是单纯把每个 primitive 翻译一次；module 构造和平台语义也在这里汇合。\n\n下一步从用户侧读取这个 lowering 的真实输出。"
+    },
+    {
+      "title": "可观察产物：StableHLO",
+      "file": "labs/001-jit-cpu/lab_core.py",
+      "pattern": "def stablehlo_text\\(",
+      "description": "## StableHLO 不是手写示例\n\n这里调用 `jax.jit(function).lower(...)`，再从当前环境读取 `stablehlo` dialect 文本。修改实验参数或 JAX 源码后，输出会随之变化。\n\n>> uv run python labs/001-jit-cpu/probe.py --stage stablehlo --size 4\n\n在输出中寻找 `stablehlo.multiply` 和 `stablehlo.add`。"
+    },
+    {
+      "title": "编译与持久化缓存",
+      "file": "upstream/jax/jax/_src/compiler.py",
+      "pattern": "def compile_or_get_cached\\(",
+      "description": "## `compile_or_get_cached`\n\n这里生成 cache key，尝试读取已有 executable；未命中时调用后端编译并可能写回缓存。区分两层缓存很重要：前面的 tracing cache 与这里的 compiled executable cache 不是同一件事。\n\n可加上 JAX 自带的编译日志验证：\n\n>> uv run python labs/001-jit-cpu/probe.py --stage run --log-compiles"
+    },
+    {
+      "title": "运行时边界：PJRT CPU client",
+      "file": "upstream/jax/jax/_src/xla_bridge.py",
+      "pattern": "def make_cpu_client\\(",
+      "description": "## Python/JAX 与 CPU runtime 的边界\n\n`make_cpu_client` 根据配置构造 CPU client，包括 collectives 实现。继续向硬件深入时，下一条分析线应从这里进入 `jaxlib`、PJRT、XLA CPU backend 和 LLVM，而不是继续扩张这一篇 Tour。"
+    },
+    {
+      "title": "实验闭环：用执行证伪或确认结论",
+      "file": "labs/001-jit-cpu/lab_core.py",
+      "pattern": "def cache_experiment\\(",
+      "description": "## 结论必须能运行\n\n这里对同一个 jitted function 依次输入 `shape=N`、`shape=N`、`shape=N+1`。闭包里的计数器只在 tracing 执行 Python 函数体时增加：预期次数是 `1, 1, 2`。\n\n如果实际结果不符合，应该修改分析结论，而不是修改预期输出。"
+    },
+    {
+      "title": "Hack：在真实入口加入可撤销观测点",
+      "file": "labs/001-jit-cpu/patches/trace-pjit.patch",
+      "line": 1,
+      "description": "## 从阅读进入 Hack\n\n这个 patch 在 `_trace_for_jit` 添加环境变量控制的诊断点。JAX 是 editable 安装，所以应用 Python-level patch 后无需编译即可运行。\n\n应用、验证、撤销：\n\n>> git -C upstream/jax apply ../../labs/001-jit-cpu/patches/trace-pjit.patch\n\n>> JAX_SOURCE_ANALYSIS_TRACE_JIT=counted_affine uv run python labs/001-jit-cpu/probe.py --stage run\n\n>> git -C upstream/jax apply -R ../../labs/001-jit-cpu/patches/trace-pjit.patch\n\n到这里，**源码 → IR → 执行 → Hack → 使用修改后实现** 已形成最小闭环。"
+    }
+  ]
+}

@@ -1,11 +1,11 @@
-# JAX 上游源码分析树
+# JAX 软件栈：源码分析与 Hack 实践
 
-这个仓库用于从 JAX 源码一路向硬件方向阅读 CPU、GPU、TPU 软件栈。基线固定为：
+本仓库用于对 JAX 的 CPU、GPU、TPU 软件栈进行系统性分析，从 JAX 出发一路向硬件方向探索；同时尝试 hack 其中一部分，按需手动编译修改后的组件，并实际使用 hack 后的实现。源码与实验基线固定为：
 
 - JAX `5832e866449a41c3eea6333416528039119a0fde`（源码版本 `0.11.2`）
 - JAX 在 `MODULE.bazel` 中锁定的 XLA `496bd4bd49db9ecbffd85da630b49c860b724604`
 
-边界以 `upstream/jax` 为准：JAX 使用、构建或运行时所依赖的项目属于这里的“上游”；使用 JAX 构建应用或库的项目属于下游，不收录。Tokamax、jax-triton、jax-tpu-embedding 等下游项目已明确排除。
+边界以 `upstream/jax` 为准：JAX 使用、构建或运行时所依赖的项目属于这里的“上游”；使用 JAX 构建应用或库的项目属于下游，不收录。
 
 ## 源码树
 
@@ -49,6 +49,13 @@ uv sync --locked
 uv run python -c 'import jax; print(jax.__version__, jax.devices())'
 ```
 
+JupyterLab 作为可选的 uv 依赖组维护。运行第一个交互式源码分析 Lab：
+
+```bash
+uv sync --group notebook --locked
+uv run --group notebook jupyter lab labs/001-jit-cpu/jupyter.ipynb
+```
+
 正常使用时不要删除或绕过 `uv.lock`。只有在有意更新分析基线时才重新解析依赖，并同时审查锁文件变化。
 
 需要阅读某个 lazy 项时，显式传入路径即可，例如：
@@ -63,3 +70,4 @@ git submodule update --init --depth 1 -- upstream/runtime/boringssl
 
 - [源码树、依赖关系与边界](docs/source-tree.md)
 - [CPU、GPU、TPU 阅读路径](docs/reading-paths.md)
+- [Lab 001：追踪 `jax.jit` 的 CPU 执行路径](labs/001-jit-cpu/README.md)（Marimo 实验台 + CodeTour 源码走读）
