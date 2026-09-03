@@ -40,6 +40,17 @@ bash tools/verify-upstream-sources.sh
 
 第一个脚本按锁文件初始化并校准主路径 submodule，同时跳过 lazy 项；OpenMP 使用 blobless 浅克隆，只展开 LLVM 10.0.1 的 `openmp/`。第二个脚本下载并校验唯一的精确源码包。第三个脚本检查清单、`.gitmodules`、gitlink、实际 HEAD、lazy 状态和 archive 标记是否一致。
 
+## Python 分析环境
+
+仓库使用 uv 管理可复现的 CPU 分析环境。Python 固定为 3.12.3，JAX 以 editable 方式直接使用 `upstream/jax` 中的源码，CPU `jaxlib` 固定为 0.11.1；其余传递依赖的精确版本和文件哈希记录在 `uv.lock`。
+
+```bash
+uv sync --locked
+uv run python -c 'import jax; print(jax.__version__, jax.devices())'
+```
+
+正常使用时不要删除或绕过 `uv.lock`。只有在有意更新分析基线时才重新解析依赖，并同时审查锁文件变化。
+
 需要阅读某个 lazy 项时，显式传入路径即可，例如：
 
 ```bash

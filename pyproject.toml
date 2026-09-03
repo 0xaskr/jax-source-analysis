@@ -1,0 +1,17 @@
+[project]
+name = "jax-source-analysis"
+version = "0.1.0"
+description = "Reproducible environment for analyzing the pinned JAX source tree"
+readme = "README.md"
+requires-python = "==3.12.*"
+dependencies = [
+  "jax",
+  "jaxlib==0.11.1",
+]
+
+[tool.uv]
+package = false
+required-version = "==0.12.9"
+
+[tool.uv.sources]
+jax = { path = "upstream/jax", editable = true }
