@@ -1,0 +1,196 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jax-source-analysis.local/schema/coverage.schema.json",
+  "title": "JAX-to-TPU white-box coverage inventory",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "updated_at",
+    "scope",
+    "layers",
+    "features"
+  ],
+  "properties": {
+    "$schema": {"type": "string", "minLength": 1},
+    "schema_version": {"const": "1.0"},
+    "updated_at": {"type": "string", "format": "date-time"},
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "boundary",
+        "coverage_unit",
+        "covered_semantics",
+        "completion_rule"
+      ],
+      "properties": {
+        "boundary": {"type": "string", "minLength": 1},
+        "coverage_unit": {"type": "string", "minLength": 1},
+        "covered_semantics": {"type": "string", "minLength": 1},
+        "completion_rule": {"type": "string", "minLength": 1}
+      }
+    },
+    "layers": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/entry"}
+    },
+    "features": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/entry"}
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+    },
+    "repositoryPath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\u0000\\\\]+$"
+    },
+    "topicId": {
+      "type": "string",
+      "pattern": "^[0-9]{2,3}-[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "qualifiedRef": {
+      "type": "string",
+      "pattern": "^[0-9]{2,3}-[a-z0-9]+(?:-[a-z0-9]+)*#[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+    },
+    "depth": {
+      "enum": ["L0", "L1", "L2", "L3", "L4", "L5"]
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "documentation",
+        "topic_refs",
+        "claim_refs",
+        "source_refs",
+        "capture_refs",
+        "probe_refs"
+      ],
+      "properties": {
+        "documentation": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/repositoryPath"}
+        },
+        "topic_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/topicId"}
+        },
+        "claim_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/qualifiedRef"}
+        },
+        "source_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/qualifiedRef"}
+        },
+        "capture_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/repositoryPath"}
+        },
+        "probe_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/repositoryPath"}
+        }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "status",
+        "target_depth",
+        "evidence",
+        "depends_on",
+        "notes"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "title": {"type": "string", "minLength": 1},
+        "status": {
+          "enum": ["unobserved", "covered", "blocked", "not-applicable"]
+        },
+        "target_depth": {"$ref": "#/$defs/depth"},
+        "achieved_depth": {"$ref": "#/$defs/depth"},
+        "evidence": {"$ref": "#/$defs/evidence"},
+        "depends_on": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"}
+        },
+        "blockers": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "next_action": {"type": "string", "minLength": 1},
+        "rationale": {"type": "string", "minLength": 1},
+        "notes": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"status": {"const": "covered"}},
+            "required": ["status"]
+          },
+          "then": {
+            "required": ["achieved_depth"],
+            "properties": {
+              "evidence": {
+                "anyOf": [
+                  {"properties": {"documentation": {"minItems": 1}}},
+                  {"properties": {"topic_refs": {"minItems": 1}}},
+                  {"properties": {"claim_refs": {"minItems": 1}}},
+                  {"properties": {"source_refs": {"minItems": 1}}},
+                  {"properties": {"capture_refs": {"minItems": 1}}},
+                  {"properties": {"probe_refs": {"minItems": 1}}}
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {"status": {"const": "blocked"}},
+            "required": ["status"]
+          },
+          "then": {"required": ["blockers", "next_action"]}
+        },
+        {
+          "if": {
+            "properties": {"status": {"const": "unobserved"}},
+            "required": ["status"]
+          },
+          "then": {"required": ["next_action"]}
+        },
+        {
+          "if": {
+            "properties": {"status": {"const": "not-applicable"}},
+            "required": ["status"]
+          },
+          "then": {"required": ["rationale"]}
+        }
+      ]
+    }
+  }
+}

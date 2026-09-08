@@ -5,16 +5,35 @@
 
 ## 证据记法
 
-- `SOURCE-ONLY`：定义或接口可由固定公开源码确认，尚未代表本机执行过该源码；
-- `RUN-CPU`：由与记录版本一致的 CPU probe 实际确认；
-- `SIM-TPU`：由 Pallas/TPU interpreter 或静态模拟确认；
-- `COMPILE-TPU`：由固定 libtpu 与固定 TPU target 的编译产物确认；
-- `RUN-TPU`：由记录代际和 topology 的真实 TPU 执行确认；
-- `VERSION-SKEW`：运行二进制与引用源码 commit 不一致。
+完整的六级证据定义见[证据约定](../contributing/evidence-conventions.md)：
+`SOURCE-ONLY`、`RUN-CPU`、`SIM-TPU`、`COMPILE-TPU`、`RUN-TPU` 和
+`REPLAY-OFFLINE`。`VERSION-SKEW` 是运行二进制与引用源码 revision 不一致时叠加的
+来源限定，不是第七种证据。本表带公开源码链接的结构性定义均为
+**证据：SOURCE-ONLY**；它们不自动升级为运行证据。LLO/libtpu 私有实现和硬件行为
+会单独标记 `COMPILE-TPU` 或 `RUN-TPU`。
 
-完整规则见[执行计划](../../PLAN.md#52-证据标签)。本表带公开源码链接的结构性定义
-均为 **证据：SOURCE-ONLY**；它们不自动升级为运行证据。LLO/libtpu 私有实现和硬件
-行为会单独标记 `COMPILE-TPU` 或 `RUN-TPU`。
+## Python 值与函数入口
+
+### PyTree
+
+由 list、tuple、dict、注册容器等节点和 array/标量叶子组成的嵌套结构。JAX 在 API
+边界把它展平为叶子序列和 `PyTreeDef`，变换结束后再按定义还原；PyTree 本身不是
+device layout。实现入口见
+[tree_util.py](../../upstream/jax/jax/_src/tree_util.py)。**证据：SOURCE-ONLY。**
+
+### `jax.Array`
+
+JAX 暴露的数组对象；它把 shape/dtype 等数组语义与一个或多个设备上的 sharding、
+buffer 和就绪状态连接起来。Python 对象存在不代表异步设备工作已经结束。公开基类
+来自 [basearray.py](../../upstream/jax/jax/_src/basearray.py)，具体 `ArrayImpl` 见
+[array.py](../../upstream/jax/jax/_src/array.py)。**证据：SOURCE-ONLY。**
+
+### `grad`
+
+返回一个 callable，用反向模式自动微分计算标量输出函数对所选参数的梯度。它建立在
+linearization、JVP/transpose 和 residual 等机制上，不是对 Python 文本做符号求导。
+API 入口见 [api.py](../../upstream/jax/jax/_src/api.py)，解释规则见
+[ad.py](../../upstream/jax/jax/_src/interpreters/ad.py)。**证据：SOURCE-ONLY。**
 
 ## Trace、tracing 与 transformation
 
@@ -22,8 +41,10 @@
 
 接收一个函数并返回具有新语义的 callable，例如 `jit(f)`、`grad(f)` 和 `vmap(f)`。
 在 JAX 中，组合性主要来自 primitive 及各解释层的 rules，不应描述成固定的一串
-Python AST rewrite。API 入口见 [api.py](../../upstream/jax/jax/_src/api.py)，解释器
-rules 见 [jax/_src/interpreters](../../upstream/jax/jax/_src/interpreters/)。
+Python AST rewrite。组合仍要求相关 primitive 具备所需 rules 并满足 transformation
+约束；嵌套次序会改变 trace、staging 和生成的程序。API 入口见
+[api.py](../../upstream/jax/jax/_src/api.py)，解释器 rules 见
+[jax/_src/interpreters](../../upstream/jax/jax/_src/interpreters/)。
 **证据：SOURCE-ONLY。**
 
 ### tracing
@@ -32,11 +53,12 @@ rules 见 [jax/_src/interpreters](../../upstream/jax/jax/_src/interpreters/)。
 operation 由当前解释规则处理，并收集或变换程序。tracing 不是编译，也不保证产生
 设备 executable。**证据：SOURCE-ONLY。**
 
-### `Trace`
+### `Trace`（解释器对象）
 
-解释层的对象/类，决定该层如何处理 primitive、call、map 等操作。固定源码中的
-`Trace` 定义见 [core.py](../../upstream/jax/jax/_src/core.py)。文档写代码实体时保留
-首字母大写和反引号。**证据：SOURCE-ONLY。**
+解释层的对象/类。固定版本的核心入口是 `process_primitive`，并有 custom JVP/VJP
+处理方法；旧资料中的通用 `process_call`/`process_map` 接口不再属于这个类。定义见
+[core.py](../../upstream/jax/jax/_src/core.py)。文档写代码实体时保留首字母大写和
+反引号。**证据：SOURCE-ONLY。**
 
 ### `Tracer`
 
@@ -45,7 +67,7 @@ tracing 期间流经 Python 程序的代理值。它携带 abstract value，并�
 [core.py](../../upstream/jax/jax/_src/core.py)。`Tracer` 不是 device buffer，也不是
 运行时 profile trace。**证据：SOURCE-ONLY。**
 
-### trace
+### trace（歧义词）
 
 避免单独使用，因为它可能指 tracing 的一次实例，也可能指 profiler event stream。
 本仓库分别写“tracing 过程”“trace level/stack”和“runtime profile trace”。
@@ -54,6 +76,8 @@ tracing 期间流经 Python 程序的代理值。它携带 abstract value，并�
 
 用于说明嵌套 transformations 中解释层的相对位置和动态上下文。它帮助回答哪个
 transformation 正在解释哪个 primitive，但不等同于 Python 调用栈或硬件执行栈。
+固定版本应从 `trace_ctx.trace`、解释器的 `parent_trace` 与诊断用
+`unsafe_get_trace_stack` 入手，不沿用旧 `MainTrace.level/sublevel` 模型。
 **证据：SOURCE-ONLY。**
 
 ### Primitive
@@ -107,8 +131,9 @@ effects 和 debug/source 信息；每个 equation 调用一个 primitive 并携�
 
 ### `ClosedJaxpr`
 
-把 Jaxpr 与其 closed-over constants 绑定后的容器，便于把“程序”和捕获常量一起传递。
-定义见 [core.py](../../upstream/jax/jax/_src/core.py)。**证据：SOURCE-ONLY。**
+在当前固定版本中，`Jaxpr` 已直接携带可能为空的 `consts`；`ClosedJaxpr = Jaxpr`
+只是为旧构造调用、类型检查和注解保留的兼容别名，不再是独立容器。合并说明见
+[core.py](../../upstream/jax/jax/_src/core.py)。**证据：SOURCE-ONLY。**
 
 ### Jaxpr equation / eqn
 
@@ -132,6 +157,18 @@ tensor payload，也不等同于线程锁。**证据：SOURCE-ONLY。**
 
 Jacobian-vector product；把 primal 与 tangent 向前传播的 AD 规则。实现入口见
 [ad.py](../../upstream/jax/jax/_src/interpreters/ad.py)。**证据：SOURCE-ONLY。**
+
+### primal / tangent / cotangent / residual
+
+- **primal** 是被求值、被微分的原始输入或中间值；
+- **tangent** 是前向模式中随 primal 传播的一阶扰动；
+- **cotangent** 是反向模式从输出向输入传播的线性对偶值；
+- **residual** 是前向/线性化阶段为后续 transpose 或反向阶段保存的必要中间信息。
+
+这些词描述 AD 变换中的角色，不保证每个值都独占一个运行时 buffer。实现入口见
+[ad.py](../../upstream/jax/jax/_src/interpreters/ad.py)与
+[partial_eval.py](../../upstream/jax/jax/_src/interpreters/partial_eval.py)。
+**证据：SOURCE-ONLY。**
 
 ### VJP / transpose
 
@@ -211,17 +248,20 @@ Pallas TPU kernel lowering 产生的 MLIR module，可以包含 `arith`、`scf`�
 ### LLO
 
 本文只用“TPU-specific LLO”指 HLO/Mosaic 以下、bundle/machine code 以上的目标相关
-层。当前固定公开源码没有 LLO schema、parser/printer、pass pipeline 或 encoding，
-也没有为缩写提供可核验的唯一展开，因此正文不展开 `LLO`。具体 opcode、pass、
-数据结构和 Mosaic/HLO 映射必须从固定 libtpu 源码与 target dump 建立。
+层。固定公开树把它称为 low level optimization/optimizer programs，并公开了部分 dump
+入口；见 [compiler.h](../../upstream/xla/xla/service/compiler.h)和
+[error_3000.md](../../upstream/xla/docs/errors/error_3000.md)。公开树仍没有 TPU LLO 的
+schema、parser/printer、完整 pass pipeline 或 encoding。具体 opcode、pass、数据结构
+和 Mosaic/HLO 映射必须从固定 libtpu 源码与 target dump 建立。
 **待验证：COMPILE-TPU。**
 
-### bundle / VLIW bundle
+### bundle / target machine program
 
-本文用它指 TPU compiler 为目标代际生成、将可并行设备操作编码在一起的机器级程序
-包。当前公开树没有足以证明目标编码的 schema；只有拿到 target-specific packer、
-dump 和 executable metadata 后才能描述字段。**待验证：COMPILE-TPU。** bundle 在
-真实设备上的发射和 stall 行为仍需 **RUN-TPU**。
+本文用它指 TPU compiler 为目标代际生成的机器级程序包。“VLIW bundle”只有在固定
+target 的源码或 dump 明确使用该编码时才采用。当前公开树没有足以证明目标编码的
+schema；只有拿到 target-specific packer、dump 和 executable metadata 后才能描述
+字段。**待验证：COMPILE-TPU。** bundle 在真实设备上的发射和 stall 行为仍需
+**RUN-TPU**。
 
 ### machine code / hardware code
 
@@ -324,8 +364,9 @@ backend 不是单个 kernel library。发现与注册逻辑见
 
 ### plugin
 
-实现 PJRT 平台接口并由 JAX/JAXlib 注册或动态加载的组件。当前 TPU 路径由
-`xla_bridge.make_tpu_client` 加载 `libtpu.so` 并初始化 `tpu` plugin。
+实现 PJRT 平台接口并由 JAX/JAXlib 注册或动态加载的组件。当前 TPU 路径在尚未
+loaded/initialized 时由 `xla_bridge.make_tpu_client` 按需加载 `libtpu.so` 并初始化
+`tpu` plugin。
 **证据：SOURCE-ONLY。** plugin 内部实现尚未固定。
 
 ### PJRT
@@ -412,17 +453,18 @@ Pallas kernel 中可读写 memory reference 的抽象，load/store/swap 等 prim
 [mosaic/interpret](../../upstream/jax/jax/_src/pallas/mosaic/interpret/)。实验结果标
 `SIM-TPU`，不能外推 cycle timing 或真实硬件性能。**证据：SOURCE-ONLY。**
 
-### HBM / CMEM / VMEM / SMEM / IMEM
+### HBM / CMEM / VMEM / SMEM / IMEM（target-bound 候选）
 
-本文用这些名字表示 TPU memory hierarchy 中不同职责的空间。公开 Pallas/Mosaic
-源码只暴露其中部分 programmer/compiler abstractions；具体容量、banking、地址规则、
-lifetime 和 traffic 必须绑定 TPU 代际与 libtpu target。编译映射需 `COMPILE-TPU`，
-实际访问和 stall 需 `RUN-TPU`。
+这些名称是后续 target census 需要核对的 memory/address-space 候选，并不预设每代
+TPU 全部存在、含义相同或在公开 Pallas/Mosaic API 中可见。具体名称、容量、banking、
+地址规则、lifetime 和 traffic 必须绑定 TPU 代际与 libtpu target。编译映射需
+`COMPILE-TPU`，实际访问和 stall 需 `RUN-TPU`。
 
 ### MXU / VPU / XLU / DMA / sequencer
 
-本文用作 TPU matrix、vector、cross-lane、data movement 和 instruction sequencing
-资源类别。任何 Mosaic/LLO operation 到资源或周期的一一映射都必须由目标代际的
+这些名称也是 target census 的候选资源类别。只有目标资料明确使用对应名称时，才把
+它们解释为 matrix、vector、cross-lane、data movement 或 instruction sequencing
+资源。任何 Mosaic/LLO operation 到资源或周期的一一映射都必须由目标代际的
 compiler/hardware 证据建立。**待验证：COMPILE-TPU、RUN-TPU。**
 
 ## Sharding 与 topology

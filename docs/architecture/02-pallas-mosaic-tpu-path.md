@@ -2,25 +2,29 @@
 
 本文从一个 `pallas_call` 开始，同时追踪两个程序：调用 kernel 的外层 JAX 程序，
 以及描述单个 kernel 的内层 Pallas Jaxpr。只看其中一层，会丢失 sharding、custom
-call、memory space 或 kernel operation 的来源。
+call、memory space 或 kernel operation 的来源。术语定义见
+[JAX→TPU 术语表](../index/glossary.md)。
 
 ## 边界与证据
 
 Pallas tracing、Mosaic lowering、TPU dialect、serde 和 `tpu_custom_call` 在本仓库有
 固定公开源码，以下相应结论标为 `SOURCE-ONLY`。libtpu 如何消费 Mosaic payload、
 如何生成 LLO 和 bundle 需要 `COMPILE-TPU`；真实 memory/compute/communication 行为
-需要 `RUN-TPU`。当前 wheel 与源码 commit 不一致，尚有 `VERSION-SKEW`。标签定义见
-[全栈地图](00-whole-stack.md#证据边界)。
+需要 `RUN-TPU`。当前 wheel 与源码 commit 不一致，因此运行结论还带
+`VERSION-SKEW` 来源限定。规则见
+[证据约定](../contributing/evidence-conventions.md)。
 
 ## 双层程序图
 
 ```mermaid
 flowchart TB
   subgraph OUTER["外层模型程序"]
-    MODEL["JAX function"] --> OJ["outer transformed Jaxpr"]
-    OJ --> OP["pallas_call primitive"]
-    OJ --> OTHER["other JAX primitives"]
-    OTHER --> OSHLO["outer StableHLO"]
+    MODEL["outer JAX function"] --> CALLSITE["pallas_call wrapper"]
+    CALLSITE --> OP["pallas_call_p.bind"]
+    OP --> OJ["outer transformed Jaxpr<br/>contains pallas_call equation"]
+    MODEL --> OTHER["other JAX primitive calls"]
+    OTHER --> OJ
+    OJ -->|"lower ordinary equations"| OSHLO["outer StableHLO"]
   end
 
   subgraph INNER["内层 kernel 程序"]
@@ -29,9 +33,9 @@ flowchart TB
     MOS --> SER["mosaic-serde bytecode"]
   end
 
-  OP --> KERNEL
+  KJ -->|"jaxpr parameter"| OP
   SER --> CFG["custom-call backend_config"]
-  OP --> CC["stablehlo.custom_call<br/>target = tpu_custom_call"]
+  OJ -->|"lower pallas_call equation"| CC["stablehlo.custom_call<br/>target = tpu_custom_call"]
   CFG --> CC
   CC --> OSHLO
   OSHLO --> PJRT["jaxlib / IFRT / PJRT"]
@@ -71,8 +75,8 @@ compiler params 等信息。构造调用时，JAX 追踪 kernel 并把数组窗�
 - TPU-specific compiler params、memory spaces 与 core types：
   [mosaic/core.py](../../upstream/jax/jax/_src/pallas/mosaic/core.py)。
 
-这些源码证明外层/内层 Jaxpr 的结构关系，但具体 Tokamax kernel 的 grid、blocks、
-effects 和 aliases 要由固定 workload capture 给出。**证据：SOURCE-ONLY。**
+这些源码证明外层/内层 Jaxpr 的结构关系；Tokamax 接入后，每个选定 kernel 的 grid、
+blocks、effects 和 aliases 要由固定 workload capture 给出。**证据：SOURCE-ONLY。**
 
 ### 需要同时保存的 Jaxpr
 
@@ -87,9 +91,11 @@ operation；kernel 的细节在内层 Jaxpr。**证据：SOURCE-ONLY。**
 
 ## 2. 平台分派与解释模式
 
-通用 `_pallas_call_lowering` 按 platform 和 `interpret` 参数选择路径；TPU 编译规则
-由 Pallas backend registry 连接到
-`pallas_call_tpu_lowering_rule`。注册和分派分别见
+通用 `_pallas_call_lowering` 先处理 `interpret`，否则通过 `mlir.lower_per_platform`
+进入 TPU 分支。若 `compiler_params` 的类型在 Pallas backend registry 中注册了 TPU
+rule，该分支优先调用注册 rule；没有匹配 rule 时，它直接导入并调用
+`pallas_call_tpu_lowering_rule`。`tpu_core.CompilerParams` 在 Mosaic registration 模块
+中注册到同一个 rule。注册和分派分别见
 [pallas_call.py](../../upstream/jax/jax/_src/pallas/pallas_call.py)与
 [pallas_call_registration.py](../../upstream/jax/jax/_src/pallas/mosaic/pallas_call_registration.py)。
 **证据：SOURCE-ONLY。**
@@ -136,7 +142,7 @@ type、enum 和 verifier 定义在
 Mosaic TPU MLIR 是当前公开源码能逐 op 阅读、验证和序列化的 kernel IR。当前树中
 没有 LLO dialect、LLO schema、LLO parser/printer 或 Mosaic-to-LLO implementation。
 所以不能把一个 `tpu.*` operation 直接命名为 LLO instruction，也不能从 MLIR 文本
-推断最终 VLIW bundle。**证据：SOURCE-ONLY。**
+推断最终 target machine bundle 或其编码。**证据：SOURCE-ONLY。**
 
 Mosaic operation 到 LLO、LLO pass 和 bundle 的对应关系需要匹配 libtpu 源码、
 固定 target 与 compiler dumps。**待验证：COMPILE-TPU。**
@@ -144,17 +150,20 @@ Mosaic operation 到 LLO、LLO pass 和 bundle 的对应关系需要匹配 libtp
 ## 4. Serde 与外层 `tpu_custom_call`
 
 Mosaic module 不作为另一个顶层 PJRT program 独立提交。公开代码先运行
-`mosaic-serde`，写为 MLIR bytecode，再把 base64 payload、memory/communication
-配置、alias、side-effect 等字段放入 custom call backend config；外层 JAX MLIR
-lowering生成 call target `tpu_custom_call`。
+`mosaic-serde`，写为 MLIR bytecode，再把 base64 payload、memory/communication 和
+编译 flags 放入 custom call backend config。alias 映射和 side-effect 标志作为
+`stablehlo.custom_call` 的独立属性传入；部分 side-effect metadata 进入 frontend
+attributes。外层 JAX MLIR lowering 生成 call target `tpu_custom_call`。
 
 ```mermaid
 flowchart LR
   MOD["Mosaic ModuleOp"] --> SERDE["mosaic-serde"]
   SERDE --> BYTE["versioned MLIR bytecode"]
   BYTE --> JSON["CustomCallBackendConfig JSON"]
-  ARGS["aliases / memory spaces / effects / flags"] --> JSON
+  CONFIG["memory spaces / communication / flags"] --> JSON
   JSON --> CALL["stablehlo.custom_call tpu_custom_call"]
+  ALIAS["input-output aliases"] -->|"operand_output_aliases"| CALL
+  EFFECT["effect classification"] -->|"has_side_effect / frontend attributes"| CALL
   CALL --> OUTER["outer StableHLO module"]
 ```
 
@@ -174,8 +183,8 @@ serde version、backend config 和每个字段的消费逻辑尚未固定。**�
 ### Sharding 与通信边界
 
 `_tpu_custom_call_lowering` 对多设备 axis context 有显式约束，并在不能自动 partition
-时要求调用方使用 `shard_map`；backend config 还携带 communication、collective id
-和 side-effect 信息。具体条件见
+时要求调用方使用 `shard_map`；backend config 携带 communication 和 collective id，
+而 side effect 通过独立 custom-call 属性表达。具体条件见
 [tpu_custom_call.py](../../upstream/jax/jax/_src/tpu_custom_call.py)。
 **证据：SOURCE-ONLY。**
 
@@ -194,7 +203,7 @@ serde version、backend config 和每个字段的消费逻辑尚未固定。**�
 
 1. custom call 在 HLO import、optimization、fusion、layout 和 scheduling 的哪个阶段识别；
 2. Mosaic module 在何处反序列化、verify 和升级/降级；
-3. 哪些 HLO passes 可以改写 custom call 的 operands、aliases 或 placement；
+3. 哪些 HLO passes 可以改写 custom call 的 operands、alias 属性、side-effect 属性或 placement；
 4. 哪些 Mosaic passes 决定 vector layout、tiling、memory allocation 和 schedule；
 5. Mosaic IR 如何映射到目标代际的 LLO；
 6. LLO 如何验证、优化和打包为 executable bundle；

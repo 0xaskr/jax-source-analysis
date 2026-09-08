@@ -1,0 +1,392 @@
+diff --git a/labs/001-jit-cpu/probe.py b/labs/001-jit-cpu/probe.py
+index 44864f078706707869d8f5173f10c3665644043d..e0a57eef6a96757791b05c078c48a96eb7d237b7 100644
+--- a/labs/001-jit-cpu/probe.py
++++ b/labs/001-jit-cpu/probe.py
+@@ -6,0 +7,4 @@ import argparse
++import copy
++import hashlib
++import json
++from pathlib import Path
+@@ -8,0 +13,2 @@ import jax
++import jaxlib
++import jaxlib.version as jaxlib_version
+@@ -16,0 +23,7 @@ from lab_core import stablehlo_text
++REPO_ROOT = Path(__file__).resolve().parents[2]
++BASELINE_PATH = REPO_ROOT / "manifests/baseline.json"
++NATIVE_BINARY_SCHEMA_ID = (
++    "https://jax-source-analysis.local/schema/native-binaries.schema.json"
++)
++
++
+@@ -52 +65,11 @@ def show_run(size: int, scale: float, bias: float) -> None:
+-  for observation in cache_experiment(size, scale, bias):
++  observations = cache_experiment(size, scale, bias)
++  trace_counts = tuple(observation.trace_count for observation in observations)
++  shapes = tuple(observation.shape for observation in observations)
++  expected_shapes = ((size,), (size,), (size + 1,))
++  if trace_counts != (1, 1, 2) or shapes != expected_shapes:
++    raise AssertionError(
++        "jit cache invariant failed: "
++        f"expected counts/shapes {(1, 1, 2)!r}/{expected_shapes!r}, "
++        f"got {trace_counts!r}/{shapes!r}"
++    )
++  for observation in observations:
+@@ -58,0 +82,89 @@ def show_run(size: int, scale: float, bias: float) -> None:
++def _sha256(path: Path) -> str:
++  digest = hashlib.sha256()
++  with path.open("rb") as file:
++    for chunk in iter(lambda: file.read(1024 * 1024), b""):
++      digest.update(chunk)
++  return digest.hexdigest()
++
++
++def write_native_binary_manifest(output_path: Path, baseline_path: Path) -> None:
++  """Record jaxlib native binaries mapped after running the selected stage."""
++  process_maps = Path("/proc/self/maps")
++  if not process_maps.is_file():
++    raise RuntimeError("native binary capture requires Linux /proc/self/maps")
++
++  jaxlib_root = Path(jaxlib.__file__).resolve().parent
++  binaries: set[Path] = set()
++  for line in process_maps.read_text().splitlines():
++    fields = line.split(maxsplit=5)
++    if len(fields) != 6:
++      continue
++    candidate = Path(fields[5])
++    if not candidate.is_absolute() or not candidate.is_file():
++      continue
++    try:
++      candidate.relative_to(jaxlib_root)
++    except ValueError:
++      continue
++    if ".so" in candidate.name:
++      binaries.add(candidate.resolve())
++
++  if not binaries:
++    raise RuntimeError("no mapped jaxlib native binaries were found")
++
++  entries = []
++  for binary in sorted(binaries):
++    entry = {
++        "package_path": binary.relative_to(jaxlib_root).as_posix(),
++        "sha256": _sha256(binary),
++        "size_bytes": binary.stat().st_size,
++    }
++    try:
++      entry["artifact_path"] = binary.relative_to(REPO_ROOT).as_posix()
++    except ValueError:
++      # A temporary validation environment can still provide package-relative
++      # paths and hashes without leaking a host path into the capture.
++      pass
++    entries.append(entry)
++
++  baseline_path = baseline_path.resolve()
++  try:
++    baseline_path.relative_to(REPO_ROOT)
++  except ValueError as error:
++    raise RuntimeError("baseline manifest must be repository-local") from error
++  baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
++  runtime = baseline["runtime"]["jaxlib"]
++  build_revision = getattr(jaxlib_version, "_git_hash", None)
++  if runtime["version"] != jaxlib.__version__:
++    raise RuntimeError("baseline jaxlib version differs from the imported runtime")
++  if runtime["build_revision"] != build_revision or not build_revision:
++    raise RuntimeError("baseline jaxlib build revision differs from the imported runtime")
++
++  identity = copy.deepcopy(runtime["distribution"])
++
++  payload = {
++      "$schema": NATIVE_BINARY_SCHEMA_ID,
++      "schema_version": "1.0",
++      "inventory_id": "native-binaries",
++      "packages": [
++          {
++              "name": "jaxlib",
++              "version": jaxlib.__version__,
++              "source_component": "jax",
++              "build_revision": build_revision,
++              "runtime_roles": ["python-extension", "cpu-backend"],
++              "identity": identity,
++              "selection": (
++                  "jaxlib shared objects mapped after the selected probe stage; "
++                  "the lock identity selects a hashed wheel candidate but is not "
++                  "cryptographic proof of installation membership"
++              ),
++              "binaries": entries,
++          }
++      ],
++  }
++  output_path.write_text(
++      json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
++  )
++
++
+@@ -66,0 +179,6 @@ def parse_args() -> argparse.Namespace:
++  parser.add_argument(
++      "--baseline-manifest",
++      type=Path,
++      default=BASELINE_PATH,
++      help="Baseline whose exact jaxlib distribution identity is reused.",
++  )
+@@ -79,0 +198,5 @@ def parse_args() -> argparse.Namespace:
++  parser.add_argument(
++      "--native-binaries-manifest",
++      type=Path,
++      help="Write hashes for mapped jaxlib shared objects after the selected stage.",
++  )
+@@ -99,0 +223,2 @@ def main() -> None:
++  if args.native_binaries_manifest is not None:
++    write_native_binary_manifest(args.native_binaries_manifest, args.baseline_manifest)
+diff --git a/manifests/baseline.json b/manifests/baseline.json
+index 2dff4b7c129e624f21c8775602646558095b8c17..9003d123c476d9a36075c2d4783f6b2147002cc3 100644
+--- a/manifests/baseline.json
++++ b/manifests/baseline.json
+@@ -1,0 +2 @@
++  "$schema": "schema/baseline.schema.json",
+@@ -7,0 +9,30 @@
++    "inputs": {
++      ".gitmodules": {
++        "sha256": "4d7231829695cfc7dc8c2507a6931a2d1d71d558b21238d47ee1841670b62059",
++        "size_bytes": 12311
++      },
++      ".python-version": {
++        "sha256": "fa682ae9d943f5c8076e68335c9ba3ab4d063ad035c07ac6928653dd4ac50af7",
++        "size_bytes": 7
++      },
++      "manifests/schema/baseline.schema.json": {
++        "sha256": "f154b14314ae016b475b9ab79383e0b3b95fe6fad29b6fb3c6cf0ca482ea0106",
++        "size_bytes": 10038
++      },
++      "pyproject.toml": {
++        "sha256": "3ab69082648ed4b165e1b262b1c4d037c9121b21f4877f468d1ca446fd3fc4c2",
++        "size_bytes": 481
++      },
++      "upstream-sources.lock": {
++        "sha256": "eb7a7a5fbb7eb7a3c10753b2519add1244fc64ce41a0fe0165788c2635938555",
++        "size_bytes": 14333
++      },
++      "upstream/jax/.bazelversion": {
++        "sha256": "331890b9bae605c036309f3f56e1cfca916aff3dfd61aebe50370d4bfa125c78",
++        "size_bytes": 6
++      },
++      "uv.lock": {
++        "sha256": "401301d83658e42bf7b5431fed3ae1599422f5d1abe3ca56051c7de1904d426b",
++        "size_bytes": 150179
++      }
++    },
+@@ -9 +40 @@
+-      "git_commit": "df923120f2b170248867a26e3b0f5596a4d049fd",
++      "git_commit": "c8526fc89a4263f02291ee51705d5370a7780c2f",
+@@ -14,0 +46 @@
++        "dirty": false,
+@@ -16 +48,2 @@
+-        "path": "upstream/jax"
++        "path": "upstream/jax",
++        "status": []
+@@ -18,0 +52 @@
++        "dirty": false,
+@@ -20 +54,2 @@
+-        "path": "upstream/llvm-project"
++        "path": "upstream/llvm-project",
++        "status": []
+@@ -22,0 +58 @@
++        "dirty": false,
+@@ -24 +60,2 @@
+-        "path": "upstream/shardy"
++        "path": "upstream/shardy",
++        "status": []
+@@ -26,0 +64 @@
++        "dirty": false,
+@@ -28 +66,2 @@
+-        "path": "upstream/stablehlo"
++        "path": "upstream/stablehlo",
++        "status": []
+@@ -30,0 +70 @@
++        "dirty": false,
+@@ -32 +72,2 @@
+-        "path": "upstream/xla"
++        "path": "upstream/xla",
++        "status": []
+@@ -37,0 +79 @@
++      "arch": "x86_64",
+@@ -38,0 +81,5 @@
++      "device_count": 1,
++      "devices": [
++        "cpu:0"
++      ],
++      "host_os": "Linux",
+@@ -44 +91,2 @@
+-      "git_hash": "5832e866449a41c3eea6333416528039119a0fde",
++      "imported_file": "upstream/jax/jax/__init__.py",
++      "imported_file_sha256": "e97031df0826c1ed1399652872281209a5c8d1d64302da6cf8ce158c0bb51f66",
+@@ -46,0 +95 @@
++      "source_checkout_git_hash": "5832e866449a41c3eea6333416528039119a0fde",
+@@ -50 +99,9 @@
+-      "git_hash": "2d66622450e2c8633cda2307688ef7aa294bd6eb",
++      "build_revision": "2d66622450e2c8633cda2307688ef7aa294bd6eb",
++      "distribution": {
++        "artifact_sha256": "c3dcec3bb33ebf5c76dc33f962c796652c077edb246464fa32cb1d8fcb6087e6",
++        "artifact_size_bytes": 87903454,
++        "artifact_uri": "artifact:jaxlib-0.11.1-cp312-cp312-manylinux_2_27_x86_64.whl",
++        "kind": "lock-artifact",
++        "lock_path": "uv.lock",
++        "retrieval": "Resolve this exact wheel entry from uv.lock with uv sync --locked."
++      },
+@@ -51,0 +109,129 @@
++      "native_binaries": [
++        {
++          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/_hlo.so",
++          "package_path": "_hlo.so",
++          "sha256": "da3acce5cadff67c523d7a0bd37f9366f45456290bd5722c2d5c8ed82684fffa",
++          "size_bytes": 3592
++        },
++        {
++          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/_ifrt_proxy.so",
++          "package_path": "_ifrt_proxy.so",
++          "sha256": "28863472384ef27b37623b25964e3d9b11ee73b4d7241c08fdbe03b16fce76ef",
++          "size_bytes": 3616
++        },
++        {
++          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/_jax.so",
++          "package_path": "_jax.so",
++          "sha256": "6a28f034febe24e313cd12b45a97edeed3e226fa23383effa9d1fe7937beaa83",
++          "size_bytes": 3576
++        },
++        {
++          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/_pretty_printer.so",
++          "package_path": "_pretty_printer.so",
++          "sha256": "c1719b8b1d9161618332ab097d809789c88d961318661c64c449275ddbc37334",
++          "size_bytes": 3624
++        },
++        {
++          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/_profile_data.so",
++          "package_path": "_profile_data.so",
++          "sha256": "d8210921f95a5813d60ee81f169792e1b690e27a4a2e2d0bbab5176743dfb110",
++          "size_bytes": 3632
++        },
++        {
++          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/_profiler.so",
++          "package_path": "_profiler.so",
++          "sha256": "623ee0144611d362a64bff482dce09716a5dd63a392616f73036c09d9930ef6e",
++          "size_bytes": 3624
++        },
++        {
++          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/_xla.so",
++          "package_path": "_xla.so",
++          "sha256": "757add466e0718ac74b16bcf86c895af57a093e808197638bbe4f7b6ca3a8258",
++          "size_bytes": 3576
++        },
++        {
++          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/cpu/_lapack.so",
++          "package_path": "cpu/_lapack.so",
++          "sha256": "44f1b1d739230b0c5e152c3625ce6515520a181ea22bd6632a3ee93e5aca7429",
++          "size_bytes": 1887224
++        },
++        {
++          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/cpu/_sparse.so",
++          "package_path": "cpu/_sparse.so",
++          "sha256": "b6827a9cebc3ea9f5220b55d259f93396de4e3bfc25ca470e39477db90901917",
++          "size_bytes": 246824
++        },
++        {
++          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/cpu_feature_guard.so",
++          "package_path": "cpu_feature_guard.so",
++          "sha256": "bd5828eeb31ac47ff7ed6be9bc11dfa15f9dc022726e793c952fe6e55ff841d3",
++          "size_bytes": 4728
++        },
++        {
++          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/libjax_common.so",
++          "package_path": "libjax_common.so",
++          "sha256": "5e4a89f4c4f1b4928d97bcdc678174708ab14dc250744f9d92c1cf168af707b3",
++          "size_bytes": 348918384
++        },
++        {
++          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_chlo.so",
++          "package_path": "mlir/_mlir_libs/_chlo.so",
++          "sha256": "f8c589b5a7805c0057cdff3c3d1b6c1c78bd6cfac50b3ab03cf167ebda8cd1ba",
++          "size_bytes": 3592
++        },
++        {
++          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_jax_mlir_ext.so",
++          "package_path": "mlir/_mlir_libs/_jax_mlir_ext.so",
++          "sha256": "b70dbd3dc0994f69456cf3c47e04c37b05d9b3a139da4dfe24e1bacd4c00ed16",
++          "size_bytes": 3632
++        },
++        {
++          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_mlir.so",
++          "package_path": "mlir/_mlir_libs/_mlir.so",
++          "sha256": "ce30a6e5d49b2c694a1b82d31a41c5882036786cfadf484775e1f32941d06ff3",
++          "size_bytes": 3592
++        },
++        {
++          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_mosaic_gpu_ext.so",
++          "package_path": "mlir/_mlir_libs/_mosaic_gpu_ext.so",
++          "sha256": "1978360fbc410162d9309c75a6fc9a5a5deb5a0815525dd61b5bb3926b0883b5",
++          "size_bytes": 3640
++        },
++        {
++          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_sdy.so",
++          "package_path": "mlir/_mlir_libs/_sdy.so",
++          "sha256": "ae337e723b1b38ee7a4496952e991fe328db495fb9e1a5d7617fec3032d60ff4",
++          "size_bytes": 3592
++        },
++        {
++          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_sdyMpmd.so",
++          "package_path": "mlir/_mlir_libs/_sdyMpmd.so",
++          "sha256": "1671b82945d41143c22f2d62ad6c06b5ee92379102def2669a70769aabdd78a9",
++          "size_bytes": 3608
++        },
++        {
++          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_stablehlo.so",
++          "package_path": "mlir/_mlir_libs/_stablehlo.so",
++          "sha256": "4c3d2ca3bee280003a5e6f9321bd6d086157727ee796a57e6df1b344437324ba",
++          "size_bytes": 3624
++        },
++        {
++          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_tpu_ext.so",
++          "package_path": "mlir/_mlir_libs/_tpu_ext.so",
++          "sha256": "72433fb380a5effd0eb89aaf1b224277ac65729281cb1150265057fd9c429360",
++          "size_bytes": 3608
++        },
++        {
++          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/utils.so",
++          "package_path": "utils.so",
++          "sha256": "2c8d8bea24fff23769f400447f117fb9007fb5dcf6a9b449d57965eb776e423a",
++          "size_bytes": 3576
++        },
++        {
++          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/weakref_lru_cache.so",
++          "package_path": "weakref_lru_cache.so",
++          "sha256": "0b361ecfbab33a19eac100c9aafb9d6b50e3a57965f09062d1bf519e140bdf90",
++          "size_bytes": 3632
++        }
++      ],
++      "package_root": ".venv/lib/python3.12/site-packages/jaxlib",
+@@ -55 +241 @@
+-  "schema_version": 1,
++  "schema_version": "1.0",
+@@ -57,2 +243,3 @@
+-    "evidence_tags": [
+-      "RUN-CPU",
++    "evidence_level": "RUN-CPU",
++    "jax_source_matches_jaxlib_build": false,
++    "qualifiers": [
+@@ -61,2 +248 @@
+-    "jax_source_matches_jaxlib_build": false,
+-    "reason": "The imported editable JAX source commit does not match the installed jaxlib build git hash; C++/XLA runtime observations are version-skewed.",
++    "reason": "The imported JAX checkout or jaxlib build revision is not aligned; native runtime observations are version-skewed.",
+@@ -71,0 +258,3 @@
++      "artifact_sha256": "671793498fe0a545432e2524b6691ffb9eea4540d9fda43ca2f978df2dbf8426",
++      "artifact_size_bytes": 49313824,
++      "artifact_uri": "artifact:uv-0.12.9-x86_64-unknown-linux-gnu",
+@@ -72,0 +262,2 @@
++      "repository_pin": "0.12.9",
++      "retrieval": "Install the pinned uv 0.12.9 x86_64 Linux standalone artifact and verify its recorded SHA-256.",
+diff --git a/uv.lock b/uv.lock
+index 1b41d9768219e5508da7a789ab70ab1d59e97346..7523c88a4a31a68a22338045a5401b555e0a06c1 100644
+--- a/uv.lock
++++ b/uv.lock
+@@ -486,0 +487 @@ dependencies = [
++    { name = "jsonschema" },
+@@ -499,0 +501 @@ requires-dist = [
++    { name = "jsonschema", specifier = ">=4,<5" },

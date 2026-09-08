@@ -4,3 +4,5 @@ __pycache__/
 .pytest_cache/
 .ipynb_checkpoints/
 __marimo__/
+/artifacts/builds/
+/manifests/build-fingerprints/**/.*.tmp

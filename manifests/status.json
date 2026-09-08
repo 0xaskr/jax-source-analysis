@@ -1,0 +1,203 @@
+{
+  "$schema": "schema/project-status.schema.json",
+  "schema_version": "1.0",
+  "updated_at": "2026-09-08T15:10:52+08:00",
+  "objective": "Build a version-pinned, coverage-measured, searchable and executable white-box account of JAX-to-TPU, including transformations, compiler passes, libtpu compiler/runtime, LLO and hardware mapping.",
+  "plan_path": "PLAN.md",
+  "baseline_path": "manifests/baseline.json",
+  "current_phase": {
+    "id": "P1",
+    "title": "Runtime provenance and source-built jaxlib",
+    "state": "running",
+    "notes": [
+      "P0 core is closed with machine-checked baseline, evidence, coverage, architecture and recovery-state contracts; L4/L5 claims remain fail-closed until their contracts and required TPU inputs exist.",
+      "Tokamax and the private framework remain external inputs for early workload intake and feature census.",
+      "An unwrapped exploratory CPU build was launched only to populate the Bazel cache; its live state and result are deliberately excluded from durable evidence."
+    ]
+  },
+  "milestones": [
+    {
+      "id": "p0-core-foundation",
+      "title": "Version-pinned plan, evidence and coverage contracts, public-boundary architecture, glossary and recovery state",
+      "state": "complete",
+      "completed_at": "2026-09-08T15:10:52+08:00",
+      "artifacts": [
+        "AGENTS.md",
+        "HANDOFF.md",
+        "PLAN.md",
+        "README.md",
+        "manifests/baseline.json",
+        "manifests/coverage.json",
+        "manifests/schema/baseline.schema.json",
+        "manifests/schema/capture.schema.json",
+        "manifests/schema/coverage.schema.json",
+        "manifests/schema/native-binaries.schema.json",
+        "manifests/schema/project-status.schema.json",
+        "manifests/schema/source-index.schema.json",
+        "manifests/schema/topic.schema.json",
+        "manifests/status.json",
+        "tools/capture-baseline.py",
+        "tools/validate-evidence.py",
+        "tools/selftest-validate-evidence.py",
+        "tools/validate-coverage.py",
+        "tools/selftest-validate-coverage.py",
+        "tools/project-status.py",
+        "tools/selftest-project-status.py",
+        "docs/contributing/evidence-conventions.md",
+        "docs/contributing/examples/03-jit-cache/topic.json",
+        "docs/contributing/examples/03-jit-cache/source-index.json",
+        "docs/contributing/examples/03-jit-cache/captures/jit-cold-call/manifest.json",
+        "docs/architecture/00-whole-stack.md",
+        "docs/architecture/01-regular-xla-tpu-path.md",
+        "docs/architecture/02-pallas-mosaic-tpu-path.md",
+        "docs/architecture/03-runtime-control-plane.md",
+        "docs/index/glossary.md"
+      ],
+      "notes": [
+        "Pinned-source cross-review covers the public JAX, StableHLO/Shardy, XLA and PJRT/libtpu ABI seams; it does not claim libtpu, LLO or hardware internals are covered.",
+        "Semantic validators reject forged or spliced source, binary, capture, replay, coverage and recovery-state relationships through isolated negative fixtures.",
+        "VERSION-SKEW is a provenance qualifier, not an evidence level; the current CPU jaxlib remains intentionally version-skewed."
+      ]
+    }
+  ],
+  "active_work": [
+    {
+      "id": "q005-current-runtime-provenance",
+      "title": "Close the current jaxlib wheel and dynamic-linker provenance capture",
+      "state": "running",
+      "artifacts": [
+        "manifests/baseline.json",
+        "tools/capture-baseline.py",
+        "labs/001-jit-cpu/probe.py",
+        "docs/contributing/examples/03-jit-cache/captures/jit-cold-call/manifest.json",
+        "docs/contributing/examples/03-jit-cache/captures/jit-cold-call/native-binaries.json"
+      ],
+      "notes": [
+        "Wheel filename/hash/size, embedded build revision, mapped native-library paths/hashes and VERSION-SKEW are recorded and validated.",
+        "A durable dynamic dependency and loader-resolution capture is still required before Q005 is complete."
+      ]
+    },
+    {
+      "id": "p1-source-built-jaxlib",
+      "title": "Build and validate a jaxlib wheel from the pinned JAX/XLA sources",
+      "state": "blocked",
+      "artifacts": [
+        "docs/building/source-built-jaxlib.md",
+        "tools/build-jaxlib.py",
+        "tools/check-jaxlib-build-env.py",
+        "tools/selftest-build-jaxlib.py",
+        "manifests/schema/build-jaxlib.schema.json"
+      ],
+      "notes": [
+        "The official wrapper-managed attempt is blocked on q005-native-dependency-capture.",
+        "The wrapper records fixed sources, tools, configuration, attempts, logs and wheel bytes and rejects unverified success states.",
+        "Before the official attempt, P1 must archive and hash the Bazel module graph, resolved repositories, registry/module-extension inputs and download integrity; the current --lockfile_mode=off contract is not a complete external-source closure.",
+        "runtime_validation remains fail-closed at not-run until P1 adds a non-cyclic hashed runtime-evidence contract.",
+        "The exploratory unwrapped build was cache warming only; the first official attempt starts after a committed Bazel dependency-closure checkpoint and writes durable artifacts."
+      ]
+    }
+  ],
+  "next_actions": [
+    {
+      "order": 1,
+      "id": "q005-native-dependency-capture",
+      "title": "Capture and validate dynamic dependencies and loader resolution for the current VERSION-SKEW jaxlib",
+      "depends_on": [
+        "p0-core-foundation"
+      ]
+    },
+    {
+      "order": 2,
+      "id": "p1-bazel-dependency-closure",
+      "title": "Archive and validate the Bazel external module and repository closure",
+      "depends_on": [
+        "q005-native-dependency-capture"
+      ]
+    },
+    {
+      "order": 3,
+      "id": "p1-official-build",
+      "title": "Run the hardened wrapper-managed build and record the wheel SHA-256",
+      "depends_on": [
+        "p1-bazel-dependency-closure"
+      ]
+    },
+    {
+      "order": 4,
+      "id": "p1-isolated-validation",
+      "title": "Install the source-built wheel in an isolated environment and verify provenance plus Lab 001",
+      "depends_on": [
+        "p1-official-build"
+      ]
+    },
+    {
+      "order": 5,
+      "id": "p1-native-diagnostic-patch",
+      "title": "Rebuild with a reversible native diagnostic patch, prove it was loaded, then roll back",
+      "depends_on": [
+        "p1-isolated-validation"
+      ]
+    },
+    {
+      "order": 6,
+      "id": "q009-lab-template",
+      "title": "Create the reusable lab template and headless validation entry point",
+      "depends_on": [
+        "p1-native-diagnostic-patch"
+      ]
+    }
+  ],
+  "external_inputs": [
+    {
+      "id": "tokamax-source",
+      "state": "missing",
+      "required_for": [
+        "Q007 early workload intake",
+        "Q008 feature census",
+        "P13 Tokamax L5 vertical dossiers"
+      ],
+      "notes": "No Tokamax checkout, URL or locked revision is present in the workspace."
+    },
+    {
+      "id": "private-framework-source",
+      "state": "missing",
+      "required_for": [
+        "Q007 early workload intake",
+        "Q008 feature census",
+        "P13 private-framework boundary dossiers"
+      ],
+      "notes": "No sanitized source revision, opaque provenance or pure JAX/Pallas entry contract is present; analysis will stop at the recorded JAX boundary."
+    },
+    {
+      "id": "libtpu-source",
+      "state": "not-required-yet",
+      "required_for": [
+        "P10 libtpu compiler internals",
+        "P11 TPU runtime/control plane",
+        "P12 TPU-specific LLO"
+      ],
+      "notes": "The public ABI boundary is mapped; private implementation evidence starts after matching source is supplied."
+    },
+    {
+      "id": "tpu-target",
+      "state": "not-required-yet",
+      "required_for": [
+        "P10 COMPILE-TPU",
+        "P11 RUN-TPU runtime",
+        "P12 target-specific LLO and hardware mapping"
+      ],
+      "notes": "No TPU generation or topology has been fixed yet."
+    },
+    {
+      "id": "tpu-device",
+      "state": "not-required-yet",
+      "required_for": [
+        "P11 RUN-TPU runtime",
+        "P12 hardware mapping",
+        "P14 communication and performance claims"
+      ],
+      "notes": "The current machine exposes CPU devices only."
+    }
+  ],
+  "coverage_path": "manifests/coverage.json"
+}

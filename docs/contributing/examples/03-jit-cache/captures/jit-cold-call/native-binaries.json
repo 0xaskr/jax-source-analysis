@@ -1,112 +1,9 @@
 {
-  "$schema": "schema/baseline.schema.json",
-  "external_inputs": {
-    "libtpu": null,
-    "tokamax": null,
-    "tpu_target": null
-  },
-  "repository": {
-    "inputs": {
-      ".gitmodules": {
-        "sha256": "4d7231829695cfc7dc8c2507a6931a2d1d71d558b21238d47ee1841670b62059",
-        "size_bytes": 12311
-      },
-      ".python-version": {
-        "sha256": "fa682ae9d943f5c8076e68335c9ba3ab4d063ad035c07ac6928653dd4ac50af7",
-        "size_bytes": 7
-      },
-      "manifests/schema/baseline.schema.json": {
-        "sha256": "f154b14314ae016b475b9ab79383e0b3b95fe6fad29b6fb3c6cf0ca482ea0106",
-        "size_bytes": 10038
-      },
-      "pyproject.toml": {
-        "sha256": "3ab69082648ed4b165e1b262b1c4d037c9121b21f4877f468d1ca446fd3fc4c2",
-        "size_bytes": 481
-      },
-      "upstream-sources.lock": {
-        "sha256": "eb7a7a5fbb7eb7a3c10753b2519add1244fc64ce41a0fe0165788c2635938555",
-        "size_bytes": 14333
-      },
-      "upstream/jax/.bazelversion": {
-        "sha256": "331890b9bae605c036309f3f56e1cfca916aff3dfd61aebe50370d4bfa125c78",
-        "size_bytes": 6
-      },
-      "uv.lock": {
-        "sha256": "401301d83658e42bf7b5431fed3ae1599422f5d1abe3ca56051c7de1904d426b",
-        "size_bytes": 150179
-      }
-    },
-    "root": {
-      "git_commit": "c8526fc89a4263f02291ee51705d5370a7780c2f",
-      "path": ".",
-      "verification": "ancestor"
-    },
-    "sources": {
-      "jax": {
-        "dirty": false,
-        "git_commit": "5832e866449a41c3eea6333416528039119a0fde",
-        "path": "upstream/jax",
-        "status": []
-      },
-      "llvm": {
-        "dirty": false,
-        "git_commit": "ab547095ead5464dc024d66264d9b8a987f429f3",
-        "path": "upstream/llvm-project",
-        "status": []
-      },
-      "shardy": {
-        "dirty": false,
-        "git_commit": "eb23a98329aa70d991aa2d8a51a209af1f8df8fc",
-        "path": "upstream/shardy",
-        "status": []
-      },
-      "stablehlo": {
-        "dirty": false,
-        "git_commit": "7b1b15781ccbd770f50c7eef4b0c3e03834649fd",
-        "path": "upstream/stablehlo",
-        "status": []
-      },
-      "xla": {
-        "dirty": false,
-        "git_commit": "496bd4bd49db9ecbffd85da630b49c860b724604",
-        "path": "upstream/xla",
-        "status": []
-      }
-    }
-  },
-  "runtime": {
-    "device": {
-      "arch": "x86_64",
-      "default_platform": "cpu",
-      "device_count": 1,
-      "devices": [
-        "cpu:0"
-      ],
-      "host_os": "Linux",
-      "platforms": [
-        "cpu"
-      ]
-    },
-    "jax": {
-      "imported_file": "upstream/jax/jax/__init__.py",
-      "imported_file_sha256": "e97031df0826c1ed1399652872281209a5c8d1d64302da6cf8ce158c0bb51f66",
-      "install_type": "editable-source",
-      "reported_git_hash": null,
-      "source_checkout_git_hash": "5832e866449a41c3eea6333416528039119a0fde",
-      "version": "0.11.2.dev20260830+5832e86644"
-    },
-    "jaxlib": {
-      "build_revision": "2d66622450e2c8633cda2307688ef7aa294bd6eb",
-      "distribution": {
-        "artifact_sha256": "c3dcec3bb33ebf5c76dc33f962c796652c077edb246464fa32cb1d8fcb6087e6",
-        "artifact_size_bytes": 87903454,
-        "artifact_uri": "artifact:jaxlib-0.11.1-cp312-cp312-manylinux_2_27_x86_64.whl",
-        "kind": "lock-artifact",
-        "lock_path": "uv.lock",
-        "retrieval": "Resolve this exact wheel entry from uv.lock with uv sync --locked."
-      },
-      "install_type": "installed-wheel",
-      "native_binaries": [
+  "$schema": "https://jax-source-analysis.local/schema/native-binaries.schema.json",
+  "inventory_id": "native-binaries",
+  "packages": [
+    {
+      "binaries": [
         {
           "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/_hlo.so",
           "package_path": "_hlo.so",
@@ -192,6 +89,12 @@
           "size_bytes": 3592
         },
         {
+          "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_mlirHlo.so",
+          "package_path": "mlir/_mlir_libs/_mlirHlo.so",
+          "sha256": "bdb58aa43aadb74173cc468c521b8219608b13300a7e88a24692d88b148c5585",
+          "size_bytes": 3608
+        },
+        {
           "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_mosaic_gpu_ext.so",
           "package_path": "mlir/_mlir_libs/_mosaic_gpu_ext.so",
           "sha256": "1978360fbc410162d9309c75a6fc9a5a5deb5a0815525dd61b5bb3926b0883b5",
@@ -234,34 +137,24 @@
           "size_bytes": 3632
         }
       ],
-      "package_root": ".venv/lib/python3.12/site-packages/jaxlib",
+      "build_revision": "2d66622450e2c8633cda2307688ef7aa294bd6eb",
+      "identity": {
+        "artifact_sha256": "c3dcec3bb33ebf5c76dc33f962c796652c077edb246464fa32cb1d8fcb6087e6",
+        "artifact_size_bytes": 87903454,
+        "artifact_uri": "artifact:jaxlib-0.11.1-cp312-cp312-manylinux_2_27_x86_64.whl",
+        "kind": "lock-artifact",
+        "lock_path": "uv.lock",
+        "retrieval": "Resolve this exact wheel entry from uv.lock with uv sync --locked."
+      },
+      "name": "jaxlib",
+      "runtime_roles": [
+        "python-extension",
+        "cpu-backend"
+      ],
+      "selection": "jaxlib shared objects mapped after the selected probe stage; the lock identity selects a hashed wheel candidate but is not cryptographic proof of installation membership",
+      "source_component": "jax",
       "version": "0.11.1"
     }
-  },
-  "schema_version": "1.0",
-  "status": {
-    "evidence_level": "RUN-CPU",
-    "jax_source_matches_jaxlib_build": false,
-    "qualifiers": [
-      "VERSION-SKEW"
-    ],
-    "reason": "The imported JAX checkout or jaxlib build revision is not aligned; native runtime observations are version-skewed.",
-    "runtime_source_alignment": "VERSION-SKEW"
-  },
-  "toolchain": {
-    "python": {
-      "project_constraint": "==3.12.*",
-      "repository_pin": "3.12.3",
-      "runtime": "3.12.3"
-    },
-    "uv": {
-      "artifact_sha256": "671793498fe0a545432e2524b6691ffb9eea4540d9fda43ca2f978df2dbf8426",
-      "artifact_size_bytes": 49313824,
-      "artifact_uri": "artifact:uv-0.12.9-x86_64-unknown-linux-gnu",
-      "project_constraint": "==0.12.9",
-      "repository_pin": "0.12.9",
-      "retrieval": "Install the pinned uv 0.12.9 x86_64 Linux standalone artifact and verify its recorded SHA-256.",
-      "runtime": "0.12.9"
-    }
-  }
+  ],
+  "schema_version": "1.0"
 }

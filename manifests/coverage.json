@@ -1,0 +1,589 @@
+{
+  "$schema": "schema/coverage.schema.json",
+  "schema_version": "1.0",
+  "updated_at": "2026-09-08T15:03:01+08:00",
+  "scope": {
+    "boundary": "JAX and Pallas entry functions through Jaxpr, StableHLO/Shardy, XLA, PJRT, libtpu, TPU-specific LLO, runtime and target hardware; downstream framework internals are excluded after their JAX boundary is recorded.",
+    "coverage_unit": "A reachable workload feature or stack layer with an explicit depth, evidence references and an unobserved, covered, blocked or not-applicable state.",
+    "covered_semantics": "covered means that non-zero evidence exists at achieved_depth; it does not mean that target_depth or the whole project is complete.",
+    "completion_rule": "After workload census assigns reviewed target depths, every applicable entry must be covered with achieved_depth greater than or equal to target_depth; critical vertical slices target L5, every other reachable branch targets at least L1, no applicable entry remains unobserved or blocked, and every not-applicable rationale is reviewed."
+  },
+  "layers": [
+    {
+      "id": "jax-python-program-model",
+      "title": "JAX Python values, PyTrees, arrays, primitives and effects",
+      "status": "covered",
+      "target_depth": "L4",
+      "achieved_depth": "L1",
+      "evidence": {
+        "documentation": [
+          "docs/architecture/00-whole-stack.md"
+        ],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [],
+      "notes": [
+        "Only the initial public boundary and responsibilities are mapped; the program-model topic and labs are not complete."
+      ]
+    },
+    {
+      "id": "transformations-jaxpr",
+      "title": "Tracing, Jaxpr, jit, AD, batching and transformation composition",
+      "status": "covered",
+      "target_depth": "L4",
+      "achieved_depth": "L1",
+      "evidence": {
+        "documentation": [
+          "docs/architecture/00-whole-stack.md"
+        ],
+        "topic_refs": [
+          "03-jit-cache"
+        ],
+        "claim_refs": [
+          "03-jit-cache#shape-retrace"
+        ],
+        "source_refs": [
+          "03-jit-cache#jax.pjit.trace-for-jit"
+        ],
+        "capture_refs": [
+          "docs/contributing/examples/03-jit-cache/captures/jit-cold-call/manifest.json"
+        ],
+        "probe_refs": [
+          "labs/001-jit-cpu/probe.py"
+        ]
+      },
+      "depends_on": [],
+      "notes": [
+        "The architecture boundary is L1. A VERSION-SKEW CPU cache probe and capture exist, but the entry remains L1 until its claim is joined to real IR and a source caller/callee path; composition and AD remain unobserved."
+      ]
+    },
+    {
+      "id": "jax-mlir-stablehlo",
+      "title": "Jaxpr lowering, MLIR and StableHLO",
+      "status": "covered",
+      "target_depth": "L4",
+      "achieved_depth": "L1",
+      "evidence": {
+        "documentation": [
+          "docs/architecture/00-whole-stack.md",
+          "docs/architecture/01-regular-xla-tpu-path.md"
+        ],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [
+        "transformations-jaxpr"
+      ],
+      "notes": [
+        "Public interfaces are mapped; no topic-local lowering capture is recorded yet."
+      ]
+    },
+    {
+      "id": "shardy-xla-hlo",
+      "title": "Conditional Shardy path and XLA HLO pipelines",
+      "status": "covered",
+      "target_depth": "L5",
+      "achieved_depth": "L1",
+      "evidence": {
+        "documentation": [
+          "docs/architecture/00-whole-stack.md",
+          "docs/architecture/01-regular-xla-tpu-path.md"
+        ],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [
+        "jax-mlir-stablehlo"
+      ],
+      "notes": [
+        "The public source boundary is mapped. Shardy is conditional and TPU HLO pass execution is not yet observed."
+      ]
+    },
+    {
+      "id": "ifrt-pjrt-jaxlib",
+      "title": "jaxlib bindings, IFRT/PJRT compile and execution control",
+      "status": "covered",
+      "target_depth": "L4",
+      "achieved_depth": "L1",
+      "evidence": {
+        "documentation": [
+          "docs/architecture/00-whole-stack.md",
+          "docs/architecture/01-regular-xla-tpu-path.md",
+          "docs/architecture/03-runtime-control-plane.md"
+        ],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [
+        "jax-mlir-stablehlo"
+      ],
+      "notes": [
+        "Only public bindings, loader and ABI seams are mapped; object lifetimes and dispatch remain unobserved."
+      ]
+    },
+    {
+      "id": "pallas-mosaic-tpu",
+      "title": "Pallas kernel Jaxpr, Mosaic TPU MLIR and outer custom call",
+      "status": "covered",
+      "target_depth": "L5",
+      "achieved_depth": "L1",
+      "evidence": {
+        "documentation": [
+          "docs/architecture/00-whole-stack.md",
+          "docs/architecture/02-pallas-mosaic-tpu-path.md"
+        ],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [
+        "transformations-jaxpr"
+      ],
+      "notes": [
+        "The two-level payload boundary is mapped from public source; no local Mosaic fixture or interpreter capture is recorded."
+      ]
+    },
+    {
+      "id": "libtpu-compiler",
+      "title": "libtpu compiler internals for regular HLO and Mosaic payloads",
+      "status": "blocked",
+      "target_depth": "L5",
+      "evidence": {
+        "documentation": [
+          "docs/architecture/00-whole-stack.md"
+        ],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [
+        "shardy-xla-hlo",
+        "pallas-mosaic-tpu"
+      ],
+      "blockers": [
+        "No matching libtpu source, binary build ID or build toolchain is present."
+      ],
+      "next_action": "Lock the matching libtpu source and binary provenance, then inventory its compiler entry points and pass registry.",
+      "notes": [
+        "The current architecture drawing records only an assumed private boundary, not compiler internals."
+      ]
+    },
+    {
+      "id": "tpu-runtime-control-plane",
+      "title": "libtpu runtime, executable loading, launch, buffers, events and driver boundary",
+      "status": "blocked",
+      "target_depth": "L5",
+      "evidence": {
+        "documentation": [
+          "docs/architecture/00-whole-stack.md",
+          "docs/architecture/03-runtime-control-plane.md"
+        ],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [
+        "ifrt-pjrt-jaxlib",
+        "libtpu-compiler"
+      ],
+      "blockers": [
+        "No matching libtpu runtime source is present and no TPU device is available."
+      ],
+      "next_action": "After libtpu intake, map compile/load/execute APIs separately; add RUN-TPU launch and lifecycle captures when a device is available.",
+      "notes": [
+        "Generic CPU PJRT work can proceed independently but cannot establish TPU runtime behavior."
+      ]
+    },
+    {
+      "id": "llo-machine-bundle",
+      "title": "Target-specific LLO, scheduling and machine bundle",
+      "status": "blocked",
+      "target_depth": "L5",
+      "evidence": {
+        "documentation": [
+          "docs/architecture/00-whole-stack.md"
+        ],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [
+        "libtpu-compiler"
+      ],
+      "blockers": [
+        "The libtpu source and target TPU generation are not fixed; no LLO schema or fixture is available."
+      ],
+      "next_action": "Fix a target generation and compiler build, then enumerate the actual LLO schema, passes, address spaces and bundle encoding.",
+      "notes": [
+        "No specific opcode, VLIW structure or machine encoding is currently claimed."
+      ]
+    },
+    {
+      "id": "tpu-hardware-execution",
+      "title": "Target TPU memory, execution resources, interconnect and counters",
+      "status": "blocked",
+      "target_depth": "L5",
+      "evidence": {
+        "documentation": [
+          "docs/architecture/00-whole-stack.md"
+        ],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [
+        "tpu-runtime-control-plane",
+        "llo-machine-bundle"
+      ],
+      "blockers": [
+        "No TPU generation, topology, runtime/firmware revision or device access is fixed."
+      ],
+      "next_action": "Lock a TPU target manifest and collect RUN-TPU profiles that connect LLO groups to the target's documented resources.",
+      "notes": [
+        "Hardware resource names remain target-dependent until that intake is complete."
+      ]
+    }
+  ],
+  "features": [
+    {
+      "id": "public-architecture-skeleton",
+      "title": "Initial public-boundary architecture skeleton",
+      "status": "covered",
+      "target_depth": "L1",
+      "achieved_depth": "L1",
+      "evidence": {
+        "documentation": [
+          "docs/architecture/00-whole-stack.md",
+          "docs/architecture/01-regular-xla-tpu-path.md",
+          "docs/architecture/02-pallas-mosaic-tpu-path.md",
+          "docs/architecture/03-runtime-control-plane.md"
+        ],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [],
+      "notes": [
+        "This covers public seams and labels private/device regions as assumptions; it is not a complete libtpu, runtime or hardware map."
+      ]
+    },
+    {
+      "id": "jit-shape-retrace",
+      "title": "JIT tracing reuse and shape-triggered retracing",
+      "status": "covered",
+      "target_depth": "L3",
+      "achieved_depth": "L1",
+      "evidence": {
+        "documentation": [
+          "docs/contributing/examples/03-jit-cache/README.md"
+        ],
+        "topic_refs": [
+          "03-jit-cache"
+        ],
+        "claim_refs": [
+          "03-jit-cache#shape-retrace"
+        ],
+        "source_refs": [
+          "03-jit-cache#jax.pjit.trace-for-jit"
+        ],
+        "capture_refs": [
+          "docs/contributing/examples/03-jit-cache/captures/jit-cold-call/manifest.json"
+        ],
+        "probe_refs": [
+          "labs/001-jit-cpu/probe.py"
+        ]
+      },
+      "depends_on": [],
+      "notes": [
+        "The RUN-CPU capture carries VERSION-SKEW and validates the narrow tracing-count assertion.",
+        "It remains L1 because the bundle has no claim-linked IR artifact and its source index does not yet record an actual caller/callee relation."
+      ]
+    },
+    {
+      "id": "source-built-jaxlib",
+      "title": "Pinned source build, isolated install, modification and rollback of jaxlib",
+      "status": "unobserved",
+      "target_depth": "L4",
+      "evidence": {
+        "documentation": [
+          "docs/building/source-built-jaxlib.md"
+        ],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [],
+      "next_action": "Archive and validate the Bazel external dependency closure, then complete the wrapper-managed build and isolated provenance verification before marking any portion covered.",
+      "notes": [
+        "An unwrapped exploratory build completed only to warm the Bazel cache; its result is excluded from durable execution coverage."
+      ]
+    },
+    {
+      "id": "tokamax-intake",
+      "title": "Locked Tokamax source and pure JAX/Pallas entry contract",
+      "status": "blocked",
+      "target_depth": "L2",
+      "evidence": {
+        "documentation": [],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [],
+      "blockers": [
+        "Tokamax URL, checkout and revision are not present."
+      ],
+      "next_action": "Record source provenance, license, representative train/infer entry points and their invocation contracts when the source is supplied.",
+      "notes": []
+    },
+    {
+      "id": "private-framework-intake",
+      "title": "Private framework provenance and exact boundary into JAX/Pallas",
+      "status": "blocked",
+      "target_depth": "L2",
+      "evidence": {
+        "documentation": [],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [],
+      "blockers": [
+        "No private-framework source revision, opaque provenance or entry contract is present."
+      ],
+      "next_action": "Record a sanitized revision/build identifier and extract reproducible JAX/Pallas entry fixtures without expanding analysis above the JAX boundary.",
+      "notes": []
+    },
+    {
+      "id": "workload-feature-census",
+      "title": "Machine-readable census of every reachable workload feature",
+      "status": "blocked",
+      "target_depth": "L3",
+      "evidence": {
+        "documentation": [],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [
+        "tokamax-intake",
+        "private-framework-intake"
+      ],
+      "blockers": [
+        "The real workload entry points are not available."
+      ],
+      "next_action": "Trace locked train and inference fixtures and enumerate transformations, primitives, effects, control flow, dtypes, sharding, custom calls and Pallas kernels into this inventory.",
+      "notes": [
+        "Synthetic workloads may validate tooling but cannot close real-workload coverage."
+      ]
+    },
+    {
+      "id": "global-index-query",
+      "title": "Generated global symbol, IR, pass, flag and symptom indexes with query CLI",
+      "status": "unobserved",
+      "target_depth": "L4",
+      "evidence": {
+        "documentation": [],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [
+        "workload-feature-census"
+      ],
+      "next_action": "Define schemas and build a deterministic query/validation tool that derives global indexes from topic bundles and coverage entries.",
+      "notes": []
+    },
+    {
+      "id": "jit-grad-vmap-composition",
+      "title": "jit, grad and vmap composition across trace stacks and IR",
+      "status": "unobserved",
+      "target_depth": "L4",
+      "evidence": {
+        "documentation": [],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [
+        "source-built-jaxlib"
+      ],
+      "next_action": "Implement the transformation labs and compare all six valid nestings with source-indexed rules and automatic assertions.",
+      "notes": []
+    },
+    {
+      "id": "safe-hlo-topology-rewrite",
+      "title": "Semantics-preserving model graph rewrite through a compiler pass",
+      "status": "unobserved",
+      "target_depth": "L5",
+      "evidence": {
+        "documentation": [],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [
+        "source-built-jaxlib",
+        "jit-grad-vmap-composition",
+        "shardy-xla-hlo",
+        "ifrt-pjrt-jaxlib"
+      ],
+      "next_action": "First run the deliberately semantics-changing sin-to-cos mechanism probe with an isolated cache; perform the production dot rewrite only after sharding and runtime contracts are covered.",
+      "notes": [
+        "The production pass must select a legal pipeline stage and preserve effects, sharding, aliasing, donation, schedule and source metadata."
+      ]
+    },
+    {
+      "id": "distributed-sharding-communication",
+      "title": "Sharding, SPMD, collectives and multi-host communication",
+      "status": "unobserved",
+      "target_depth": "L5",
+      "evidence": {
+        "documentation": [
+          "docs/architecture/01-regular-xla-tpu-path.md"
+        ],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [
+        "source-built-jaxlib"
+      ],
+      "next_action": "Establish multi-CPU semantics first, then add target-bound TPU compiler and runtime evidence.",
+      "notes": []
+    },
+    {
+      "id": "pallas-interpret-debugging",
+      "title": "Pallas TPU interpreter, memory, DMA, semaphore and race diagnostics",
+      "status": "unobserved",
+      "target_depth": "L3",
+      "evidence": {
+        "documentation": [
+          "docs/architecture/02-pallas-mosaic-tpu-path.md"
+        ],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [
+        "source-built-jaxlib"
+      ],
+      "next_action": "Create a CPU interpreter fixture with numerical, bounds, synchronization and dynamic race assertions.",
+      "notes": [
+        "Interpreter evidence will remain distinct from TPU compiler and cycle-level behavior."
+      ]
+    },
+    {
+      "id": "libtpu-build-modify-rollback",
+      "title": "Build, modify, replace and roll back libtpu/LLO code",
+      "status": "blocked",
+      "target_depth": "L4",
+      "evidence": {
+        "documentation": [],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [
+        "libtpu-compiler",
+        "llo-machine-bundle"
+      ],
+      "blockers": [
+        "No matching libtpu source or build toolchain is present."
+      ],
+      "next_action": "After intake, prove a diagnostic compiler change and an LLO pass change through isolated build, load provenance, tests and rollback.",
+      "notes": []
+    },
+    {
+      "id": "tokamax-vertical-dossiers",
+      "title": "Tokamax training and inference white-box vertical dossiers",
+      "status": "blocked",
+      "target_depth": "L5",
+      "evidence": {
+        "documentation": [],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [
+        "workload-feature-census",
+        "global-index-query",
+        "safe-hlo-topology-rewrite",
+        "tpu-hardware-execution"
+      ],
+      "blockers": [
+        "Tokamax intake, libtpu/target intake and real TPU execution evidence are unavailable."
+      ],
+      "next_action": "Build CPU/source-only partial dossiers after workload intake, then close compiler and device sections as environments become available.",
+      "notes": []
+    },
+    {
+      "id": "topic-guides-labs-articles",
+      "title": "Source guide, index, executable lab or replay, and article for every topic",
+      "status": "unobserved",
+      "target_depth": "L5",
+      "evidence": {
+        "documentation": [],
+        "topic_refs": [],
+        "claim_refs": [],
+        "source_refs": [],
+        "capture_refs": [],
+        "probe_refs": []
+      },
+      "depends_on": [
+        "global-index-query"
+      ],
+      "next_action": "Track the per-topic deliverables matrix and publish each article only from reviewed evidence bundles.",
+      "notes": [
+        "Blocked TPU topics may carry an executable offline replay until real-device captures can replace it."
+      ]
+    }
+  ]
+}

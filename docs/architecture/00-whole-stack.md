@@ -1,22 +1,23 @@
 # JAX 到 TPU 的全栈地图
 
 本文给刚进入 JAX 软件栈的 kernel 开发者一张导航图。分析从 JAX API
-开始，到 TPU-specific LLO、机器码和硬件资源为止；Tokamax 和自研框架只提供
-JAX/Pallas workload，不进入本文的框架层分析。
+开始，到 TPU-specific LLO、机器码和硬件资源为止；Tokamax 和自研框架接入后只
+提供 JAX/Pallas workload，不进入本文的框架层分析。概念定义见
+[JAX→TPU 术语表](../index/glossary.md)，当前外部输入状态见
+[`manifests/baseline.json`](../../manifests/baseline.json)。
 
 ## 证据边界
 
-本文沿用 [执行计划](../../PLAN.md#52-证据标签)中的证据标签：
-
-- `SOURCE-ONLY`：固定版本的公开源码能够证明接口或数据结构，但尚未执行；
-- `COMPILE-TPU`：需要匹配的 libtpu、固定 TPU target 和一次可复现的离线或在线编译；
-- `RUN-TPU`：需要记录代际与 topology 的真实 TPU 执行；
-- `VERSION-SKEW`：执行时加载的二进制与本文链接的源码 commit 不一致。
+本文使用[证据约定](../contributing/evidence-conventions.md)中的六级证据；图中的静态
+源码结论主要是 `SOURCE-ONLY`，未来的编译和设备结论分别需要 `COMPILE-TPU` 和
+`RUN-TPU`。`VERSION-SKEW` 是来源限定，不是证据等级。
 
 当前公开源码基线为 JAX `5832e866...`、XLA `496bd4bd...`、StableHLO
 `7b1b1578...` 和 Shardy `eb23a983...`。当前 CPU 环境使用
-`jaxlib==0.11.1`，不能为固定 XLA commit 提供严格的二进制执行证据。
-**证据：SOURCE-ONLY、VERSION-SKEW。** 版本详情见[执行计划的基线表](../../PLAN.md#3-当前固定基线)。
+`jaxlib==0.11.1`，不能为固定 XLA commit 提供严格的二进制执行证据。本文的固定
+源码结论是 **证据：SOURCE-ONLY**；若引用当前 wheel 的运行结果，证据等级应为
+`RUN-CPU`，并附 `VERSION-SKEW` qualifier。版本详情见
+[执行计划的基线表](../../PLAN.md#3-当前固定基线)。
 
 ## 总图
 
@@ -27,34 +28,41 @@ flowchart TB
     TRANS["Trace / Tracer / Primitive<br/>Jaxpr 与 transformation rules"]
     REG["普通 primitive 的 MLIR lowering"]
     PCALL["pallas_call primitive<br/>外层 Jaxpr"]
+    KERNEL["Pallas kernel Python"]
     KJAXPR["Pallas kernel Jaxpr<br/>Grid / BlockSpec / Ref"]
     MOSAIC["Mosaic TPU MLIR<br/>arith / vector / tpu dialect"]
     CC["外层 StableHLO<br/>tpu_custom_call + serialized Mosaic module"]
-    SHLO["StableHLO MLIR<br/>Shardy sdy annotations"]
+    SHLO["StableHLO MLIR<br/>可选 Shardy sdy IR / attributes"]
     HOST["jaxlib Python/C++ binding<br/>IFRT / PJRT C API client"]
+    LOADER["PJRT plugin loader<br/>dlopen / GetPjrtApi / generic C API client"]
+    TPUADAPTER["public xla_tpu helper<br/>dynamic/static registration + C API client"]
   end
 
   subgraph LT["假设取得匹配的 libtpu 源码；待 COMPILE-TPU 确认"]
-    PLUGIN["TPU PJRT plugin<br/>compile / load / execute API"]
+    PLUGIN["libtpu-provided PJRT function table<br/>compiler/runtime implementation"]
     HLO["HLO import 与 TPU compiler pipeline"]
     REGTPU["普通 HLO 的 TPU lowering"]
     MOSTPU["Mosaic custom-call compiler path"]
     LLO["TPU-specific LLO"]
-    BUNDLE["VLIW bundle / machine code"]
+    BUNDLE["target machine bundle / code"]
     RT["TPU runtime / driver"]
   end
 
   subgraph DEV["真实 TPU；待 RUN-TPU 确认"]
-    MEM["HBM / CMEM / VMEM / SMEM / IMEM"]
-    UNITS["MXU / VPU / XLU / DMA / sequencer"]
+    MEM["target-bound memory/address spaces<br/>例如 HBM / VMEM / SMEM"]
+    UNITS["target-specific compute / vector / DMA / sequencer"]
     FABRIC["ICI 与多芯片 topology"]
   end
 
   API --> TRANS
   TRANS --> REG --> SHLO
-  TRANS --> PCALL --> KJAXPR --> MOSAIC --> CC
+  TRANS --> PCALL
+  KERNEL --> KJAXPR -->|"jaxpr parameter"| PCALL
+  PCALL -->|"TPU lowering consumes kernel Jaxpr"| MOSAIC
+  MOSAIC -->|"serde payload + backend config"| CC
   CC --> SHLO
-  SHLO --> HOST --> PLUGIN --> HLO
+  SHLO --> HOST --> LOADER --> PLUGIN --> HLO
+  TPUADAPTER -. "alternate public registration/client seam" .-> PLUGIN
   HLO --> REGTPU --> LLO
   HLO --> MOSTPU --> LLO
   LLO --> BUNDLE --> RT
@@ -65,14 +73,16 @@ flowchart TB
   classDef public fill:#e8f3ff,stroke:#1f6feb,color:#111;
   classDef assumed fill:#fff4cc,stroke:#9a6700,color:#111,stroke-dasharray:5 5;
   classDef device fill:#ffe8e8,stroke:#cf222e,color:#111,stroke-dasharray:5 5;
-  class API,TRANS,REG,PCALL,KJAXPR,MOSAIC,CC,SHLO,HOST public;
+  class API,TRANS,REG,PCALL,KERNEL,KJAXPR,MOSAIC,CC,SHLO,HOST,LOADER,TPUADAPTER public;
   class PLUGIN,HLO,REGTPU,MOSTPU,LLO,BUNDLE,RT assumed;
   class MEM,UNITS,FABRIC device;
 ```
 
-图中蓝色部分有本仓库固定的公开源码。黄色部分是项目在取得匹配 libtpu
-源码后要逐项确认的候选阶段；箭头只表示研究假设，不声称私有实现一定采用这些
-阶段名或顺序。红色部分必须由目标 TPU 的可执行产物、profile 和设备信息证明。
+图中蓝色部分有本仓库固定的公开源码，包括 plugin loader、generic PJRT C API client、
+TPU adapter 与 C ABI glue；这些代码只定义装载和调用边界。黄色部分从 libtpu 实际
+提供的函数表及其实现开始，项目取得匹配源码后再逐项确认；其中内部箭头只表示研究
+假设，不声称私有实现一定采用这些阶段名或顺序。红色部分必须由目标 TPU 的可执行
+产物、profile 和设备信息证明。
 
 ## 两条路径在哪里分开
 
@@ -96,9 +106,13 @@ Mosaic TPU dialect 是 Pallas kernel 的公开、机器相关 MLIR 表示；它�
 [JAXlib 转接目录](../../upstream/jax/jaxlib/mosaic/dialect/tpu/)。
 **证据：SOURCE-ONLY。**
 
-LLO 目前只作为项目要追踪的 TPU-specific 层级出现；公开源码没有给出其 schema、
-parser、printer、pass pipeline 或 bundle encoding。任何具体 LLO opcode、pass 名称、
-HLO-to-LLO 调用链和 VLIW 格式都必须在固定 libtpu 源码与 target 上重新取证。
+LLO 目前只作为项目要追踪的 TPU-specific 层级出现。公开树的
+[compiler interface](../../upstream/xla/xla/service/compiler.h)与
+[Mosaic error guide](../../upstream/xla/docs/errors/error_3000.md)可以核验 low level
+optimization/optimizer 的名称、阶段边界和部分 dump 入口，但没有给出 TPU LLO 的
+schema、parser、printer、完整 pass pipeline 或 bundle encoding。任何具体 LLO
+opcode、pass 名称、HLO-to-LLO 调用链和机器编码都必须在固定 libtpu 源码与 target
+上重新取证。
 **待验证：COMPILE-TPU。**
 
 ## 公开源码的锚点
@@ -114,14 +128,20 @@ HLO-to-LLO 调用链和 VLIW 格式都必须在固定 libtpu 源码与 target �
 | compile dispatch | [compiler.py](../../upstream/jax/jax/_src/compiler.py) | compile options、cache 与 `backend.compile_and_load` 调用 | `SOURCE-ONLY` |
 | TPU backend discovery | [xla_bridge.py](../../upstream/jax/jax/_src/xla_bridge.py) | 动态加载 `libtpu.so`、初始化 `tpu` PJRT plugin、创建 C API client | `SOURCE-ONLY` |
 | PJRT ABI | [pjrt_c_api.h](../../upstream/xla/xla/pjrt/c/pjrt_c_api.h)、[C API client](../../upstream/xla/xla/pjrt/c_api_client/) | client、program、compile、executable、buffer、event 的公开 ABI 和 adapter | `SOURCE-ONLY` |
+| PJRT plugin loader | [pjrt_api.cc](../../upstream/xla/xla/pjrt/pjrt_api.cc) | `dlopen`、`GetPjrtApi` 查找与函数表注册 | `SOURCE-ONLY` |
+| public TPU adapters | [xla_tpu](../../upstream/xla/xla/pjrt/plugin/xla_tpu/)、[xla/tpu](../../upstream/xla/xla/tpu/) | 公开 C++ client 入口、C ABI 声明和初始化 glue；不包含 libtpu compiler 实现 | `SOURCE-ONLY` |
 | Pallas | [pallas_call.py](../../upstream/jax/jax/_src/pallas/pallas_call.py)、[core.py](../../upstream/jax/jax/_src/pallas/core.py) | kernel tracing、Grid、BlockSpec、Ref 与 `pallas_call` primitive | `SOURCE-ONLY` |
 | Mosaic lowering | [lowering.py](../../upstream/jax/jax/_src/pallas/mosaic/lowering.py) | kernel Jaxpr 到 Mosaic module 的 lowering rules | `SOURCE-ONLY` |
 | Mosaic transport | [tpu_custom_call.py](../../upstream/jax/jax/_src/tpu_custom_call.py) | serde、backend config 与外层 `tpu_custom_call` 构造 | `SOURCE-ONLY` |
 
-上述表只证明代码中存在这些接口；在 source-built jaxlib 完成前，不声称当前 Python
-进程执行了表中的 C++ 实现。**限制：VERSION-SKEW。**
+上述表只证明代码中存在这些接口；`SOURCE-ONLY` 不声称当前 Python 进程执行了表中的
+C++ 实现。在 source-built jaxlib 完成前，任何当前 wheel 的运行 probe 都应标为
+`RUN-CPU` 并附 `VERSION-SKEW` qualifier。
 
 ## 编译面、执行面与控制面的关系
+
+详细的初始化、compile、load、execute、buffer 与 event 链见
+[JAX、IFRT、PJRT 与 TPU runtime 控制面](03-runtime-control-plane.md)。
 
 ```mermaid
 flowchart LR
@@ -158,7 +178,7 @@ profile。**待验证：RUN-TPU。**
 - CPU 数值一致不能证明 TPU layout、时序、memory placement、collective 或性能一致。
 - Pallas interpreter 能验证部分语义和 race，不是 TPU cycle-accurate simulator。
 - 公开的 PJRT ABI 不能证明 libtpu 内部类、pass 顺序或线程模型。
-- Mosaic MLIR 的 operation 不能未经 libtpu 证据直接映射为某条 LLO 或 VLIW 指令。
+- Mosaic MLIR 的 operation 不能未经 libtpu 证据直接映射为某条 LLO 或目标机器指令。
 - 编译得到可执行文件仍不能证明真实 TPU 上的数值、通信和性能；前者是
   `COMPILE-TPU`，后者是 `RUN-TPU`。
 

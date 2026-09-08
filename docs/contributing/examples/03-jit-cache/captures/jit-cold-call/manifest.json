@@ -3,22 +3,32 @@
   "schema_version": "1.0",
   "capture_id": "jit-cold-call",
   "topic_id": "03-jit-cache",
-  "evidence_label": "RUN-CPU",
-  "captured_at": "2026-09-07T23:28:29+08:00",
+  "evidence_level": "RUN-CPU",
+  "qualifiers": [
+    "VERSION-SKEW"
+  ],
+  "captured_at": "2026-09-08T15:00:42+08:00",
   "provenance": {
-    "analysis_repository_revision": "df923120f2b170248867a26e3b0f5596a4d049fd",
+    "analysis_repository_revision": "c8526fc89a4263f02291ee51705d5370a7780c2f",
     "components": [
       {
         "name": "analysis-repository",
         "kind": "source",
         "root": ".",
-        "revision": "df923120f2b170248867a26e3b0f5596a4d049fd",
+        "revision": "c8526fc89a4263f02291ee51705d5370a7780c2f",
         "scope_paths": [
           "labs/001-jit-cpu/probe.py",
           "labs/001-jit-cpu/lab_core.py",
+          "manifests/baseline.json",
           "uv.lock"
         ],
-        "dirty": false
+        "dirty": true,
+        "patches": [
+          {
+            "path": "docs/contributing/examples/03-jit-cache/captures/jit-cold-call/analysis-source.patch",
+            "sha256": "81ad3201e44dd817a9e9d61a7f45558b5ebdafbf7fac35d1177b26e95c210c41"
+          }
+        ]
       },
       {
         "name": "jax",
@@ -29,12 +39,20 @@
         "dirty": false
       },
       {
-        "name": "jaxlib-libjax-common",
+        "name": "jaxlib-runtime",
         "kind": "binary",
-        "root": ".venv/lib/python3.12/site-packages/jaxlib",
+        "package": "jaxlib",
         "version": "0.11.1",
-        "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/libjax_common.so",
-        "artifact_sha256": "5e4a89f4c4f1b4928d97bcdc678174708ab14dc250744f9d92c1cf168af707b3"
+        "source_component": "jax",
+        "build_revision": "2d66622450e2c8633cda2307688ef7aa294bd6eb",
+        "runtime_roles": [
+          "python-extension",
+          "cpu-backend"
+        ],
+        "root": ".venv/lib/python3.12/site-packages/jaxlib",
+        "artifact_path": ".venv/lib/python3.12/site-packages/jaxlib/_jax.so",
+        "artifact_sha256": "6a28f034febe24e313cd12b45a97edeed3e226fa23383effa9d1fe7937beaa83",
+        "artifact_size_bytes": 3576
       }
     ]
   },
@@ -48,14 +66,23 @@
   },
   "producer": {
     "cwd": ".",
-    "command": ".venv/bin/python labs/001-jit-cpu/probe.py --stage run",
+    "argv": [
+      ".venv/bin/python",
+      "-B",
+      "labs/001-jit-cpu/probe.py",
+      "--stage",
+      "run",
+      "--native-binaries-manifest",
+      "docs/contributing/examples/03-jit-cache/captures/jit-cold-call/native-binaries.json"
+    ],
+    "stdout_path": "docs/contributing/examples/03-jit-cache/captures/jit-cold-call/stdout.txt",
     "required_environment": [],
     "tool_version": "Python 3.12.3"
   },
   "inputs": [
     {
       "path": "labs/001-jit-cpu/probe.py",
-      "sha256": "d03de8b550e1722e8348fae5570cae71831fd83f894d2fdbffc92372a56b3841",
+      "sha256": "7a9012adda22cd325129860f730a01de61d9536a2a10d33d4b6a7de32152170a",
       "role": "Command-line probe"
     },
     {
@@ -64,9 +91,14 @@
       "role": "Shared experiment implementation"
     },
     {
+      "path": "manifests/baseline.json",
+      "sha256": "6cb3432ea08cc8da6714e50256a71d74db7faac8b13827420a57f1e155864e4c",
+      "role": "Pinned source and runtime provenance used to identify the jaxlib package"
+    },
+    {
       "path": "uv.lock",
-      "sha256": "b016b3de55f4a60209b5616e68dfdfe66f9f0b380340caf94a92f451c3b0dcf4",
-      "role": "Python dependency lock"
+      "sha256": "401301d83658e42bf7b5431fed3ae1599422f5d1abe3ca56051c7de1904d426b",
+      "role": "Locked jaxlib wheel identity"
     }
   ],
   "artifacts": [
@@ -78,18 +110,40 @@
       "kind": "stdout",
       "stage": "execute",
       "format": "text/plain",
-      "generated": true
+      "generated": true,
+      "retrieval": "Regenerate with the capture producer command."
+    },
+    {
+      "id": "native-binaries",
+      "path": "docs/contributing/examples/03-jit-cache/captures/jit-cold-call/native-binaries.json",
+      "sha256": "9441f7b59dd0504b4625baa7bdca00bf0350d4e2c314a6854d5d94a9ada089fc",
+      "size_bytes": 7200,
+      "kind": "other",
+      "stage": "execute",
+      "format": "application/vnd.jax-source-analysis.native-binaries+json",
+      "generated": true,
+      "retrieval": "Regenerate with the capture producer command."
     }
   ],
+  "runtime_inventory": "native-binaries",
   "outcome": {
     "status": "pass",
     "assertions": [
-      "Tracing counts are 1, 1, and 2 for input shapes (4,), (4,), and (5,), respectively."
+      {
+        "id": "tracing-counts",
+        "status": "pass",
+        "summary": "Tracing counts are 1, 1, and 2 for input shapes (4,), (4,), and (5,), respectively.",
+        "probe_ref": "labs/001-jit-cpu/probe.py",
+        "artifact_refs": [
+          "stdout"
+        ]
+      }
     ]
   },
   "sanitized": true,
   "limitations": [
     "The capture covers Python tracing and CPU execution only.",
-    "The editable JAX source is version 0.11.2.dev while the CPU jaxlib binary is version 0.11.1."
+    "The editable JAX source is version 0.11.2.dev while the CPU jaxlib binary is version 0.11.1.",
+    "The lock-artifact identity selects one hashed wheel candidate but, without retained wheel bytes, does not cryptographically prove that the installed native files came from it."
   ]
 }

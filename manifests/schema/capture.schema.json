@@ -4,262 +4,197 @@
   "title": "JAX source-analysis capture manifest",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "$schema",
-    "schema_version",
-    "capture_id",
-    "topic_id",
-    "evidence_label",
-    "captured_at",
-    "provenance",
-    "environment",
-    "producer",
-    "inputs",
-    "artifacts",
-    "outcome",
-    "sanitized",
-    "limitations"
-  ],
+  "required": ["$schema", "schema_version", "capture_id", "topic_id", "evidence_level", "qualifiers", "captured_at", "provenance", "environment", "producer", "inputs", "artifacts", "outcome", "sanitized", "limitations"],
   "properties": {
-    "$schema": {"type": "string"},
+    "$schema": {"type": "string", "minLength": 1},
     "schema_version": {"const": "1.0"},
     "capture_id": {"$ref": "#/$defs/id"},
-    "topic_id": {
-      "type": "string",
-      "pattern": "^[0-9]{2,3}-[a-z0-9]+(?:-[a-z0-9]+)*$"
-    },
-    "evidence_label": {"$ref": "#/$defs/evidenceLabel"},
+    "topic_id": {"type": "string", "pattern": "^[0-9]{2,3}-[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "evidence_level": {"$ref": "#/$defs/evidenceLevel"},
+    "qualifiers": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/qualifier"}},
     "captured_at": {"type": "string", "format": "date-time"},
     "provenance": {"$ref": "#/$defs/provenance"},
     "environment": {"$ref": "#/$defs/environment"},
     "producer": {"$ref": "#/$defs/producer"},
-    "inputs": {
-      "type": "array",
-      "items": {"$ref": "#/$defs/input"}
-    },
-    "artifacts": {
-      "type": "array",
-      "minItems": 1,
-      "items": {"$ref": "#/$defs/artifact"}
-    },
+    "inputs": {"type": "array", "items": {"$ref": "#/$defs/input"}},
+    "artifacts": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/artifact"}},
+    "runtime_inventory": {"$ref": "#/$defs/id"},
+    "replay": {"$ref": "#/$defs/replay"},
     "outcome": {"$ref": "#/$defs/outcome"},
     "sanitized": {"const": true},
-    "limitations": {
-      "type": "array",
-      "minItems": 1,
-      "items": {"type": "string", "minLength": 1}
-    },
+    "limitations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
     "notes": {"type": "string"}
   },
+  "allOf": [
+    {
+      "if": {"properties": {"evidence_level": {"const": "SOURCE-ONLY"}}, "required": ["evidence_level"]},
+      "then": {"properties": {"environment": {"properties": {"backend": {"const": "source-inspection"}}}}}
+    },
+    {
+      "if": {"properties": {"evidence_level": {"const": "RUN-CPU"}}, "required": ["evidence_level"]},
+      "then": {"required": ["runtime_inventory"], "properties": {"environment": {"properties": {"backend": {"const": "cpu"}, "device_count": {"minimum": 1}}}}}
+    },
+    {
+      "if": {"properties": {"evidence_level": {"const": "SIM-TPU"}}, "required": ["evidence_level"]},
+      "then": {"required": ["runtime_inventory"], "properties": {"environment": {"required": ["device_model"], "properties": {"backend": {"const": "simulated-tpu"}, "device_count": {"minimum": 1}}}}}
+    },
+    {
+      "if": {"properties": {"evidence_level": {"const": "COMPILE-TPU"}}, "required": ["evidence_level"]},
+      "then": {"required": ["runtime_inventory"], "properties": {"environment": {"required": ["device_model", "topology"], "properties": {"backend": {"enum": ["compile-only-tpu", "tpu"]}}}}}
+    },
+    {
+      "if": {"properties": {"evidence_level": {"const": "RUN-TPU"}}, "required": ["evidence_level"]},
+      "then": {"required": ["runtime_inventory"], "properties": {"environment": {"required": ["device_model", "topology"], "properties": {"backend": {"const": "tpu"}, "device_count": {"minimum": 1}}}}}
+    },
+    {
+      "if": {"properties": {"evidence_level": {"const": "REPLAY-OFFLINE"}}, "required": ["evidence_level"]},
+      "then": {"required": ["replay"], "properties": {"environment": {"properties": {"backend": {"const": "offline"}}}}},
+      "else": {"not": {"required": ["replay"]}}
+    }
+  ],
   "$defs": {
-    "id": {
-      "type": "string",
-      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
-    },
-    "relativePath": {
-      "type": "string",
-      "minLength": 1,
-      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\u0000]+$"
-    },
-    "sha256": {
-      "type": "string",
-      "pattern": "^[0-9a-f]{64}$"
-    },
-    "evidenceLabel": {
-      "enum": [
-        "RUN-CPU",
-        "SIM-TPU",
-        "COMPILE-TPU",
-        "RUN-TPU",
-        "REPLAY-OFFLINE"
-      ]
-    },
+    "id": {"type": "string", "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"},
+    "relativePath": {"type": "string", "minLength": 1, "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\u0000\\\\]+$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "gitCommit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "opaqueArtifactUri": {"type": "string", "format": "uri", "pattern": "^artifact:[a-z0-9][a-z0-9._-]*$"},
+    "evidenceLevel": {"enum": ["SOURCE-ONLY", "RUN-CPU", "SIM-TPU", "COMPILE-TPU", "RUN-TPU", "REPLAY-OFFLINE"]},
+    "qualifier": {"enum": ["VERSION-SKEW"]},
+    "runtimeRole": {"enum": ["python-extension", "cpu-backend", "gpu-backend", "tpu-simulator", "tpu-compiler", "tpu-runtime", "collective-runtime", "other"]},
     "patch": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["path", "sha256"],
-      "properties": {
-        "path": {"$ref": "#/$defs/relativePath"},
-        "sha256": {"$ref": "#/$defs/sha256"}
-      }
+      "type": "object", "additionalProperties": false, "required": ["path", "sha256"],
+      "properties": {"path": {"$ref": "#/$defs/relativePath"}, "sha256": {"$ref": "#/$defs/sha256"}}
     },
-    "component": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["name", "kind", "root"],
+    "sourceComponent": {
+      "type": "object", "additionalProperties": false, "required": ["name", "kind", "root", "revision", "dirty"],
       "properties": {
-        "name": {"type": "string", "minLength": 1},
-        "kind": {"enum": ["source", "binary"]},
+        "name": {"$ref": "#/$defs/id"},
+        "kind": {"const": "source"},
         "root": {"$ref": "#/$defs/relativePath"},
         "version": {"type": "string", "minLength": 1},
-        "revision": {
-          "type": "string",
-          "pattern": "^[0-9a-f]{40}$"
-        },
-        "artifact_sha256": {"$ref": "#/$defs/sha256"},
-        "artifact_path": {"$ref": "#/$defs/relativePath"},
-        "build_id": {"type": "string", "minLength": 1},
-        "scope_paths": {
-          "type": "array",
-          "minItems": 1,
-          "items": {"$ref": "#/$defs/relativePath"}
-        },
+        "revision": {"$ref": "#/$defs/gitCommit"},
+        "scope_paths": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/relativePath"}},
         "dirty": {"type": "boolean"},
-        "patches": {
-          "type": "array",
-          "minItems": 1,
-          "items": {"$ref": "#/$defs/patch"}
-        }
+        "patches": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/patch"}}
       },
-      "allOf": [
-        {
-          "if": {
-            "properties": {"kind": {"const": "source"}},
-            "required": ["kind"]
-          },
-          "then": {"required": ["revision", "dirty"]}
-        },
-        {
-          "if": {
-            "properties": {"kind": {"const": "binary"}},
-            "required": ["kind"]
-          },
-          "then": {
-            "required": ["version", "artifact_path", "artifact_sha256"]
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "kind": {"const": "source"},
-              "dirty": {"const": true}
-            },
-            "required": ["kind", "dirty"]
-          },
-          "then": {"required": ["patches"]}
-        }
+      "allOf": [{
+        "if": {"properties": {"dirty": {"const": true}}, "required": ["dirty"]},
+        "then": {"required": ["scope_paths", "patches"]},
+        "else": {"not": {"required": ["patches"]}}
+      }]
+    },
+    "binaryComponent": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "kind", "package", "version", "source_component", "build_revision", "runtime_roles", "artifact_sha256", "artifact_size_bytes"],
+      "properties": {
+        "name": {"$ref": "#/$defs/id"},
+        "kind": {"const": "binary"},
+        "package": {"$ref": "#/$defs/id"},
+        "version": {"type": "string", "minLength": 1},
+        "source_component": {"$ref": "#/$defs/id"},
+        "build_revision": {"$ref": "#/$defs/gitCommit"},
+        "runtime_roles": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/runtimeRole"}},
+        "root": {"$ref": "#/$defs/relativePath"},
+        "artifact_path": {"$ref": "#/$defs/relativePath"},
+        "artifact_uri": {"$ref": "#/$defs/opaqueArtifactUri"},
+        "artifact_sha256": {"$ref": "#/$defs/sha256"},
+        "artifact_size_bytes": {"type": "integer", "minimum": 0},
+        "retrieval": {"type": "string", "minLength": 1},
+        "build_id": {"$ref": "#/$defs/id"}
+      },
+      "oneOf": [
+        {"required": ["root", "artifact_path"], "not": {"anyOf": [{"required": ["artifact_uri"]}, {"required": ["retrieval"]}]}},
+        {"required": ["artifact_uri", "retrieval"], "not": {"anyOf": [{"required": ["root"]}, {"required": ["artifact_path"]}]}}
       ]
     },
+    "component": {"oneOf": [{"$ref": "#/$defs/sourceComponent"}, {"$ref": "#/$defs/binaryComponent"}]},
     "provenance": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["analysis_repository_revision", "components"],
+      "type": "object", "additionalProperties": false, "required": ["analysis_repository_revision", "components"],
       "properties": {
-        "analysis_repository_revision": {
-          "type": "string",
-          "pattern": "^[0-9a-f]{40}$"
-        },
-        "components": {
-          "type": "array",
-          "minItems": 1,
-          "items": {"$ref": "#/$defs/component"}
-        }
+        "analysis_repository_revision": {"$ref": "#/$defs/gitCommit"},
+        "components": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/component"}}
       }
     },
     "environment": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["host_os", "arch", "backend", "device_count"],
+      "type": "object", "additionalProperties": false, "required": ["host_os", "arch", "backend", "device_count"],
       "properties": {
         "host_os": {"type": "string", "minLength": 1},
         "arch": {"type": "string", "minLength": 1},
-        "backend": {
-          "enum": ["cpu", "simulated-tpu", "tpu", "compile-only-tpu"]
-        },
+        "backend": {"enum": ["source-inspection", "cpu", "simulated-tpu", "tpu", "compile-only-tpu", "offline"]},
         "device_model": {"type": "string", "minLength": 1},
         "topology": {"type": "string", "minLength": 1},
         "process_count": {"type": "integer", "minimum": 1},
-        "device_count": {"type": "integer", "minimum": 1}
+        "device_count": {"type": "integer", "minimum": 0}
       }
     },
     "producer": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["cwd", "command"],
+      "type": "object", "additionalProperties": false, "required": ["cwd", "argv", "required_environment"],
       "properties": {
         "cwd": {"$ref": "#/$defs/relativePath"},
-        "command": {"type": "string", "minLength": 1},
-        "required_environment": {
-          "type": "array",
-          "uniqueItems": true,
-          "items": {
-            "type": "string",
-            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
-          }
-        },
+        "argv": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "stdout_path": {"$ref": "#/$defs/relativePath"},
+        "required_environment": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"}},
         "tool_version": {"type": "string", "minLength": 1}
       }
     },
     "input": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["path", "sha256", "role"],
-      "properties": {
-        "path": {"$ref": "#/$defs/relativePath"},
-        "sha256": {"$ref": "#/$defs/sha256"},
-        "role": {"type": "string", "minLength": 1}
-      }
+      "type": "object", "additionalProperties": false, "required": ["path", "sha256", "role"],
+      "properties": {"path": {"$ref": "#/$defs/relativePath"}, "sha256": {"$ref": "#/$defs/sha256"}, "role": {"type": "string", "minLength": 1}}
     },
     "artifact": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "id",
-        "sha256",
-        "size_bytes",
-        "kind",
-        "stage",
-        "format",
-        "generated"
-      ],
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "sha256", "size_bytes", "kind", "stage", "format", "generated", "retrieval"],
       "properties": {
         "id": {"$ref": "#/$defs/id"},
         "path": {"$ref": "#/$defs/relativePath"},
-        "uri": {"type": "string", "format": "uri"},
+        "uri": {"$ref": "#/$defs/opaqueArtifactUri"},
         "retrieval": {"type": "string", "minLength": 1},
         "sha256": {"$ref": "#/$defs/sha256"},
         "size_bytes": {"type": "integer", "minimum": 0},
-        "kind": {
-          "enum": [
-            "stdout",
-            "jaxpr",
-            "stablehlo",
-            "shardy",
-            "hlo",
-            "mosaic",
-            "llo",
-            "profile",
-            "executable",
-            "log",
-            "metrics",
-            "other"
-          ]
-        },
+        "kind": {"enum": ["stdout", "jaxpr", "stablehlo", "shardy", "hlo", "mosaic", "llo", "profile", "executable", "log", "metrics", "other"]},
         "stage": {"type": "string", "minLength": 1},
         "format": {"type": "string", "minLength": 1},
         "generated": {"const": true},
         "normalized_from": {"$ref": "#/$defs/id"},
         "normalization": {"type": "string", "minLength": 1}
       },
+      "dependentRequired": {"normalized_from": ["normalization"], "normalization": ["normalized_from"]},
       "oneOf": [
         {"required": ["path"], "not": {"required": ["uri"]}},
+        {"required": ["uri"], "not": {"required": ["path"]}}
+      ]
+    },
+    "replay": {
+      "type": "object", "additionalProperties": false, "required": ["origin_capture", "origin_sha256", "origin_artifact_refs", "tool_component"],
+      "properties": {
+        "origin_capture": {"$ref": "#/$defs/relativePath"},
+        "origin_sha256": {"$ref": "#/$defs/sha256"},
+        "origin_artifact_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+        "tool_component": {"$ref": "#/$defs/id"}
+      }
+    },
+    "outcome": {
+      "type": "object", "additionalProperties": false, "required": ["status", "assertions"],
+      "properties": {
+        "status": {"enum": ["pass", "fail", "expected-failure"]},
+        "assertions": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/assertion"}}
+      },
+      "allOf": [
         {
-          "required": ["uri", "retrieval"],
-          "not": {"required": ["path"]}
+          "if": {"properties": {"status": {"const": "pass"}}, "required": ["status"]},
+          "then": {"properties": {"assertions": {"items": {"properties": {"status": {"const": "pass"}}}}}}
         }
       ]
     },
-    "outcome": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["status", "assertions"],
+    "assertion": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "status", "summary", "probe_ref", "artifact_refs"],
       "properties": {
-        "status": {"enum": ["pass", "fail", "expected-failure"]},
-        "assertions": {
-          "type": "array",
-          "minItems": 1,
-          "items": {"type": "string", "minLength": 1}
-        }
+        "id": {"$ref": "#/$defs/id"},
+        "status": {"enum": ["pass", "fail"]},
+        "summary": {"type": "string", "minLength": 1},
+        "probe_ref": {"$ref": "#/$defs/relativePath"},
+        "artifact_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/id"}}
       }
     }
   }

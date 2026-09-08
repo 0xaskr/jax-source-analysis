@@ -2,14 +2,16 @@
 
 本文追踪由普通 JAX primitive 组成的函数。Pallas kernel 使用另一条 lowering，见
 [Pallas/Mosaic TPU 路径](02-pallas-mosaic-tpu-path.md)。两条路径会在外层
-StableHLO、PJRT 和 TPU runtime 处相遇。
+StableHLO、PJRT 和 TPU runtime 处相遇。第一次遇到术语时可同时查看
+[JAX→TPU 术语表](../index/glossary.md)。
 
 ## 边界与证据
 
 公开源码中的控制流和类型标记为 `SOURCE-ONLY`。libtpu 内部的候选阶段必须用固定
 target 的编译产物升级为 `COMPILE-TPU`；设备执行、通信和性能只能用 `RUN-TPU`
 确认。当前 CPU wheel 与固定源码存在 `VERSION-SKEW`，所以本文不把本机导入 JAX
-当作固定 XLA commit 的运行证据。标签定义见[总图](00-whole-stack.md#证据边界)。
+当作固定 XLA commit 的运行证据。证据等级与来源限定见
+[证据约定](../contributing/evidence-conventions.md)。
 
 ## 冷编译调用链
 
@@ -55,7 +57,10 @@ sequenceDiagram
 
 `jit`、`grad` 和 `vmap` 都返回 callable transformation。它们能够嵌套，不是因为
 三个工具按固定顺序直接改写 Python AST，而是因为 primitive operation 可由当前
-`Trace` 解释，且 AD、batching、partial evaluation/lowering 等层各自提供规则。
+`Trace` 解释，且 AD、batching、partial evaluation/lowering 等层各自提供规则。这个
+组合性有契约条件：路径上的 primitive 必须具备相应 transformation/lowering rule，
+并满足 shape、effect、sharding 等合法性约束；缺少规则或违反约束会报错。嵌套顺序也
+会改变哪个 trace 先解释 primitive，以及产生的 Jaxpr、staging 和 cache 行为。
 
 ```mermaid
 flowchart LR
@@ -90,7 +95,7 @@ lowering rule。普通数值 primitive 的 rules 分布在 `jax/_src/lax` 等模
 
 | 输入 | 输出 | 必须保留的上下文 |
 |---|---|---|
-| `Jaxpr`/`ClosedJaxpr`、avals、effects | MLIR module，主要 payload 为 StableHLO | lowering platforms、axis context、source locations、donation/alias 信息 |
+| `Jaxpr`（`ClosedJaxpr` 在本版本只是兼容别名）、avals、effects | MLIR module，主要 payload 为 StableHLO | consts、lowering platforms、axis context、source locations、donation/alias 信息 |
 | logical sharding | `sdy` 或兼容 sharding attributes/ops | mesh、manual/auto axes、global/local shape |
 | tokens/effects | token values、ordered/unordered effect metadata | effect ordering 和 host callback 信息 |
 
@@ -130,8 +135,14 @@ data-flow edge，再通过 import、propagation、export 等 passes 进入后续
 [compiler.py](../../upstream/jax/jax/_src/compiler.py)的
 `backend_compile_and_load` 把 MLIR module、executable devices、compile options 和
 host callbacks 交给 backend。[xla_bridge.py](../../upstream/jax/jax/_src/xla_bridge.py)
-的 `make_tpu_client` 动态加载 `libtpu.so`，初始化名为 `tpu` 的 PJRT plugin，再创建
-C API client。**证据：SOURCE-ONLY。**
+的 `make_tpu_client` 在 `tpu` plugin 尚未加载时动态加载 `libtpu.so`，随后按需初始化
+plugin，再创建 C API client。**证据：SOURCE-ONLY。**
+
+公开/私有切口可以进一步定位为：`make_tpu_client` 调用 jaxlib binding；公开
+`pjrt_api.cc` 负责 `dlopen` 并解析 plugin 导出的 `GetPjrtApi`；公开 generic C API
+client 序列化 `PJRT_Program`/compile options 并调用函数表中的
+`PJRT_Client_Compile`。函数表背后的 TPU compiler/runtime 实现由匹配的
+`libtpu.so` 提供，当前不在公开源码中。
 
 公开 ABI 的关键对象和调用在：
 
@@ -139,6 +150,11 @@ C API client。**证据：SOURCE-ONLY。**
   `PJRT_Client_Compile`、loaded executable、buffer 与 event；
 - [PJRT C API client](../../upstream/xla/xla/pjrt/c_api_client/)：C++ client 到 C ABI
   argument struct 的适配；
+- [PJRT plugin loader](../../upstream/xla/xla/pjrt/pjrt_api.cc)：动态库加载和
+  `GetPjrtApi` 符号解析；
+- [公开 TPU C++ adapter](../../upstream/xla/xla/pjrt/plugin/xla_tpu/)：另一条构造
+  TPU C API client 的公开入口，并非 JAX Python 路径的必经节点；
+- [TPU C ABI glue](../../upstream/xla/xla/tpu/)：公开声明、初始化和类型转换边界；
 - [jaxlib py_client.cc](../../upstream/jax/jaxlib/py_client.cc)与
   [py_executable.cc](../../upstream/jax/jaxlib/py_executable.cc)：Python object 与
   IFRT executable/array 的绑定。
@@ -179,7 +195,7 @@ flowchart LR
   API["jax.extend.xla"] --> PY["jax._src.xla_transform"]
   PY --> BIND["jaxlib/xla.cc"]
   BIND --> EXT["PJRT XlaTransform extension"]
-  EXT --> TPU["TPU plugin callback"]
+  EXT -->|"if extension supported"| TPU["TPU plugin callback"]
 ```
 
 - Python API： [jax/extend/xla.py](../../upstream/jax/jax/extend/xla.py)；
@@ -190,10 +206,10 @@ flowchart LR
 - CPU/TPU 示例、`sin → cos` 与 async scheduler 示例：
   [xla_transform_test.py](../../upstream/jax/tests/xla_transform_test.py)。
 
-接口和测试存在于固定源码。**证据：SOURCE-ONLY。** 当前 CPU jaxlib 是否包含完全
-匹配的 binding 需要 source-built wheel 验证。**限制：VERSION-SKEW。** TPU plugin
-是否支持该 extension、callback 插入其内部 pipeline 的准确位置及修改后的最终 HLO
-必须由目标 libtpu 验证。**待验证：COMPILE-TPU。**
+接口和测试存在于固定源码。**证据：SOURCE-ONLY。** 当前 wheel 的运行 probe 应标为
+`RUN-CPU` 并附 `VERSION-SKEW` qualifier；完全匹配的 binding 需要 source-built wheel
+验证。TPU plugin 是否支持该 extension、callback 插入其内部 pipeline 的准确位置及
+修改后的最终 HLO 必须由目标 libtpu 验证。**待验证：COMPILE-TPU。**
 
 在这个语境中，“修改模型拓扑”指改变 `HloModule` 的 computation/instruction graph，
 或在 post-scheduler 修改合法 schedule。它不表示改变物理 TPU pod 拓扑。pass 至少要

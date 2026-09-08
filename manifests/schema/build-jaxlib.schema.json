@@ -1,0 +1,458 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jax-source-analysis.local/schema/build-jaxlib.schema.json",
+  "title": "Source-built CPU jaxlib build manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "schema_version", "build_id", "kind", "dry_run", "status",
+    "created_at", "updated_at", "paths", "build_config",
+    "input_fingerprint_sha256", "inputs", "preflight", "attempts", "result",
+    "runtime_validation"
+  ],
+  "properties": {
+    "$schema": {"type": "string", "minLength": 1},
+    "schema_version": {"const": "1.0"},
+    "build_id": {"$ref": "#/$defs/buildId"},
+    "kind": {"const": "jaxlib-cpu-source-build"},
+    "dry_run": {"type": "boolean"},
+    "status": {
+      "enum": [
+        "planned", "running", "preflight-failed", "dry-run-succeeded",
+        "build-failed", "interrupted", "build-succeeded"
+      ]
+    },
+    "created_at": {"type": "string", "format": "date-time"},
+    "updated_at": {"type": "string", "format": "date-time"},
+    "paths": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest", "artifact_dir", "build_lock", "global_lock", "generated_bazelrc"],
+      "properties": {
+        "manifest": {"$ref": "#/$defs/relativePath"},
+        "artifact_dir": {"$ref": "#/$defs/relativePath"},
+        "build_lock": {"$ref": "#/$defs/relativePath"},
+        "global_lock": {"const": "artifacts/builds/.jaxlib-build.lock"},
+        "generated_bazelrc": {"const": "upstream/jax/.jax_configure.bazelrc"}
+      }
+    },
+    "build_config": {"$ref": "#/$defs/buildConfig"},
+    "input_fingerprint_sha256": {"$ref": "#/$defs/sha256"},
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "analysis_repository_commit", "sources", "source_patches", "files",
+        "toolchain", "build_config", "build_id"
+      ],
+      "properties": {
+        "analysis_repository_commit": {
+          "oneOf": [{"$ref": "#/$defs/gitCommit"}, {"type": "null"}]
+        },
+        "sources": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["jax", "xla"],
+          "properties": {
+            "jax": {"$ref": "#/$defs/source"},
+            "xla": {"$ref": "#/$defs/source"}
+          }
+        },
+        "source_patches": {
+          "type": "array", "maxItems": 2,
+          "items": {"$ref": "#/$defs/sourcePatch"}
+        },
+        "files": {
+          "type": "object", "minProperties": 1,
+          "additionalProperties": {"$ref": "#/$defs/file"}
+        },
+        "toolchain": {"$ref": "#/$defs/toolchain"},
+        "build_config": {"$ref": "#/$defs/buildConfig"},
+        "build_id": {"$ref": "#/$defs/buildId"}
+      }
+    },
+    "preflight": {"$ref": "#/$defs/preflight"},
+    "attempts": {"type": "array", "items": {"$ref": "#/$defs/attempt"}},
+    "result": {"$ref": "#/$defs/result"},
+    "runtime_validation": {"$ref": "#/$defs/runtimeValidation"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"enum": ["planned", "preflight-failed"]}}, "required": ["status"]},
+      "then": {"properties": {"attempts": {"maxItems": 0}}}
+    },
+    {
+      "if": {"properties": {"status": {"const": "preflight-failed"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "preflight": {"properties": {"ok": {"const": false}}},
+          "result": {
+            "properties": {
+              "attempt_number": {"type": "null"},
+              "exit_code": {"type": "null"},
+              "error": {"type": "string", "minLength": 1},
+              "wheels": {"maxItems": 0},
+              "generated_bazelrc": {"type": "null"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "running"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "attempts": {"minItems": 1},
+          "preflight": {"properties": {"ok": {"const": true}}},
+          "result": {
+            "properties": {
+              "attempt_number": {"type": "null"},
+              "exit_code": {"type": "null"},
+              "error": {"type": "null"},
+              "wheels": {"maxItems": 0},
+              "generated_bazelrc": {"type": "null"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "dry-run-succeeded"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "dry_run": {"const": true},
+          "preflight": {"properties": {"ok": {"const": true}}},
+          "result": {
+            "properties": {
+              "attempt_number": {"type": "integer"}, "exit_code": {"const": 0},
+              "error": {"type": "null"}, "wheels": {"maxItems": 0},
+              "generated_bazelrc": {"$ref": "#/$defs/artifact"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"status": {"const": "build-succeeded"}}, "required": ["status"]},
+      "then": {
+        "properties": {
+          "dry_run": {"const": false},
+          "preflight": {"properties": {"ok": {"const": true}}},
+          "result": {
+            "properties": {
+              "attempt_number": {"type": "integer"}, "exit_code": {"const": 0},
+              "error": {"type": "null"}, "wheels": {"minItems": 1, "maxItems": 1},
+              "generated_bazelrc": {"$ref": "#/$defs/artifact"}
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "buildId": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "gitCommit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "relativePath": {
+      "type": "string", "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\u0000\\\\]+$"
+    },
+    "artifact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "sha256", "size_bytes"],
+      "properties": {
+        "path": {"$ref": "#/$defs/relativePath"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "size_bytes": {"type": "integer", "minimum": 0}
+      }
+    },
+    "file": {
+      "type": "object", "additionalProperties": false,
+      "required": ["exists", "kind", "sha256", "size_bytes"],
+      "properties": {
+        "exists": {"type": "boolean"},
+        "kind": {"enum": ["missing", "file", "symlink", "directory", "other"]},
+        "sha256": {"oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "size_bytes": {"type": ["integer", "null"], "minimum": 0}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"kind": {"const": "file"}}, "required": ["kind"]},
+          "then": {
+            "properties": {
+              "exists": {"const": true}, "sha256": {"$ref": "#/$defs/sha256"},
+              "size_bytes": {"type": "integer", "minimum": 0}
+            }
+          },
+          "else": {"properties": {"sha256": {"type": "null"}, "size_bytes": {"type": "null"}}}
+        },
+        {
+          "if": {"properties": {"kind": {"const": "missing"}}, "required": ["kind"]},
+          "then": {"properties": {"exists": {"const": false}}},
+          "else": {"properties": {"exists": {"const": true}}}
+        }
+      ]
+    },
+    "sourcePatch": {
+      "type": "object", "additionalProperties": false,
+      "required": ["component", "base_revision", "path", "size_bytes", "sha256"],
+      "properties": {
+        "component": {"enum": ["jax", "xla"]},
+        "base_revision": {"$ref": "#/$defs/gitCommit"},
+        "path": {"$ref": "#/$defs/relativePath"},
+        "size_bytes": {"type": "integer", "minimum": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "exists", "commit", "top_level", "expected_commit", "status_returncode", "dirty", "status", "index_flags", "index_flags_returncode", "ignored", "ignored_returncode"],
+      "properties": {
+        "path": {"oneOf": [{"$ref": "#/$defs/relativePath"}, {"type": "null"}]},
+        "exists": {"type": ["boolean", "null"]},
+        "commit": {"oneOf": [{"$ref": "#/$defs/gitCommit"}, {"type": "null"}]},
+        "top_level": {"type": ["string", "null"]},
+        "expected_commit": {"oneOf": [{"$ref": "#/$defs/gitCommit"}, {"type": "null"}]},
+        "status_returncode": {"type": ["integer", "null"]},
+        "dirty": {"type": ["boolean", "null"]},
+        "status": {"type": ["array", "null"], "items": {"type": "string"}},
+        "index_flags": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "index_flags_returncode": {"type": ["integer", "null"]},
+        "ignored": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/relativePath"}},
+        "ignored_returncode": {"type": ["integer", "null"]}
+      }
+    },
+    "tool": {
+      "type": "object", "additionalProperties": false,
+      "required": ["path", "resolved_path", "version", "returncode", "sha256"],
+      "properties": {
+        "path": {"type": ["string", "null"]},
+        "resolved_path": {"type": ["string", "null"]},
+        "version": {"type": ["string", "null"]},
+        "returncode": {"type": ["integer", "null"]},
+        "sha256": {"oneOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]}
+      }
+    },
+    "pythonTool": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "executable", "resolved_executable", "base_executable",
+        "base_resolved_path", "base_size_bytes", "base_sha256", "version"
+      ],
+      "properties": {
+        "executable": {"$ref": "#/$defs/relativePath"},
+        "resolved_executable": {"const": "/usr/bin/python3.12"},
+        "base_executable": {"const": "/usr/bin/python3.12"},
+        "base_resolved_path": {"const": "/usr/bin/python3.12"},
+        "base_size_bytes": {"const": 8020928},
+        "base_sha256": {
+          "const": "1643dacd9feaedc58f3cc581e4d22577dfe25c09b10282936186ccf0f2e61118"
+        },
+        "version": {"const": "3.12.3"}
+      }
+    },
+    "toolchain": {
+      "type": "object", "additionalProperties": false,
+      "required": ["python", "bazel", "clang", "clangxx", "git"],
+      "properties": {
+        "python": {"$ref": "#/$defs/pythonTool"},
+        "bazel": {"$ref": "#/$defs/tool"},
+        "clang": {"$ref": "#/$defs/tool"},
+        "clangxx": {"$ref": "#/$defs/tool"},
+        "git": {
+          "allOf": [
+            {"$ref": "#/$defs/tool"},
+            {
+              "properties": {
+                "path": {"const": "/usr/bin/git"},
+                "resolved_path": {"const": "/usr/bin/git"},
+                "version": {"const": "git version 2.43.0"},
+                "returncode": {"const": 0},
+                "sha256": {"const": "2a8c18fbf43da9f692d75474c72bea9dfd796c260b0f3dfe456376abc3bbd668"}
+              }
+            }
+          ]
+        }
+      }
+    },
+    "environmentPolicy": {
+      "type": "object", "additionalProperties": false,
+      "required": ["fixed", "per_attempt_directories", "inherited_names"],
+      "properties": {
+        "fixed": {
+          "type": "object", "additionalProperties": false,
+          "required": ["PATH", "LANG", "LC_ALL", "TZ", "PYTHONNOUSERSITE", "PYTHONDONTWRITEBYTECODE"],
+          "properties": {
+            "PATH": {"type": "string"}, "LANG": {"type": "string"},
+            "LC_ALL": {"type": "string"}, "TZ": {"type": "string"},
+            "PYTHONNOUSERSITE": {"const": "1"},
+            "PYTHONDONTWRITEBYTECODE": {"const": "1"}
+          }
+        },
+        "per_attempt_directories": {
+          "type": "object", "additionalProperties": false,
+          "required": ["HOME", "TMPDIR"],
+          "properties": {"HOME": {"const": "home"}, "TMPDIR": {"const": "tmp"}}
+        },
+        "inherited_names": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}
+      }
+    },
+    "buildConfig": {
+      "type": "object", "additionalProperties": false,
+      "required": ["cwd", "python_executable", "jobs", "bazel_startup_options", "bazel_options", "dry_run", "environment_policy"],
+      "properties": {
+        "cwd": {"const": "upstream/jax"},
+        "python_executable": {"const": ".venv/bin/python"},
+        "jobs": {"type": "integer", "minimum": 1},
+        "bazel_startup_options": {"type": "array", "minItems": 2, "items": {"type": "string", "minLength": 1}},
+        "bazel_options": {"type": "array", "minItems": 2, "items": {"type": "string", "minLength": 1}},
+        "dry_run": {"type": "boolean"},
+        "environment_policy": {"$ref": "#/$defs/environmentPolicy"}
+      }
+    },
+    "blocker": {
+      "type": "object", "additionalProperties": false,
+      "required": ["code", "message"],
+      "properties": {"code": {"type": "string", "minLength": 1}, "message": {"type": "string", "minLength": 1}}
+    },
+    "waivedBlocker": {
+      "type": "object", "additionalProperties": false,
+      "required": ["code", "message", "source_patch_sha256"],
+      "properties": {
+        "code": {"type": "string", "pattern": "^source-dirty:(jax|xla)$"},
+        "message": {"type": "string", "minLength": 1},
+        "source_patch_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "preflight": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ok", "blockers", "waived_blockers"],
+      "properties": {
+        "ok": {"type": "boolean"},
+        "blockers": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/blocker"}},
+        "waived_blockers": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/waivedBlocker"}}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"ok": {"const": true}}, "required": ["ok"]},
+          "then": {"properties": {"blockers": {"maxItems": 0}}},
+          "else": {"properties": {"blockers": {"minItems": 1}}}
+        }
+      ]
+    },
+    "processIdentity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["pid", "boot_id", "start_time_ticks", "cmdline_sha256"],
+      "properties": {
+        "pid": {"type": "integer", "minimum": 1},
+        "boot_id": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"},
+        "start_time_ticks": {"type": "integer", "minimum": 0},
+        "cmdline_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "attemptPaths": {
+      "type": "object", "additionalProperties": false,
+      "required": ["attempt_dir", "log", "wheel_dir", "generated_bazelrc_archive", "home_dir", "tmp_dir"],
+      "properties": {
+        "attempt_dir": {"$ref": "#/$defs/relativePath"},
+        "log": {"$ref": "#/$defs/relativePath"},
+        "wheel_dir": {"$ref": "#/$defs/relativePath"},
+        "generated_bazelrc_archive": {"$ref": "#/$defs/relativePath"},
+        "home_dir": {"$ref": "#/$defs/relativePath"},
+        "tmp_dir": {"$ref": "#/$defs/relativePath"}
+      }
+    },
+    "attemptEnvironment": {
+      "type": "object", "additionalProperties": false,
+      "required": ["fixed", "inherited_names"],
+      "properties": {
+        "fixed": {
+          "type": "object", "additionalProperties": false,
+          "required": ["PATH", "LANG", "LC_ALL", "TZ", "PYTHONNOUSERSITE", "PYTHONDONTWRITEBYTECODE", "HOME", "TMPDIR"],
+          "properties": {
+            "PATH": {"type": "string"}, "LANG": {"type": "string"},
+            "LC_ALL": {"type": "string"}, "TZ": {"type": "string"},
+            "PYTHONNOUSERSITE": {"const": "1"},
+            "PYTHONDONTWRITEBYTECODE": {"const": "1"},
+            "HOME": {"$ref": "#/$defs/relativePath"},
+            "TMPDIR": {"$ref": "#/$defs/relativePath"}
+          }
+        },
+        "inherited_names": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}
+      }
+    },
+    "command": {
+      "type": "object", "additionalProperties": false,
+      "required": ["cwd", "argv", "shell"],
+      "properties": {
+        "cwd": {"const": "upstream/jax"},
+        "argv": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+        "shell": {"type": "string", "minLength": 1}
+      }
+    },
+    "attempt": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "number", "status", "started_at", "ended_at", "paths", "command",
+        "environment", "wrapper_process", "child_process", "exit_code", "error",
+        "log_artifact", "wheels", "generated_bazelrc"
+      ],
+      "properties": {
+        "number": {"type": "integer", "minimum": 1},
+        "status": {"enum": ["running", "dry-run-succeeded", "build-failed", "interrupted", "build-succeeded"]},
+        "started_at": {"type": "string", "format": "date-time"},
+        "ended_at": {"type": ["string", "null"], "format": "date-time"},
+        "paths": {"$ref": "#/$defs/attemptPaths"},
+        "command": {"$ref": "#/$defs/command"},
+        "environment": {"$ref": "#/$defs/attemptEnvironment"},
+        "wrapper_process": {"$ref": "#/$defs/processIdentity"},
+        "child_process": {"oneOf": [{"$ref": "#/$defs/processIdentity"}, {"type": "null"}]},
+        "exit_code": {"type": ["integer", "null"]},
+        "error": {"type": ["string", "null"]},
+        "log_artifact": {"oneOf": [{"$ref": "#/$defs/artifact"}, {"type": "null"}]},
+        "wheels": {"type": "array", "items": {"$ref": "#/$defs/artifact"}},
+        "generated_bazelrc": {"oneOf": [{"$ref": "#/$defs/artifact"}, {"type": "null"}]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"status": {"const": "running"}}, "required": ["status"]},
+          "then": {"properties": {"ended_at": {"type": "null"}, "exit_code": {"type": "null"}, "error": {"type": "null"}, "log_artifact": {"type": "null"}, "wheels": {"maxItems": 0}, "generated_bazelrc": {"type": "null"}}}
+        },
+        {
+          "if": {"properties": {"status": {"const": "dry-run-succeeded"}}, "required": ["status"]},
+          "then": {"properties": {"ended_at": {"type": "string"}, "child_process": {"$ref": "#/$defs/processIdentity"}, "exit_code": {"const": 0}, "error": {"type": "null"}, "log_artifact": {"$ref": "#/$defs/artifact"}, "wheels": {"maxItems": 0}, "generated_bazelrc": {"$ref": "#/$defs/artifact"}}}
+        },
+        {
+          "if": {"properties": {"status": {"const": "build-succeeded"}}, "required": ["status"]},
+          "then": {"properties": {"ended_at": {"type": "string"}, "child_process": {"$ref": "#/$defs/processIdentity"}, "exit_code": {"const": 0}, "error": {"type": "null"}, "log_artifact": {"$ref": "#/$defs/artifact"}, "wheels": {"minItems": 1, "maxItems": 1}, "generated_bazelrc": {"$ref": "#/$defs/artifact"}}}
+        },
+        {
+          "if": {"properties": {"status": {"enum": ["build-failed", "interrupted"]}}, "required": ["status"]},
+          "then": {"properties": {"ended_at": {"type": "string"}, "error": {"type": "string", "minLength": 1}, "log_artifact": {"$ref": "#/$defs/artifact"}}}
+        }
+      ]
+    },
+    "result": {
+      "type": "object", "additionalProperties": false,
+      "required": ["attempt_number", "exit_code", "error", "wheels", "generated_bazelrc"],
+      "properties": {
+        "attempt_number": {"type": ["integer", "null"], "minimum": 1},
+        "exit_code": {"type": ["integer", "null"]},
+        "error": {"type": ["string", "null"]},
+        "wheels": {"type": "array", "items": {"$ref": "#/$defs/artifact"}},
+        "generated_bazelrc": {"oneOf": [{"$ref": "#/$defs/artifact"}, {"type": "null"}]}
+      }
+    },
+    "runtimeValidation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "checked_at", "evidence", "notes"],
+      "properties": {
+        "status": {"const": "not-run"},
+        "checked_at": {"type": "null"},
+        "evidence": {"type": "array", "maxItems": 0},
+        "notes": {"type": "string", "minLength": 1}
+      },
+      "description": "Fail-closed placeholder until P1 defines hashed runtime capture evidence without a validation cycle."
+    }
+  }
+}

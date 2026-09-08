@@ -31,18 +31,32 @@
     {
       "id": "shape-retrace",
       "claim": "The second call with shape (4,) reuses the existing trace, while a call with shape (5,) creates another trace.",
-      "label": "RUN-CPU",
+      "evidence_level": "RUN-CPU",
+      "qualifiers": [
+        "VERSION-SKEW"
+      ],
       "source_refs": [
         "jax.pjit.trace-for-jit"
       ],
       "artifact_refs": [
-        "docs/contributing/examples/03-jit-cache/captures/jit-cold-call/stdout.txt"
+        "stdout",
+        "native-binaries"
       ],
       "capture_manifest": "docs/contributing/examples/03-jit-cache/captures/jit-cold-call/manifest.json",
       "reproduce": {
         "cwd": ".",
-        "command": ".venv/bin/python labs/001-jit-cpu/probe.py --stage run",
-        "required_environment": []
+        "argv": [
+          ".venv/bin/python",
+          "-B",
+          "labs/001-jit-cpu/probe.py",
+          "--stage",
+          "run",
+          "--native-binaries-manifest",
+          "docs/contributing/examples/03-jit-cache/captures/jit-cold-call/native-binaries.json"
+        ],
+        "stdout_path": "docs/contributing/examples/03-jit-cache/captures/jit-cold-call/stdout.txt",
+        "required_environment": [],
+        "tool_version": "Python 3.12.3"
       },
       "limitations": [
         "This observes Python tracing count on the CPU backend; it does not prove TPU lowering, compilation, or execution behavior."

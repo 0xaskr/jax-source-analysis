@@ -1,6 +1,6 @@
 # Lab 001：追踪 `jax.jit` 的 CPU 执行路径
 
-> **核心结论**：`jax.jit` 先把 Python 函数 trace 成 Jaxpr，再 lower 为 StableHLO，最后通过编译后端和 PJRT 在 CPU 上执行。在函数和配置等缓存键不变时，相同 shape/dtype 会复用已有结果；输入 shape 改变会触发新的 tracing 和编译。
+> **核心结论**：对本 Lab 的函数，`jax.jit` 会把 Python 函数 trace 成 Jaxpr，再 lower 为 StableHLO，最后通过编译后端和 PJRT 在 CPU 上执行。在这里的缓存键不变时，第二次相同 shape/dtype 调用不会重新 tracing，但仍会执行函数计算；输入 shape 改变会触发新的 tracing。是否复用或重新生成编译产物，需要另行捕获编译日志或 cache 行为证明。
 
 | 交互 | Trace | Run | Hack | 手动编译 | Use |
 |:---:|:---:|:---:|:---:|:---:|:---:|
@@ -114,6 +114,20 @@ call=1 shape=(4,) trace_count=1 result=[1.0, 3.0, 5.0, 7.0]
 call=2 shape=(4,) trace_count=1 result=[1.0, 3.0, 5.0, 7.0]
 call=3 shape=(5,) trace_count=2 result=[1.0, 3.0, 5.0, 7.0, 9.0]
 ```
+
+`run` 阶段会先检查 shape 和 tracing 计数，不满足上述不变量时返回非零状态。生成可审查
+的 capture 时，还可以记录运行结束后实际映射的 jaxlib shared objects：
+
+```bash
+.venv/bin/python labs/001-jit-cpu/probe.py --stage run \
+  --baseline-manifest manifests/baseline.json \
+  --native-binaries-manifest /tmp/jaxlib-native-binaries.json
+```
+
+probe 会原样复用 baseline 中已经核验的 jaxlib distribution identity，因此锁定 wheel、
+仓库内 wheel 和 source build manifest 三种来源不会被重新猜测。提交为 capture 时，把输出
+写入 capture 目录；inventory 只保存 package-relative path、可用的仓库相对路径、文件大小、
+SHA-256 和 runtime roles，不写入进程或主机的绝对路径。
 
 ## 执行路径
 
