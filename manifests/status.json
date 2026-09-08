@@ -1,7 +1,7 @@
 {
   "$schema": "schema/project-status.schema.json",
   "schema_version": "1.0",
-  "updated_at": "2026-09-08T18:16:32+08:00",
+  "updated_at": "2026-09-08T23:25:22+08:00",
   "objective": "Build a version-pinned, coverage-measured, searchable and executable white-box account of JAX-to-TPU, including transformations, compiler passes, libtpu compiler/runtime, LLO and hardware mapping.",
   "plan_path": "PLAN.md",
   "baseline_path": "manifests/baseline.json",
@@ -119,6 +119,22 @@
         "P1 actions, pinned baselines and coverage depth are unchanged; this milestone adds historical research context and no runtime experiments.",
         "Passed contributor membership matching, complete author-query checks, archived snapshot hashes, metadata/link/publication checks, project-status and evidence validation, and both corresponding selftests."
       ]
+    },
+    {
+      "id": "plan-engineering-outcomes",
+      "title": "Define research background and motivation around engineering outcomes",
+      "state": "complete",
+      "completed_at": "2026-09-08T23:25:22+08:00",
+      "artifacts": [
+        "PLAN.md"
+      ],
+      "notes": [
+        "Reframed the background around organization-origin cross-layer performance work and the path from symptoms to source changes and verified outcomes.",
+        "Motivation now covers total delivery cost, choice of objective and intervention point, bounded and recoverable experimentation, and verifiable semantics and performance. Team learning and upstream collaboration remain explicit.",
+        "AI is a consumer and execution collaborator of the JAX-to-TPU research artifacts. Benefits are evaluation targets, not measured productivity claims or assertions that AI cannot solve the historical cases.",
+        "The organization case table, analysis boundary, pinned baselines, coverage, current phase and Q005 recovery queue are preserved. No runtime experiment or AI comparison was performed."
+      ],
+      "next_command": ".venv/bin/python -B tools/project-status.py"
     }
   ],
   "active_work": [
