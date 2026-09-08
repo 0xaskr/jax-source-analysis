@@ -5,9 +5,70 @@
 > 当前阶段：P1 runtime provenance 与 source-built jaxlib
 > 当前工作重点：先补齐当前 wheel 的动态依赖/loader resolution，再完成可留证的源码构建、隔离安装和运行时 provenance 验证
 
-## 1. 任务定义
+## 1. 背景、动机与任务定义
 
-本项目面向刚进入 JAX 软件栈的 kernel 开发者，建设一套版本固定、源码可跳转、实验可执行、编译产物可回放、源码修改可验证的 JAX → TPU 白盒资料库。
+### 1.1 工程背景
+
+本项目源于基于 JAX/TPU 软件栈开展 AI Infra 高性能计算与 kernel 优化的工程实践。
+发起者在实际工作中遇到过需要沿软件栈逐层定位的问题：当优化需要改变整个模型的
+计算图或 HLO 时，首先需要弄清相关表示在哪里生成、由谁变换、应该在哪个位置介入。
+对于刚进入团队的开发者，困难还包括认识软件栈有哪些组成部分，以及这些部分如何
+共同完成一次编译和执行。
+
+这些问题使源码研究具有直接的工程用途。一个性能需求可能从模型或 kernel 仓库
+提出，却需要在 JAX 的表达与变换规则、编译器接口、XLA pass、Pallas/Mosaic lowering、
+libtpu 或分析工具中获得支持。判断需求应落在哪一层、应由哪个项目实现，以及局部
+绕过能否替代长期修复，本身就是性能工程的一部分。
+
+本轮以获授权的组织 PR 和公开上游 issue/PR 为背景材料，追踪了提出问题、讨论修改
+位置、实现或绕过、回归验证以及关闭原因。公开案例与状态见
+[`docs/research/background-motivation-cases.md`](docs/research/background-motivation-cases.md)，
+其来源元数据见
+[`docs/research/background-motivation-sources.json`](docs/research/background-motivation-sources.json)。
+它们证明这些工程问题与需求确实被提出过；其中的历史测试、性能报告和根因假设不
+构成本项目固定基线上的执行证据，也不提高 coverage depth。
+
+### 1.2 真实案例揭示的问题
+
+| 工程问题 | 代表案例 | 对本项目的要求 |
+|---|---|---|
+| 找到 HLO 改写入口后，仍可能被跨语言、跨线程的编译调用链阻塞 | JAX [#38829](https://github.com/jax-ml/jax/issues/38829) 的 TPU AOT 回调死锁报告；对应 [#38943](https://github.com/jax-ml/jax/pull/38943) 未合并，作者在 OpenXLA 执行模型变化后关闭两者 | 同时追踪编译载荷和控制调用链，核对实际消除问题的修改及其版本 |
+| 当前层能够表达一个选项，不代表下游已经支持或保留其语义 | JAX [#33543](https://github.com/jax-ml/jax/issues/33543) 的 tiling 约束需要 XLA 支持；[#29223](https://github.com/jax-ml/jax/issues/29223) 讨论 composite 与自定义分片之间的信息传递 | 建立表示、属性、pass stage 与能力边界的索引，能够形成明确的上下游接口需求 |
+| kernel 接入后，变换和分片规则仍可能影响通信与正确性 | JAX [#21855](https://github.com/jax-ml/jax/issues/21855) 讨论 AD、`shard_map` 和 Pallas 组合后的额外 AllReduce；[#39744](https://github.com/jax-ml/jax/issues/39744) 报告外层内存放置与内层 DMA 的可疑交互 | 联合观察外层图与内层 kernel，验证变换规则、内存空间和版本组合 |
+| 一次编译或一次运行成功，不能覆盖缓存重用、设备子集和数值变化 | JAX [#38004](https://github.com/jax-ml/jax/issues/38004) 区分 cold/warm cache 与 TPU 子集；[#34080](https://github.com/jax-ml/jax/issues/34080) 讨论 batch padding 与浮点结果差异 | 用明确的场景矩阵验证缓存、topology、数值容差和回滚行为 |
+| 看到 profile 或 IR，还需要知道它能回答什么问题 | JAX [#22270](https://github.com/jax-ml/jax/issues/22270) 请求更便于检查优化结果的 HLO 表示；公开工具 PR [#104](https://github.com/primatrix/skills/pull/104) 补充静态 buffer assignment 观察面 | 将源码、IR、静态内存计划和运行时事件关联起来，保留各自的统计口径 |
+| 报错层、最终修复层和维护者归属可能不同 | JAX [#36750](https://github.com/jax-ml/jax/issues/36750) 后续定位到下游 kernel；[#40093](https://github.com/jax-ml/jax/issues/40093) 的硬件支持请求被维护者明确关闭为不计划实现 | 能缩小复现、纠正归因、找到负责方，并接受有证据的支持边界 |
+
+以上案例包含已合并改动、未合并提案、仍开放的问题、预期行为和不计划实现的请求。
+不能把 PR 合并、issue 关闭、临时绕过和上游根因修复视为同一状态。与 CPU/GPU 有关
+的案例只提供公共接口或排查方法的对照，不外推为 TPU 行为。
+
+### 1.3 研究动机与预期价值
+
+1. **建立能够用于工作的软件栈认识。** 让工程师知道每层的职责、输入输出和边界，
+   从模型调用、kernel、IR 或故障症状出发，都能找到相关源码与观察点。
+2. **降低定位和选择修改位置的成本。** 对图改写、融合、通信或内存优化需求，能够
+   判断应修改 JAX 程序、变换规则、lowering、compiler pass、runtime 还是工具，并说明
+   所选位置能获得哪些信息、必须保持哪些不变量。
+3. **把局部优化需求转化为可协作的上下游需求。** 当当前仓库无法独立完成优化时，
+   提供最小复现、相关版本、IR 差异、接口合同和验收条件，支持 issue、RFC 或 patch
+   的讨论；跟踪临时绕过的适用范围及后续撤销条件。
+4. **建立修改后的验证能力。** 将数值、gradient、sharding、alias/donation、缓存、
+   target 和性能分别验证，能够证明源码修改实际进入了所加载的运行产物，并在升级
+   或回滚后重新检查相关结论。
+5. **提高性能分析的可解释性。** 解释最终编译产物和测量口径，区分模型端到端指标、
+   kernel 指标、静态计划与动态事件，减少由观察范围或版本变化造成的错误归因。
+6. **沉淀团队可复用的学习与排查材料。** 把资深工程师定位问题时得到的链路、规则
+   和实验整理为新人可进入、后续维护者可复查的源码导读、索引和可运行案例。
+
+本项目的价值通过能否解释、定位、修改和验证代表性工程问题来衡量。案例用于确定
+研究问题和验收任务；上层框架自身的内部设计仍服从下述 JAX/Pallas 分析边界。
+
+### 1.4 任务定义与分析边界
+
+本项目面向从事 JAX/TPU 模型性能与 kernel 优化的 AI Infra 工程师，同时为刚进入该
+软件栈的开发者提供学习路径，建设一套版本固定、源码可跳转、实验可执行、编译产物
+可回放、源码修改可验证的 JAX → TPU 白盒资料库。
 
 分析边界从 JAX API 开始。控制调用链与编译载荷链分开记录，避免把 host API
 调用顺序和 backend 内部 pass 顺序画成一条线。
@@ -756,6 +817,7 @@ capture；缺失层必须保留原因和解除动作，不能用较弱 capture �
 | 2026-09-08 | 用 coverage inventory 度量白盒范围 | 架构骨架、真实 feature 覆盖和外部阻塞必须可区分 |
 | 2026-09-08 | 单个 capture 原子化，纵向 dossier 聚合分支相关 capture | 避免要求 CPU、普通 JAX 或 source-only 证据伪造 TPU/Mosaic/LLO 产物 |
 | 2026-09-08 | 单列 TPU runtime/control-plane 阶段 | compile、load、execute 与硬件 profile 需要不同证据 |
+| 2026-09-08 | 用真实跨仓库问题补充背景与动机，同时服务现有工程师和新人 | 研究需要支撑定位、选择修改层、上下游协作与验证；历史 issue/PR 不提升固定基线 coverage |
 
 ## 17. 状态更新记录
 
@@ -789,3 +851,11 @@ capture；缺失层必须保留原因和解除动作，不能用较弱 capture �
   P1 固定的外部 Bazel 依赖闭包与 `tools/build-jaxlib.py` 复用 cache，产生持久日志、wheel
   SHA-256 和隔离环境验证。
 - GitHub 远端为 `origin`；每个后续较大里程碑完成后提交并推送。
+
+### 2026-09-08：背景与动机补充
+
+- 根据发起者的 AI Infra/kernel 优化工作背景，补充跨层定位、选择修改层和上下游需求协作的动机。
+- 增加 14 个公开历史案例及来源元数据；受限补充材料仅保存 opaque locator 和 manifest hash。
+- 案例包括开放问题、已合并变更、未合并提案、下游绕过、预期行为及不计划支持的请求；没有增加固定基线执行证据或 coverage depth。
+- 本轮只完善背景、动机和读者定位；P1 的恢复队列保留。恢复命令仍为 `.venv/bin/python -B tools/project-status.py --check`，源码基线恢复后再继续其打印的第一项 ready action。
+- 本轮最初的状态门禁因源码 checkout 缺失/不匹配失败；源码随后可用，复查 project-status、evidence validator 及两者 selftest 均通过。另已检查本地链接、代码围栏、来源快照哈希、JSON 结构与公开材料边界；没有重跑案例中的设备实验。

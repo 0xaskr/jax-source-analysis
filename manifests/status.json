@@ -1,7 +1,7 @@
 {
   "$schema": "schema/project-status.schema.json",
   "schema_version": "1.0",
-  "updated_at": "2026-09-08T15:10:52+08:00",
+  "updated_at": "2026-09-08T17:45:22+08:00",
   "objective": "Build a version-pinned, coverage-measured, searchable and executable white-box account of JAX-to-TPU, including transformations, compiler passes, libtpu compiler/runtime, LLO and hardware mapping.",
   "plan_path": "PLAN.md",
   "baseline_path": "manifests/baseline.json",
@@ -57,6 +57,22 @@
         "Pinned-source cross-review covers the public JAX, StableHLO/Shardy, XLA and PJRT/libtpu ABI seams; it does not claim libtpu, LLO or hardware internals are covered.",
         "Semantic validators reject forged or spliced source, binary, capture, replay, coverage and recovery-state relationships through isolated negative fixtures.",
         "VERSION-SKEW is a provenance qualifier, not an evidence level; the current CPU jaxlib remains intentionally version-skewed."
+      ]
+    },
+    {
+      "id": "plan-background-motivation",
+      "title": "Engineering background and motivation grounded in public cases with a restricted supporting archive",
+      "state": "complete",
+      "completed_at": "2026-09-08T17:45:22+08:00",
+      "artifacts": [
+        "PLAN.md",
+        "docs/research/background-motivation-cases.md",
+        "docs/research/background-motivation-sources.json"
+      ],
+      "notes": [
+        "The documentation milestone adds fourteen public historical cases and clarifies the audience, cross-stack debugging, intervention points, upstream collaboration and validation needs.",
+        "Restricted source material remains outside Git behind an opaque archive locator and manifest hash. Historical issue and PR reports do not establish baseline execution evidence or increase coverage depth.",
+        "The P1 recovery queue is unchanged. Initial recovery checks encountered unavailable pinned source revisions; final project-status and evidence validation plus their selftests passed once the pinned source trees were available. No runtime experiment was performed for this milestone."
       ]
     }
   ],

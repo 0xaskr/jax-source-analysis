@@ -1,0 +1,598 @@
+{
+  "schema_version": "1.0",
+  "purpose": "Historical engineering cases supporting PLAN background and motivation; not baseline runtime evidence.",
+  "retrieved_at": "2026-09-08T09:44:04.809904+00:00",
+  "coverage_depth_changed": false,
+  "case_count": 14,
+  "cases": [
+    {
+      "id": "C01",
+      "topic": "HLO callback and topology compilation",
+      "runtime_verification": "not-performed",
+      "sources": [
+        {
+          "url": "https://github.com/jax-ml/jax/issues/38829",
+          "author": "hhhhsdxxxx",
+          "created_at": "2026-06-28T14:30:26Z",
+          "updated_at": "2026-08-11T08:59:20Z",
+          "state": "closed",
+          "state_reason": "completed",
+          "kind": "issue",
+          "snapshot_artifact_uri": "artifact:background-motivation-public-20260908:jax-ml:jax:38829",
+          "snapshot_files": {
+            "comments.json": {
+              "sha256": "06a2838efea0e8a6dc1376b8a3ed3b38183115b6f3ead97962c720d6b966ba71",
+              "size_bytes": 3167
+            },
+            "issue.json": {
+              "sha256": "b5770b75efbbc3b6518e9cdca87093cd8954d5263e8458f8433158e9cac2b4ab",
+              "size_bytes": 10773
+            }
+          }
+        },
+        {
+          "url": "https://github.com/jax-ml/jax/pull/38943",
+          "author": "hhhhsdxxxx",
+          "created_at": "2026-07-06T10:37:31Z",
+          "updated_at": "2026-08-11T08:59:17Z",
+          "state": "closed",
+          "state_reason": null,
+          "kind": "pull_request",
+          "snapshot_artifact_uri": "artifact:background-motivation-public-20260908:jax-ml:jax:38943",
+          "snapshot_files": {
+            "comments.json": {
+              "sha256": "e0cc4cf754cf48b3b85ab9416999b40468999164caf8d3c972c28496596b6129",
+              "size_bytes": 10113
+            },
+            "files.json": {
+              "sha256": "a3d66a923c4a12da97890a3e2939da460fc303bec4e557bd794888d4d3596893",
+              "size_bytes": 943
+            },
+            "issue.json": {
+              "sha256": "e0e3e09c43ac7e7c780d4c56a1291a5a7f64a9a644016eb190138d158744aa18",
+              "size_bytes": 4420
+            },
+            "pull.json": {
+              "sha256": "5cab6eb78cfb8cf8f08fd4450b546b0cb0ca835d7f3342b392ae75cc3eb58b6d",
+              "size_bytes": 18548
+            },
+            "review-comments.json": {
+              "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+              "size_bytes": 3
+            },
+            "reviews.json": {
+              "sha256": "e5bf61edb7ea6ac2e4cc76bfb97eef529ca647df0af88881a0f2f1df52c163bd",
+              "size_bytes": 2813
+            }
+          },
+          "merged_at": null,
+          "head_revision": "b764125f980f5d04600d1c190264ce1a52bcd7e4",
+          "base_revision": "7a46165bf8aedbc54f8217c379f922ef23dc8c95"
+        },
+        {
+          "kind": "commit",
+          "url": "https://github.com/openxla/xla/commit/329d8923474b880c43940b40ff8d99d29172fcea",
+          "revision": "329d8923474b880c43940b40ff8d99d29172fcea",
+          "snapshot_artifact_uri": "artifact:background-motivation-public-20260908:xla:329d892",
+          "snapshot_files": {
+            "xla-329d892.json": {
+              "sha256": "1b486f1425389af1d0cb043678ed975b9c8d9decadd537b6869cce3c6350f66a",
+              "size_bytes": 15297
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "C02",
+      "topic": "Layout tiling requires downstream support",
+      "runtime_verification": "not-performed",
+      "sources": [
+        {
+          "url": "https://github.com/jax-ml/jax/issues/33543",
+          "author": "yuwei-qin",
+          "created_at": "2025-11-25T21:00:45Z",
+          "updated_at": "2025-11-25T22:18:55Z",
+          "state": "open",
+          "state_reason": null,
+          "kind": "issue",
+          "snapshot_artifact_uri": "artifact:background-motivation-public-20260908:jax-ml:jax:33543",
+          "snapshot_files": {
+            "comments.json": {
+              "sha256": "2a0c73434c7e37c02bf05ccf43e49a6986ba593b06e905edcf39192467bb2872",
+              "size_bytes": 20225
+            },
+            "issue.json": {
+              "sha256": "f4a98275b201a160550c8e82bb98720cf7a698b4b50bc424a56f9d033cce6e65",
+              "size_bytes": 5728
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "C03",
+      "topic": "Composite preservation across partitioning",
+      "runtime_verification": "not-performed",
+      "sources": [
+        {
+          "url": "https://github.com/jax-ml/jax/issues/29223",
+          "author": "wenscarl",
+          "created_at": "2025-06-03T21:33:40Z",
+          "updated_at": "2025-06-05T14:58:56Z",
+          "state": "open",
+          "state_reason": null,
+          "kind": "issue",
+          "snapshot_artifact_uri": "artifact:background-motivation-public-20260908:jax-ml:jax:29223",
+          "snapshot_files": {
+            "comments.json": {
+              "sha256": "2143832ccbaba8a837e201045f21a37593b868b308995f0b31dad3bc9ebb4ec2",
+              "size_bytes": 10269
+            },
+            "issue.json": {
+              "sha256": "d991e5c1bd677bbe5e5913933cba5175b4d6b35d7e1c7cbfa62b3d45456544f1",
+              "size_bytes": 8358
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "C04",
+      "topic": "AD, replication rules and Pallas communication",
+      "runtime_verification": "not-performed",
+      "sources": [
+        {
+          "url": "https://github.com/jax-ml/jax/issues/21855",
+          "author": "southfreebird",
+          "created_at": "2024-06-13T17:44:07Z",
+          "updated_at": "2026-07-24T08:44:23Z",
+          "state": "open",
+          "state_reason": "reopened",
+          "kind": "issue",
+          "snapshot_artifact_uri": "artifact:background-motivation-public-20260908:jax-ml:jax:21855",
+          "snapshot_files": {
+            "comments.json": {
+              "sha256": "e7407446d256242d62f24a9a480068b0a4fd2fe9ba20aee4c90c403220a617c7",
+              "size_bytes": 11824
+            },
+            "issue.json": {
+              "sha256": "be811d9e299daa2734f971cc7a7f205f757313ca2ff2ad87a4860373e7cbfbbb",
+              "size_bytes": 14171
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "C05",
+      "topic": "Outer memory placement and inner DMA consistency",
+      "runtime_verification": "not-performed",
+      "sources": [
+        {
+          "url": "https://github.com/jax-ml/jax/issues/39744",
+          "author": "m-braganca",
+          "created_at": "2026-08-05T10:34:54Z",
+          "updated_at": "2026-08-07T08:55:36Z",
+          "state": "open",
+          "state_reason": null,
+          "kind": "issue",
+          "snapshot_artifact_uri": "artifact:background-motivation-public-20260908:jax-ml:jax:39744",
+          "snapshot_files": {
+            "comments.json": {
+              "sha256": "1bca15e7129fadebeca67dc95c090c667da13bf3f889696ce27df64237edf596",
+              "size_bytes": 10867
+            },
+            "issue.json": {
+              "sha256": "80551cba1c00903a42b7d8ad7f75bb19379b0f17022b3e4982411b4114cb9bbd",
+              "size_bytes": 5296
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "C06",
+      "topic": "Persistent cache and TPU device subsets",
+      "runtime_verification": "not-performed",
+      "sources": [
+        {
+          "url": "https://github.com/jax-ml/jax/issues/38004",
+          "author": "Rodrian7",
+          "created_at": "2026-05-27T09:24:27Z",
+          "updated_at": "2026-06-22T09:10:32Z",
+          "state": "open",
+          "state_reason": null,
+          "kind": "issue",
+          "snapshot_artifact_uri": "artifact:background-motivation-public-20260908:jax-ml:jax:38004",
+          "snapshot_files": {
+            "comments.json": {
+              "sha256": "1785cea1077d812e0f5f38b65a8288b03df76dcb8956e98c7ca48db82516140e",
+              "size_bytes": 2112
+            },
+            "issue.json": {
+              "sha256": "ea61235fb74429c6253f1178d4c1ea87f74e730bb9e67f1d775c56ede9f3fcd6",
+              "size_bytes": 6989
+            }
+          }
+        },
+        {
+          "url": "https://github.com/sgl-project/sglang-jax/pull/1225",
+          "author": "Rodrian7",
+          "created_at": "2026-05-27T04:51:13Z",
+          "updated_at": "2026-05-27T14:53:10Z",
+          "state": "closed",
+          "state_reason": null,
+          "kind": "pull_request",
+          "snapshot_artifact_uri": "artifact:background-motivation-public-20260908:sgl-project:sglang-jax:1225",
+          "snapshot_files": {
+            "comments.json": {
+              "sha256": "848aacf9430ffd2f900a36050f81276add5aaf727de5e972f6d4ace15755f044",
+              "size_bytes": 4812
+            },
+            "files.json": {
+              "sha256": "52626ffd26b704b9ec69c6912e7b9f2c8da78241044a297922776e0871c80a5b",
+              "size_bytes": 3324
+            },
+            "issue.json": {
+              "sha256": "c8ed4d2cc538f1d34e9c5a49604e006cb046220f6a568cda65e919f378064a1a",
+              "size_bytes": 6779
+            },
+            "pull.json": {
+              "sha256": "18e26c9b1c78a4bf41ab4462d0397cb1acc0fa704e90ec972841e25ff3b99a90",
+              "size_bytes": 16487
+            },
+            "review-comments.json": {
+              "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+              "size_bytes": 3
+            },
+            "reviews.json": {
+              "sha256": "4c2af6128f272d3db9afb80baa3c7e200f01447c96ab116403afaab5b388fbe1",
+              "size_bytes": 1857
+            }
+          },
+          "merged_at": "2026-05-27T14:53:10Z",
+          "head_revision": "234c9ca8535d778c6ef7c64eb158d8330ce8d179",
+          "base_revision": "889b3ceb2502805ffc8609d851385c06487b3398"
+        }
+      ]
+    },
+    {
+      "id": "C07",
+      "topic": "Numerical corruption, alias hypotheses and ownership",
+      "runtime_verification": "not-performed",
+      "sources": [
+        {
+          "url": "https://github.com/jax-ml/jax/issues/35409",
+          "author": "martin-marek",
+          "created_at": "2026-02-25T21:05:08Z",
+          "updated_at": "2026-03-03T16:24:24Z",
+          "state": "open",
+          "state_reason": null,
+          "kind": "issue",
+          "snapshot_artifact_uri": "artifact:background-motivation-public-20260908:jax-ml:jax:35409",
+          "snapshot_files": {
+            "comments.json": {
+              "sha256": "fd48f9ae153da715842ad0fc786abe9c6ff9eff42b8e76dae3ce8a26f37a7a70",
+              "size_bytes": 6185
+            },
+            "issue.json": {
+              "sha256": "4843e6b449c9169424c2bd02db273f9e64b81648e250582488003cd943742a89",
+              "size_bytes": 14890
+            }
+          }
+        },
+        {
+          "url": "https://github.com/openxla/xla/issues/38597",
+          "author": "martin-marek",
+          "created_at": "2026-03-03T14:45:06Z",
+          "updated_at": "2026-08-05T06:40:43Z",
+          "state": "open",
+          "state_reason": null,
+          "kind": "issue",
+          "snapshot_artifact_uri": "artifact:background-motivation-public-20260908:openxla:xla:38597",
+          "snapshot_files": {
+            "comments.json": {
+              "sha256": "0539a1f63d11e92d11bcdc08bfb8c8323e00643e7d18eeee0a62474c8eb27527",
+              "size_bytes": 9647
+            },
+            "issue.json": {
+              "sha256": "5e56e2e1629f85d584236822c10c9c6d3d47ce7edf4a0cd01c10b36c610a0d0b",
+              "size_bytes": 6633
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "C08",
+      "topic": "Compiler diagnostic and downstream kernel repair",
+      "runtime_verification": "not-performed",
+      "sources": [
+        {
+          "url": "https://github.com/jax-ml/jax/issues/36750",
+          "author": "shungcp",
+          "created_at": "2026-04-14T03:36:36Z",
+          "updated_at": "2026-04-23T17:12:22Z",
+          "state": "closed",
+          "state_reason": "not_planned",
+          "kind": "issue",
+          "snapshot_artifact_uri": "artifact:background-motivation-public-20260908:jax-ml:jax:36750",
+          "snapshot_files": {
+            "comments.json": {
+              "sha256": "77fc0e23b985bd445d6124218333bdf8c360e4b98f52b7034ff8bf27cfc4379a",
+              "size_bytes": 9515
+            },
+            "issue.json": {
+              "sha256": "85ca419ab4e098c759d0fcf100a1f6a902b633e2182fd2e04edb05f669fb4372",
+              "size_bytes": 8032
+            }
+          }
+        },
+        {
+          "url": "https://github.com/vllm-project/tpu-inference/pull/2138",
+          "author": "clee1994",
+          "created_at": "2026-04-03T18:40:25Z",
+          "updated_at": "2026-04-08T11:18:21Z",
+          "state": "closed",
+          "state_reason": null,
+          "kind": "pull_request",
+          "snapshot_artifact_uri": "artifact:background-motivation-public-20260908:vllm-project:tpu-inference:2138",
+          "snapshot_files": {
+            "comments.json": {
+              "sha256": "3fe5572fc3999c265469e528f0dc9a5f838edd351d44b9f64655c8b3861d0d9b",
+              "size_bytes": 6592
+            },
+            "files.json": {
+              "sha256": "a9a2741a1db2d5da1e5afabaf5e9b3039247eed2079597b5eeb8af51cd178e9c",
+              "size_bytes": 39619
+            },
+            "issue.json": {
+              "sha256": "7660b484be7284ac2868393b381dcdfa4ee7369723c82eed720413c76caee402",
+              "size_bytes": 4645
+            },
+            "pull.json": {
+              "sha256": "f72038f5941b1a25225496901f546e2201551820b731964a0196cac3ae74b284",
+              "size_bytes": 25427
+            },
+            "review-comments.json": {
+              "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+              "size_bytes": 3
+            },
+            "reviews.json": {
+              "sha256": "5354594d6264a6824d1a1dcee0891c57a3da9a6066c72e1f0388d5755ee069aa",
+              "size_bytes": 1830
+            }
+          },
+          "merged_at": "2026-04-03T23:29:38Z",
+          "head_revision": "17a81e941f2b0137e3c5b6f5e7f821d392eeaf07",
+          "base_revision": "10c269b0cf8a18628875c7b27a3e3d76f25b8920"
+        }
+      ]
+    },
+    {
+      "id": "C09",
+      "topic": "Hardware support request declined",
+      "runtime_verification": "not-performed",
+      "sources": [
+        {
+          "url": "https://github.com/jax-ml/jax/issues/40093",
+          "author": "ayaka14732",
+          "created_at": "2026-08-19T17:07:41Z",
+          "updated_at": "2026-08-24T18:21:41Z",
+          "state": "closed",
+          "state_reason": "completed",
+          "kind": "issue",
+          "snapshot_artifact_uri": "artifact:background-motivation-public-20260908:jax-ml:jax:40093",
+          "snapshot_files": {
+            "comments.json": {
+              "sha256": "43200550b1134c8c045903984cf665d9960ee471a79ce329608053b3d7c28675",
+              "size_bytes": 6380
+            },
+            "issue.json": {
+              "sha256": "d1c3c552656ba2607a7d8ab1a9bfa4da33a3005694bd1b33c38e61e26d473158",
+              "size_bytes": 4166
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "C10",
+      "topic": "Batch padding and numerical expectations",
+      "runtime_verification": "not-performed",
+      "sources": [
+        {
+          "url": "https://github.com/jax-ml/jax/issues/34080",
+          "author": "aolemila",
+          "created_at": "2025-12-22T07:08:33Z",
+          "updated_at": "2026-07-10T02:11:44Z",
+          "state": "closed",
+          "state_reason": "completed",
+          "kind": "issue",
+          "snapshot_artifact_uri": "artifact:background-motivation-public-20260908:jax-ml:jax:34080",
+          "snapshot_files": {
+            "comments.json": {
+              "sha256": "4e6f51284d3b4044fed22b871593ea61361756accc5e2658dbc688e4e5b2ef88",
+              "size_bytes": 68333
+            },
+            "issue.json": {
+              "sha256": "054c2fb9a4c462a0d8a816c31beff73881f38f5a285d3fbcc24a4dce415f6b4f",
+              "size_bytes": 12723
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "C11",
+      "topic": "Inspecting optimized HLO",
+      "runtime_verification": "not-performed",
+      "sources": [
+        {
+          "url": "https://github.com/jax-ml/jax/issues/22270",
+          "author": "balancap",
+          "created_at": "2024-07-04T09:56:15Z",
+          "updated_at": "2024-07-08T17:04:05Z",
+          "state": "open",
+          "state_reason": null,
+          "kind": "issue",
+          "snapshot_artifact_uri": "artifact:background-motivation-public-20260908:jax-ml:jax:22270",
+          "snapshot_files": {
+            "comments.json": {
+              "sha256": "93769b4712ba9fa5599e18d2e7c1161928083fb37eb264e13b3444128efeb96d",
+              "size_bytes": 9378
+            },
+            "issue.json": {
+              "sha256": "3638d6737434fc922fe38ae7dfa8929359a770b885bcd0e2efe992eb32653dc1",
+              "size_bytes": 7064
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "C12",
+      "topic": "Static memory plan and runtime trace window",
+      "runtime_verification": "not-performed",
+      "sources": [
+        {
+          "url": "https://github.com/primatrix/skills/pull/104",
+          "author": "sii-xinglong",
+          "created_at": "2026-05-27T02:11:46Z",
+          "updated_at": "2026-05-27T02:13:21Z",
+          "state": "closed",
+          "state_reason": null,
+          "kind": "pull_request",
+          "snapshot_artifact_uri": "artifact:background-motivation-public-20260908:primatrix:skills:104",
+          "snapshot_files": {
+            "comments.json": {
+              "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+              "size_bytes": 3
+            },
+            "files.json": {
+              "sha256": "2601088a0082e6d53924f8eba11026af1d12f6654861894023dab395c425e30f",
+              "size_bytes": 93513
+            },
+            "issue.json": {
+              "sha256": "7582121ca6593d974568d1e4ab434e98301f3d13bf9655c24cc9a4a10e45a375",
+              "size_bytes": 7331
+            },
+            "pull.json": {
+              "sha256": "63a55992973c70b2559581f90a6892779eb0397bedc57ffca0995739aa5f55f6",
+              "size_bytes": 22601
+            },
+            "review-comments.json": {
+              "sha256": "1c52343cf44f789faa9da472384a8808182c75ca02bdca917220f1f4d2e6f84d",
+              "size_bytes": 10382
+            },
+            "reviews.json": {
+              "sha256": "5ebef9d8dc74c20fb13efb66e9b3dbda11f1e5aeb99309cdd6171b440e812d8f",
+              "size_bytes": 2663
+            }
+          },
+          "merged_at": "2026-05-27T02:12:07Z",
+          "head_revision": "0fbca714bdec9e48489fb2feea8e993ca3e6dd4c",
+          "base_revision": "4c62b17d0cec71ef95a3aa27118e88b55e95ba65"
+        }
+      ]
+    },
+    {
+      "id": "C13",
+      "topic": "Workload quantization requires provider changes",
+      "runtime_verification": "not-performed",
+      "sources": [
+        {
+          "url": "https://github.com/primatrix/tokamax/pull/2",
+          "author": "sii-xinglong",
+          "created_at": "2026-03-24T14:21:17Z",
+          "updated_at": "2026-03-25T01:40:04Z",
+          "state": "closed",
+          "state_reason": null,
+          "kind": "pull_request",
+          "snapshot_artifact_uri": "artifact:background-motivation-public-20260908:primatrix:tokamax:2",
+          "snapshot_files": {
+            "comments.json": {
+              "sha256": "a63b2f5839a9618c0fdddededa0731bbd91900a1248d88c04f6bafd5021e94bc",
+              "size_bytes": 25668
+            },
+            "files.json": {
+              "sha256": "405fcc40ed3f61491f72a41c99dde33646c92927e78513949b5e5ca54fd4b871",
+              "size_bytes": 18759
+            },
+            "issue.json": {
+              "sha256": "346111b4e8cf68bbd48f9fbe89c87b6a9d0b9e09fd9f818de11bf99017adbaab",
+              "size_bytes": 5909
+            },
+            "pull.json": {
+              "sha256": "40b2958bfd0bd0e30214e6bc19c71be20cc8270fd104e326ce93b6639156b776",
+              "size_bytes": 21345
+            },
+            "review-comments.json": {
+              "sha256": "23c9e3cc5f6244d6390008da67732a890cb4cc998fdd525688e5d5445cd8bc88",
+              "size_bytes": 35497
+            },
+            "reviews.json": {
+              "sha256": "29650fb0179959c40d94106bfb5b44b1f881ed92874a4d355e9d914b3d242a6e",
+              "size_bytes": 21773
+            }
+          },
+          "merged_at": "2026-03-25T01:40:04Z",
+          "head_revision": "5bea4bd3a6083b533a904c97d5830845fe662c26",
+          "base_revision": "9b95a08af4e050ea8cc59a092dd24091ebca1108"
+        }
+      ]
+    },
+    {
+      "id": "C14",
+      "topic": "Application overlap and async dispatch",
+      "runtime_verification": "not-performed",
+      "sources": [
+        {
+          "url": "https://github.com/primatrix/sglang-jax/pull/291",
+          "author": "pengchengneo",
+          "created_at": "2026-05-07T13:57:09Z",
+          "updated_at": "2026-05-07T13:57:19Z",
+          "state": "open",
+          "state_reason": null,
+          "kind": "pull_request",
+          "snapshot_artifact_uri": "artifact:background-motivation-public-20260908:primatrix:sglang-jax:291",
+          "snapshot_files": {
+            "comments.json": {
+              "sha256": "836d8d5eae455148380918abc1a76d6052d70c703544e8ae080dc49f80ad5b2f",
+              "size_bytes": 8400
+            },
+            "files.json": {
+              "sha256": "fa083ecf1dd901bdc72910ea7f7f1c3a0c8b37a562a36284da01697e2724f8cd",
+              "size_bytes": 11778
+            },
+            "issue.json": {
+              "sha256": "f4231337c598a81c4feb4d72e7b0057c5f41ba720b027e3034e1fa5f119293eb",
+              "size_bytes": 5318
+            },
+            "pull.json": {
+              "sha256": "403ee1ae1b8ab262feced6bc669a0d44548bf8dc4bd1fd2f185390663aa9dbbf",
+              "size_bytes": 20998
+            },
+            "review-comments.json": {
+              "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+              "size_bytes": 3
+            },
+            "reviews.json": {
+              "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+              "size_bytes": 3
+            }
+          },
+          "merged_at": null,
+          "head_revision": "298bcbd7d0311b4ddc009efd0f5deed77b4756fc",
+          "base_revision": "6b4c28bf2a45c63da06c169cbb383e8f87455066"
+        }
+      ]
+    }
+  ],
+  "restricted_archive": {
+    "artifact_uri": "artifact:background-motivation-internal-20260908",
+    "manifest_sha256": "5c000c63a21826c5c3fd2b357078c9b4449c437663a3c90e50a38cfca82e2806",
+    "retrieval": "Request the authorized local research archive from the project maintainer; original restricted records are not distributed in Git."
+  }
+}
