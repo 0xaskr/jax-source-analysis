@@ -369,6 +369,8 @@ P0 core 验收：新会话只读取本文件、baseline、coverage 和状态文�
 
 - [ ] 记录当前 wheel 的版本、路径、git hash 和动态依赖。
 - [x] 记录 JAX/XLA 使用的 Bazel、Clang、Python 和固定构建配置。
+- [x] 将核心源码、uv 和系统工具链恢复固化为环境锁、同步脚本及固定 Docker 环境；
+  宿主机 CPU 与容器严格 preflight 分别验证，保留原二进制哈希门禁。
 - [ ] 固定并归档 Bazel module graph、resolved repositories、registry/module extension
   输入和下载完整性，使外部依赖闭包可以审查与重放。
 - [ ] 从固定 JAX/XLA commit 构建 CPU jaxlib wheel。
@@ -851,6 +853,13 @@ capture；缺失层必须保留原因和解除动作，不能用较弱 capture �
   P1 固定的外部 Bazel 依赖闭包与 `tools/build-jaxlib.py` 复用 cache，产生持久日志、wheel
   SHA-256 和隔离环境验证。
 - GitHub 远端为 `origin`；每个后续较大里程碑完成后提交并推送。
+- 本机已恢复五个核心 submodule；`tools/sync-environment.py` 直接获取锁定 commit，
+  不自动暂存，并为中断下载、脏源码、路径/哈希和缓存提供检查。
+- `env/environment.lock.json` 与 Dockerfile 固定系统环境。Ubuntu Python
+  `3.12.3-1ubuntu0.15` 的官方包已证明匹配原构建 Python 字节，宿主机 `0.16` 保留。
+- 环境同步 17 项隔离测试、宿主机/容器 baseline 与历史 evidence、当前 CPU Lab、恢复
+  状态和容器严格 preflight 已通过；容器使用独立 venv。历史 capture 不重写为当前 HEAD，
+  新采集的 live-source gate 保留。Q005 与 Bazel 外部依赖闭包仍是后续顺序。
 
 ### 2026-09-08：背景与动机补充
 

@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0",
+  "platform": "linux/amd64",
+  "source_paths": [
+    "upstream/jax",
+    "upstream/xla",
+    "upstream/stablehlo",
+    "upstream/shardy",
+    "upstream/llvm-project"
+  ],
+  "python": {
+    "version": "3.12.3",
+    "path": "/usr/bin/python3.12",
+    "size_bytes": 8020928,
+    "sha256": "1643dacd9feaedc58f3cc581e4d22577dfe25c09b10282936186ccf0f2e61118",
+    "package": "python3.12-minimal=3.12.3-1ubuntu0.15",
+    "package_url": "https://security.ubuntu.com/ubuntu/pool/main/p/python3.12/python3.12-minimal_3.12.3-1ubuntu0.15_amd64.deb",
+    "package_sha256": "487383dc2a895e0a767d820e0e55f2ab7d6ebe4dccd3d2c0b81f00ee11bb1152"
+  },
+  "uv": {
+    "version": "0.12.9",
+    "url": "https://github.com/astral-sh/uv/releases/download/0.12.9/uv-x86_64-unknown-linux-gnu.tar.gz",
+    "member": "uv-x86_64-unknown-linux-gnu/uv",
+    "size_bytes": 49313824,
+    "sha256": "671793498fe0a545432e2524b6691ffb9eea4540d9fda43ca2f978df2dbf8426"
+  },
+  "bazel": {
+    "version": "8.7.0",
+    "url": "https://github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-linux-x86_64",
+    "path": "upstream/jax/bazel-8.7.0-linux-x86_64",
+    "sha256": "d7606e679b78067c811096fb3d6cf135225b528835ca396e3a4dddf957859544"
+  },
+  "git": {
+    "path": "/usr/bin/git",
+    "version": "git version 2.43.0",
+    "sha256": "2a8c18fbf43da9f692d75474c72bea9dfd796c260b0f3dfe456376abc3bbd668"
+  },
+  "clang": {
+    "version": "18.1.3",
+    "paths": ["/usr/bin/clang", "/usr/bin/clang++"]
+  },
+  "docker": {
+    "base_image": "ubuntu@sha256:33ceb71981b602c1a7443a53469e4dba065f7503eab3078a2d7a57a2ab987517",
+    "apt_snapshot": "20260907T000000Z",
+    "package_mirrors": [
+      "https://archive.ubuntu.com/ubuntu",
+      "https://security.ubuntu.com/ubuntu"
+    ],
+    "apt_packages": [
+      "python3.12=3.12.3-1ubuntu0.15",
+      "python3.12-minimal=3.12.3-1ubuntu0.15",
+      "libpython3.12-minimal=3.12.3-1ubuntu0.15",
+      "libpython3.12-stdlib=3.12.3-1ubuntu0.15",
+      "python3.12-venv=3.12.3-1ubuntu0.15",
+      "git=1:2.43.0-1ubuntu7.3",
+      "git-man=1:2.43.0-1ubuntu7.3",
+      "clang=1:18.0-59~exp2",
+      "clang-18=1:18.1.3-1ubuntu1",
+      "ca-certificates=20260601~24.04.1",
+      "binutils",
+      "build-essential",
+      "curl",
+      "pkg-config"
+    ],
+    "bootstrap_ca": {
+      "url": "https://security.ubuntu.com/ubuntu/pool/main/c/ca-certificates/ca-certificates_20260601~24.04.1_all.deb",
+      "size_bytes": 139430,
+      "sha256": "6bac2a01979e210d9eac1d4d56747ec709ea60654744d66705dc3c36e7629e50"
+    }
+  }
+}

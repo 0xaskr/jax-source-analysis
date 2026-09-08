@@ -1,6 +1,6 @@
 # 远端 Codex 接力上下文
 
-> 更新时间：2026-09-08 15:10（Asia/Shanghai）  
+> 更新时间：2026-09-08（已补充本机环境恢复结果，Asia/Shanghai）<br>
 > 当前分支：`main`  
 > 当前阶段：P1 runtime provenance 与 source-built jaxlib  
 > 第一项可执行工作：`q005-native-dependency-capture`
@@ -89,6 +89,38 @@ state、wheel 和结果没有进入持久证据，不要把它恢复或登记为
 完整的外部源码闭包。状态队列已把 `p1-bazel-dependency-closure` 放在 Q005 与正式 build
 之间；不要跳过该 gate。
 
+## 本机环境恢复与项目同步入口
+
+五个核心源码树 JAX/XLA/StableHLO/Shardy/LLVM 已恢复到上表固定 commit，工作树干净。
+本机完成的是这五个 baseline 必需源码，并非原交接机器的 85 个 eager 源码及 GPU archive。
+
+环境定义与恢复流程已固定到 `env/environment.lock.json`、`env/Dockerfile` 和
+`tools/sync-environment.py`：
+
+```bash
+# 宿主机 CPU 分析环境；--notebook 保留/安装交互依赖组。
+python3 -B tools/sync-environment.py sync --notebook
+python3 -B tools/sync-environment.py check
+
+# 固定系统工具链；本机实际验证使用 host 网络。
+python3 -B tools/sync-environment.py docker-build --network host
+python3 -B tools/sync-environment.py docker --network host
+```
+
+宿主机保留 Ubuntu Python `3.12.3-1ubuntu0.16`。Docker 固定 `0.15`，已通过官方 `.deb`
+证明它精确匹配原构建门禁的 Python 大小和 SHA-256；容器内的 Git/uv 字节、Clang 18.1.3
+和 Bazel 8.7.0 也已核对。没有更换宿主机 Python 或放宽原构建门禁。容器用独立的
+`artifacts/environment/docker-venv/`，宿主机 notebook 环境保留。需要原固定 Clang 或
+严格构建工具链的后续工作在此容器入口内执行。
+
+已实际通过：17 个同步隔离测试、宿主机与容器内 baseline verify、历史 evidence
+（1 topic/1 capture/34 hashes）、Lab 001 的 `(1, 1, 2)` tracing 断言、project-status，
+以及容器内 `strict-ready: True`。`VERSION-SKEW` 保留，正式 jaxlib 构建尚未运行。
+
+环境恢复按证据规范重建历史 capture。旧 capture 绑定 `c8526fc` 与保存的 patch；
+`--require-live-source-state` 只在记录新 capture 时使用，不要求之后的每个新 HEAD 与历史
+采集 HEAD 相同。当前源码与 runtime 由同步入口另行检查，旧证据未改写。
+
 ## 下一项：Q005 动态链接与 loader resolution
 
 目标是在当前 `VERSION-SKEW` CPU runtime 上，把“安装包内有哪些 `.so`”推进到“进程实际
@@ -140,6 +172,7 @@ validator 与 selftest 全部通过；`VERSION-SKEW` 仍保留。Q005 不提高�
 新会话先执行：
 
 ```bash
+python3 -B tools/sync-environment.py check
 .venv/bin/python -B tools/project-status.py --check
 .venv/bin/python -B tools/project-status.py
 git status --short
@@ -162,11 +195,13 @@ git -C upstream/xla status --short --untracked-files=all
 
 editable JAX 会在普通 Python 启动中产生 ignored `.pyc`，而 live-source evidence 和正式
 build preflight 会按设计拒绝它们。运行 capture、baseline verify 和提交前门禁时使用
-`python -B`；正式 build 前显式清理 `upstream/jax` 下的 `.pyc/.pyo`，然后先跑：
+`python -B`；正式 build 前用同步入口备份源码 bytecode 并检查固定容器环境：
 
 ```bash
-.venv/bin/python -B tools/validate-evidence.py --require-live-source-state
-.venv/bin/python -B tools/check-jaxlib-build-env.py --strict
+python3 -B tools/sync-environment.py docker --network host
 ```
+
+记录新 capture 后，仍须在采集环境执行
+`.venv/bin/python -B tools/validate-evidence.py --require-live-source-state`。
 
 不要为了让门禁变绿而放宽 bytecode、revision、hash、路径或 loader 环境检查。

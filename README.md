@@ -29,11 +29,29 @@ upstream/
 
 每个目录中的项目保留自己的原始源码结构。不会把依赖仓库嵌入 `upstream/xla/third_party/`，因为该目录已经属于 XLA submodule；外层仓库无法在一个 gitlink 内安全追踪另一个 gitlink。XLA 的 Bazel overlay 仍在原位置，真实依赖源码按用途放在相邻的源码树中，并由 `upstream-sources.lock` 的 `pinned_by` 字段建立对应关系。
 
-当前共有 102 个已登记的 submodule。其中 85 个主干/硬件路径已经初始化；17 个体积较大或只服务于构建、兼容性的项目采用 lazy 策略，只登记官方 URL 与精确 gitlink，暂不下载工作树。唯一的非-submodule 源码例外是 `upstream/gpu/nvshmem-3.1.7-source/`：XLA 锁定的 NVIDIA 3.1.7 发布包没有对应的公开 Git ref，因此保留官方源码包、SHA-256 和来源标记；同时另有 `upstream/gpu/nvshmem/` submodule 用于阅读公开 Git 源码。
+当前共有 102 个已登记的 submodule，其中 85 个采用 eager 策略，17 个体积较大或只服务于构建、兼容性的项目采用 lazy 策略。登记状态不表示当前机器已经下载源码；环境同步入口先恢复 baseline 必需的五个核心源码树。唯一的非-submodule 源码例外是 `upstream/gpu/nvshmem-3.1.7-source/`：XLA 锁定的 NVIDIA 3.1.7 发布包没有对应的公开 Git ref，因此保留官方源码包、SHA-256 和来源标记；同时另有 `upstream/gpu/nvshmem/` submodule 用于阅读公开 Git 源码。
 
 ## 初始化与校验
 
-在这个分析仓库中执行：
+Linux x86_64 新机器先执行项目同步入口：
+
+```bash
+python3 -B tools/sync-environment.py sync
+python3 -B tools/sync-environment.py check
+```
+
+入口从 `upstream-sources.lock` 和已提交的 gitlink 直接获取 JAX、XLA、StableHLO、Shardy、LLVM 的固定 commit；核对 uv/Bazel 指纹，执行 `uv sync --locked`，最后校验实际 CPU baseline、历史证据包和恢复状态，并运行当前 Lab 001 的 CPU 断言。已有源码改动、非空的未初始化目录、错误下载指纹或任何命令失败都会停止同步；脚本不暂存文件。可再生的 ignored `.pyc/.pyo` 会移入 `artifacts/environment/bytecode/` 备份。
+
+工具、容器镜像 digest、Ubuntu 软件包快照及 Python 发行版修订固定在 [`env/environment.lock.json`](env/environment.lock.json)。宿主机 CPU 环境要求 Python 3.12.3；严格构建环境使用 Docker：
+
+```bash
+python3 -B tools/sync-environment.py docker-build
+python3 -B tools/sync-environment.py docker
+```
+
+容器入口执行同一套同步和验证，再运行严格 jaxlib preflight。它以调用者 UID/GID 运行，挂载当前仓库，并把 `artifacts/environment/docker-venv/` 映射为容器内的 `.venv`，与宿主机 venv 分开。可在 `docker --` 后传入要运行的命令；每次运行使用与当前构建配置匹配的本地 image ID。所有环境缓存都位于 ignored 的 `artifacts/environment/` 下。完整的工具链边界和更新流程见[构建说明](docs/building/source-built-jaxlib.md#跨机器环境同步)。
+
+需要展开其余 eager 源码及精确 GPU archive 时，再使用原有全量入口：
 
 ```bash
 bash tools/fetch-upstream-sources.sh
@@ -41,22 +59,22 @@ bash tools/fetch-source-archives.sh
 bash tools/verify-upstream-sources.sh
 ```
 
-第一个脚本按锁文件初始化并校准主路径 submodule，同时跳过 lazy 项；OpenMP 使用 blobless 浅克隆，只展开 LLVM 10.0.1 的 `openmp/`。第二个脚本下载并校验唯一的精确源码包。第三个脚本检查清单、`.gitmodules`、gitlink、实际 HEAD、lazy 状态和 archive 标记是否一致。
+第一个脚本按锁文件初始化并校准主路径 submodule，同时跳过 lazy 项，并会暂存 `.gitmodules` 和 gitlink；使用前先处理现有暂存内容。OpenMP 使用 blobless 浅克隆，只展开 LLVM 10.0.1 的 `openmp/`。第二个脚本下载并校验唯一的精确源码包。第三个脚本检查全量清单、`.gitmodules`、gitlink、实际 HEAD、lazy 状态和 archive 标记是否一致，不能用它代替五个核心源码的恢复门禁。
 
 ## Python 分析环境
 
 仓库使用 uv 管理可复现的 CPU 分析环境。Python 固定为 3.12.3，JAX 以 editable 方式直接使用 `upstream/jax` 中的源码，CPU `jaxlib` 固定为 0.11.1；其余传递依赖的精确版本和文件哈希记录在 `uv.lock`。
 
 ```bash
-uv sync --locked
-uv run python -c 'import jax; print(jax.__version__, jax.devices())'
+python3 -B tools/sync-environment.py sync
+.venv/bin/python -B -c 'import jax; print(jax.__version__, jax.devices())'
 ```
 
 JupyterLab 作为可选的 uv 依赖组维护。运行第一个交互式源码分析 Lab：
 
 ```bash
-uv sync --group notebook --locked
-uv run --group notebook jupyter lab labs/001-jit-cpu/jupyter.ipynb
+python3 -B tools/sync-environment.py sync --notebook
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/jupyter lab labs/001-jit-cpu/jupyter.ipynb
 ```
 
 正常使用时不要删除或绕过 `uv.lock`。只有在有意更新分析基线时才重新解析依赖，并同时审查锁文件变化。

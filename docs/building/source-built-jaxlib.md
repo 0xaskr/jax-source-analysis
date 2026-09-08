@@ -16,6 +16,41 @@ Python 3.12
 
 JAX 固定版本的原始构建说明位于 [`upstream/jax/docs/developer.md`](../../upstream/jax/docs/developer.md)，构建入口是 [`upstream/jax/build/build.py`](../../upstream/jax/build/build.py)。本页只记录本分析仓库的额外 provenance、安装和回滚约束。
 
+## 跨机器环境同步
+
+[`tools/sync-environment.py`](../../tools/sync-environment.py) 是项目恢复入口，bootstrap 使用系统 Python 标准库，不要求提前安装 pip 依赖。当前支持 Linux x86_64：
+
+```bash
+# 宿主机 CPU 分析环境；可加 --notebook。
+python3 -B tools/sync-environment.py sync
+python3 -B tools/sync-environment.py check
+
+# 在固定系统环境里完成严格预检。
+python3 -B tools/sync-environment.py docker-build
+python3 -B tools/sync-environment.py docker
+```
+
+源码 revision 仍由 `upstream-sources.lock`、`.gitmodules` 和已提交 gitlink 共同约束；Python 包仍由 `uv.lock` 固定。新增的 [`env/environment.lock.json`](../../env/environment.lock.json) 记录五个核心源码范围、uv/Bazel 下载与二进制指纹、Docker 基础镜像 digest、Ubuntu APT 快照和系统工具版本。APT 只从固定快照读取索引并验证 Ubuntu 签名；任何索引下载失败都会中止，不回退到实时索引。根据该索引解析出的软件包 URL、大小和 SHA-256，可以从锁中列出的 Ubuntu 官方镜像并行取得相同字节；哈希与大小都匹配后才进入缓存，最后以 `--no-download` 安装。镜像不参与版本解析。[Ubuntu snapshot 使用说明](https://snapshot.ubuntu.com/)解释了快照时间戳的语义。
+
+原构建门禁中的 Python 字节来自 Ubuntu `python3.12-minimal=3.12.3-1ubuntu0.15`。已下载官方 `.deb`、校验包 SHA-256 并解包核对 `/usr/bin/python3.12`：大小 `8020928`，SHA-256 `1643dacd9feaedc58f3cc581e4d22577dfe25c09b10282936186ccf0f2e61118`。同为 Python 3.12.3 的宿主机 `0.16` 可以用于 CPU 分析，但不满足这一严格构建指纹；Docker 安装 `0.15`，不更换宿主机解释器，也不修改原门禁。
+
+Docker build context 由脚本临时生成，只含 Dockerfile、环境锁、包下载/安装脚本、镜像校验脚本、已校验的 uv 和从官方 CA 包提取的公开信任证书。镜像构建时再次核对 Python/Git/uv 的真实字节及 Clang 版本，保存 `/opt/jax-environment/installed-packages.txt`。配置和这些脚本内容的 SHA-256 决定镜像标签和 label；运行时核对 label 后使用不可变 image ID，拒绝旧配置镜像。
+
+容器以宿主机 UID/GID 运行，仓库使用相同绝对路径挂载；单独的 `artifacts/environment/docker-venv/` 覆盖容器内 `.venv`，宿主机 `.venv` 不被容器同步覆盖。uv cache 也分为 host/docker 两份。运行附加命令：
+
+```bash
+python3 -B tools/sync-environment.py docker -- \
+  .venv/bin/python -B tools/project-status.py
+```
+
+同步中断后可重新运行相同入口；下载只在指纹验证后原子写入，源码有改动时拒绝 checkout，已有错误工具字节保留并报错，Git index 不自动暂存。源码 bytecode 被移动到带独立目录的本地备份。`check` 不下载、不重建环境，也不清理源码；它复核当前源码、锁、实际 baseline、历史证据包和项目状态，并运行当前 Lab 001 的 CPU 断言。残留 bytecode 会使检查失败。可以用 `sync --strict` 或 `check --strict` 检查一台已具备原始系统工具链的宿主机。
+
+`--require-live-source-state` 按[证据规范](../contributing/evidence-conventions.md)只用于采集当时的工作树匹配。旧 capture 绑定原提交与 patch，恢复后 HEAD 推进不应重写这份历史证据；环境同步采用默认的历史重建校验，当前环境另外由 baseline verify 和实际 CPU probe 检查。新 capture 的严格 live gate 保留。
+
+容器桥接网络下载失败时，可以显式选择宿主机网络重试：`docker-build --network host`，运行入口也支持 `docker --network host`。这只选择网络路径，仍验证同一份快照、签名和二进制指纹。
+
+更新环境属于显式 baseline 迁移：修改环境锁并审阅官方来源/指纹，重新构建镜像，运行 `tools/selftest-sync-environment.py`、恢复校验与严格 preflight，再记录新的验证结果。不要在同步时改写锁文件或把本机观察值自动提升为受信任指纹。Docker 系统环境固定不代表 Bazel 外部依赖闭包已经完成；Q005 和 `p1-bazel-dependency-closure` 仍是正式构建前的独立 gate。
+
 ## 当前前置检查
 
 从仓库根目录运行：
