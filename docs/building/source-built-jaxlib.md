@@ -34,12 +34,12 @@ JAX 固定版本的原始构建说明位于 [`upstream/jax/docs/developer.md`](.
 
 - Python 3.12.3 可用；
 - JAX 要求 Bazel 8.7.0；
-- 本地尚无 `bazel`/`bazelisk`；`build.py` 可以下载匹配 Bazel，但这需要网络；
+- JAX `build.py` 已下载并校验固定的 Bazel 8.7.0；二进制位于 `upstream/jax/bazel-8.7.0-linux-x86_64`，由上游工作树忽略；
 - Clang 18.1.3 已安装，`clang++` 位于 `/usr/bin/clang++`；
 - 工作区约有 936 GiB 可用空间；
 - 主机约有 15 GiB RAM、4 GiB swap 和 12 个逻辑 CPU。
 
-首次下载 Bazel 后重新运行 preflight，把新结果保存到构建 fingerprint。
+正式构建前重新运行 preflight，把结果保存到构建 fingerprint。
 
 ## 配置检查
 
@@ -147,4 +147,4 @@ fingerprint 写入 `manifests/build-fingerprints/`。wheel 和 Bazel cache 不�
 
 ## 尚未执行
 
-本文目前是构建设计，证据标签为 `SOURCE-ONLY`。compiler 和 Bazel 尚未安装，source-built wheel 尚未生成。完成首次构建后，应把真实命令、耗时、资源设置、wheel fingerprint 和验证结果替换进本页，并更新 `PLAN.md` 的 P1 状态。
+本文目前是构建设计，证据标签为 `SOURCE-ONLY`。Clang 18.1.3 和固定 Bazel 8.7.0 已准备完成，source-built wheel 尚未生成。完成首次构建后，应把真实命令、耗时、资源设置、wheel fingerprint 和验证结果替换进本页，并更新 `PLAN.md` 的 P1 状态。

@@ -72,6 +72,16 @@ def _memory_bytes() -> tuple[int | None, int | None]:
 
 def inspect() -> dict[str, Any]:
   bazel_version_file = ROOT / "upstream/jax/.bazelversion"
+  required_bazel_version = (
+      bazel_version_file.read_text(encoding="utf-8").strip()
+      if bazel_version_file.exists()
+      else None
+  )
+  downloaded_bazel = tuple(
+      str(path)
+      for path in sorted((ROOT / "upstream/jax").glob("bazel-*-*"))
+      if path.is_file() and os.access(path, os.X_OK)
+  )
   memory_bytes, swap_bytes = _memory_bytes()
   disk = shutil.disk_usage(ROOT)
   compiler = _command_version(("clang++", "g++"), ("--version",))
@@ -90,12 +100,10 @@ def inspect() -> dict[str, Any]:
           "version": platform.python_version(),
           "is_required_3_12": sys.version_info[:2] == (3, 12),
       },
-      "required_bazel_version": (
-          bazel_version_file.read_text(encoding="utf-8").strip()
-          if bazel_version_file.exists()
-          else None
+      "required_bazel_version": required_bazel_version,
+      "bazel": _command_version(
+          (*downloaded_bazel, "bazel", "bazelisk"), ("--version",)
       ),
-      "bazel": _command_version(("bazel", "bazelisk"), ("--version",)),
       "compiler": compiler,
       "git": _command_version(("git",), ("--version",)),
       "sources": {
