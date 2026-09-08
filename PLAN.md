@@ -20,24 +20,34 @@
 libtpu 或分析工具中获得支持。判断需求应落在哪一层、应由哪个项目实现，以及局部
 绕过能否替代长期修复，本身就是性能工程的一部分。
 
-本轮以获授权的组织 PR 和公开上游 issue/PR 为背景材料，追踪了提出问题、讨论修改
-位置、实现或绕过、回归验证以及关闭原因。公开案例与状态见
-[`docs/research/background-motivation-cases.md`](docs/research/background-motivation-cases.md)，
-其来源元数据见
-[`docs/research/background-motivation-sources.json`](docs/research/background-motivation-sources.json)。
+背景首先取材于组织内部贡献者实际提出的工程场景：既包括内部仓库的配套改动，
+也包括这些贡献者提交到 JAX、XLA、Tokamax、XProf 的上游需求。成员归属与仓库
+可见性分别核对，不能把发生在公开上游的请求自动算作组织外部案例。
+主要场景、作者与处理状态见
+[`docs/research/organization-engineering-cases.md`](docs/research/organization-engineering-cases.md)，
+来源元数据见
+[`docs/research/organization-engineering-sources.json`](docs/research/organization-engineering-sources.json)。
+首轮[其他公开案例](docs/research/background-motivation-cases.md)保留作对照。
 它们证明这些工程问题与需求确实被提出过；其中的历史测试、性能报告和根因假设不
 构成本项目固定基线上的执行证据，也不提高 coverage depth。
 
-### 1.2 真实案例揭示的问题
+### 1.2 组织内部提出的工程场景
 
 | 工程问题 | 代表案例 | 对本项目的要求 |
 |---|---|---|
-| 找到 HLO 改写入口后，仍可能被跨语言、跨线程的编译调用链阻塞 | JAX [#38829](https://github.com/jax-ml/jax/issues/38829) 的 TPU AOT 回调死锁报告；对应 [#38943](https://github.com/jax-ml/jax/pull/38943) 未合并，作者在 OpenXLA 执行模型变化后关闭两者 | 同时追踪编译载荷和控制调用链，核对实际消除问题的修改及其版本 |
-| 当前层能够表达一个选项，不代表下游已经支持或保留其语义 | JAX [#33543](https://github.com/jax-ml/jax/issues/33543) 的 tiling 约束需要 XLA 支持；[#29223](https://github.com/jax-ml/jax/issues/29223) 讨论 composite 与自定义分片之间的信息传递 | 建立表示、属性、pass stage 与能力边界的索引，能够形成明确的上下游接口需求 |
-| kernel 接入后，变换和分片规则仍可能影响通信与正确性 | JAX [#21855](https://github.com/jax-ml/jax/issues/21855) 讨论 AD、`shard_map` 和 Pallas 组合后的额外 AllReduce；[#39744](https://github.com/jax-ml/jax/issues/39744) 报告外层内存放置与内层 DMA 的可疑交互 | 联合观察外层图与内层 kernel，验证变换规则、内存空间和版本组合 |
-| 一次编译或一次运行成功，不能覆盖缓存重用、设备子集和数值变化 | JAX [#38004](https://github.com/jax-ml/jax/issues/38004) 区分 cold/warm cache 与 TPU 子集；[#34080](https://github.com/jax-ml/jax/issues/34080) 讨论 batch padding 与浮点结果差异 | 用明确的场景矩阵验证缓存、topology、数值容差和回滚行为 |
-| 看到 profile 或 IR，还需要知道它能回答什么问题 | JAX [#22270](https://github.com/jax-ml/jax/issues/22270) 请求更便于检查优化结果的 HLO 表示；公开工具 PR [#104](https://github.com/primatrix/skills/pull/104) 补充静态 buffer assignment 观察面 | 将源码、IR、静态内存计划和运行时事件关联起来，保留各自的统计口径 |
-| 报错层、最终修复层和维护者归属可能不同 | JAX [#36750](https://github.com/jax-ml/jax/issues/36750) 后续定位到下游 kernel；[#40093](https://github.com/jax-ml/jax/issues/40093) 的硬件支持请求被维护者明确关闭为不计划实现 | 能缩小复现、纠正归因、找到负责方，并接受有证据的支持边界 |
+| 能拿到 HLO，但缺少完整编辑能力，且改写可能破坏内存合同 | `Iamleos` 请求更多编辑接口：[JAX #39023](https://github.com/jax-ml/jax/issues/39023)；`pathfinder-pf` 报告 transform 后 alias 消失与 OOM：[#40280](https://github.com/jax-ml/jax/issues/40280) | 找到真正的修改接口，检查 alias/donation、buffer lifetime 和版本差异 |
+| hook 本身也有跨线程与阶段合同 | `hhhhsdxxxx` 报告 [JAX #38829](https://github.com/jax-ml/jax/issues/38829) 的回调死锁，以及 [XLA #47778](https://github.com/openxla/xla/issues/47778) 的多 slice 恒等变换 verifier 错误 | 同时追踪控制调用链和编译载荷，理解 pass stage 与 topology 上下文 |
+| 训练通信需求需要修改框架的映射规则 | `wangfakang` 提交 [JAX #39340](https://github.com/jax-ml/jax/pull/39340)，调整 TPU v7 mesh 物理轴候选优先级；已合并 | 连接逻辑 sharding、物理 topology、通信强度与源码选择规则 |
+| kernel 希望使用的操作不一定有对应 lowering | `Iamleos` 的 TensorCore `cumsum` 请求：[#32991](https://github.com/jax-ml/jax/issues/32991)；`pathfinder-pf` 的 SparseCore BF16 gather 请求：[#39577](https://github.com/jax-ml/jax/issues/39577) | 建立 primitive、kernel 类型、dtype、传输 operation 和 backend 支持的映射 |
+| 模型量化合同对 kernel 和 compiler 提出额外需求 | `pengchengneo` 提出 FP8 block size、VMEM 和流水线取舍：[Tokamax #839](https://github.com/openxla/tokamax/issues/839)；`sii-xinglong` 提交 block-wise FP8 支持提案：[#794](https://github.com/openxla/tokamax/pull/794) | 将量化精度要求、tiling、内存和编译产物纳入同一个验证任务 |
+| 获得 profile 后仍缺少可见性或解释依据 | `pathfinder-pf` 的 counter、DMA 与采样请求：[XProf #2807](https://github.com/openxla/xprof/issues/2807)、[#2446](https://github.com/openxla/xprof/issues/2446)、[#2482](https://github.com/openxla/xprof/issues/2482)；`Prayer3th` 的 LLO 空白报告：[#2441](https://github.com/openxla/xprof/issues/2441) | 核对采集、版本、解析和 UI 各层，解释统计口径及其到指令/源码的映射 |
+| 软件栈升级、batch padding 和缓存重用会改变观察结果 | `pathfinder-pf` 的版本升级精度报告：[#33111](https://github.com/jax-ml/jax/issues/33111)；`aolemila` 的 batch 数值请求：[#34080](https://github.com/jax-ml/jax/issues/34080)；`Rodrian7` 的设备子集 warm-cache 报告：[#38004](https://github.com/jax-ml/jax/issues/38004) | 建立版本、数值合同、缓存和设备分配的对照矩阵，避免直接把相关性当成根因 |
+| 内部 kernel 向上游交付需要公共接口和可复核验证 | `0xaskr` 的 KDA reference 提案：[Tokamax #1001](https://github.com/openxla/tokamax/pull/1001)；`Fred33146` 的 Pallas 与 chunked XLA 提案：[#1103](https://github.com/openxla/tokamax/pull/1103)、[#1327](https://github.com/openxla/tokamax/pull/1327) | 保留 forward/VJP、输入合同、fallback 和测试边界，区分 PR 状态与实际代码落地 |
+
+内部私有 PR 还提供了更直接的配套场景：kernel 暴露残差标签，上层 remat 策略
+消费该标签；以及优化器图大小、gather residual 生命周期、AOT/JIT flags 一致性、
+import 时提前初始化 backend 等问题。其精确 PR、作者和版本保存于受限索引，
+公开材料只引用抽象研究问题。它们要求本项目能够沿调用边界解释改动如何传递。
 
 以上案例包含已合并改动、未合并提案、仍开放的问题、预期行为和不计划实现的请求。
 不能把 PR 合并、issue 关闭、临时绕过和上游根因修复视为同一状态。与 CPU/GPU 有关
@@ -820,6 +830,7 @@ capture；缺失层必须保留原因和解除动作，不能用较弱 capture �
 | 2026-09-08 | 单个 capture 原子化，纵向 dossier 聚合分支相关 capture | 避免要求 CPU、普通 JAX 或 source-only 证据伪造 TPU/Mosaic/LLO 产物 |
 | 2026-09-08 | 单列 TPU runtime/control-plane 阶段 | compile、load、execute 与硬件 profile 需要不同证据 |
 | 2026-09-08 | 用真实跨仓库问题补充背景与动机，同时服务现有工程师和新人 | 研究需要支撑定位、选择修改层、上下游协作与验证；历史 issue/PR 不提升固定基线 coverage |
+| 2026-09-08 | 以组织成员实际提出的场景作为背景主线 | 分别核对提出者归属与仓库可见性；组织外部案例只作为补充对照 |
 
 ## 17. 状态更新记录
 
@@ -868,3 +879,11 @@ capture；缺失层必须保留原因和解除动作，不能用较弱 capture �
 - 案例包括开放问题、已合并变更、未合并提案、下游绕过、预期行为及不计划支持的请求；没有增加固定基线执行证据或 coverage depth。
 - 本轮只完善背景、动机和读者定位；P1 的恢复队列保留。恢复命令仍为 `.venv/bin/python -B tools/project-status.py --check`，源码基线恢复后再继续其打印的第一项 ready action。
 - 本轮最初的状态门禁因源码 checkout 缺失/不匹配失败；源码随后可用，复查 project-status、evidence validator 及两者 selftest 均通过。另已检查本地链接、代码围栏、来源快照哈希、JSON 结构与公开材料边界；没有重跑案例中的设备实验。
+
+### 2026-09-08：以组织成员场景重排背景
+
+- 按提出者归属补查公开上游记录，主线改为 16 组组织贡献者提出的工程场景；首轮其他公开案例保留作对照。
+- 增补内部配套 PR、remat/residual、编译内存、tracing、初始化和配置传递场景，原始成员与私有 PR 材料继续使用受限归档。
+- 核实 HLO 编辑 API 请求、多 slice verifier、alias、mesh 选择、Pallas lowering、FP8 和 XProf 可见性需求；对 PR 状态和实际代码落地分别留证。
+- 此次完善不改变 P1 队列与 coverage。下一恢复命令仍为 `.venv/bin/python -B tools/project-status.py --check`，再读取摘要中的 first-ready-action。
+- 通过成员匹配、作者限定查询完整性、快照哈希、元数据/链接和公开范围检查；project-status、evidence validator 及对应 selftest 均通过。

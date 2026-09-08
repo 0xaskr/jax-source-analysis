@@ -1,7 +1,7 @@
 {
   "$schema": "schema/project-status.schema.json",
   "schema_version": "1.0",
-  "updated_at": "2026-09-08T17:58:29+08:00",
+  "updated_at": "2026-09-08T18:16:32+08:00",
   "objective": "Build a version-pinned, coverage-measured, searchable and executable white-box account of JAX-to-TPU, including transformations, compiler passes, libtpu compiler/runtime, LLO and hardware mapping.",
   "plan_path": "PLAN.md",
   "baseline_path": "manifests/baseline.json",
@@ -100,6 +100,24 @@
         "The Docker image was built from the pinned base digest and Ubuntu snapshot; its tool fingerprints and strict jaxlib preflight passed. Host Python 3.12.3-1ubuntu0.16 and the host notebook venv remain intact; the isolated container uses the original 0.15 Python bytes.",
         "Historical capture reconstruction remains separate from recording-time live source matching; no original evidence or VERSION-SKEW qualifier was rewritten.",
         "Q005, the Bazel external dependency closure and the first official jaxlib build are still pending."
+      ]
+    },
+    {
+      "id": "plan-organization-engineering-cases",
+      "title": "Recenter research motivation on organization contributor scenarios",
+      "state": "complete",
+      "completed_at": "2026-09-08T18:16:32+08:00",
+      "artifacts": [
+        "PLAN.md",
+        "docs/research/organization-engineering-cases.md",
+        "docs/research/organization-engineering-sources.json",
+        "docs/research/background-motivation-cases.md"
+      ],
+      "notes": [
+        "Replaced the background case table with contributor-origin cases after separately checking organization membership and repository visibility.",
+        "The new public dossier contains sixteen scenario groups; private supporting records and the membership snapshot remain in the restricted archive. Issue/PR state, landing evidence and reported validation are distinct.",
+        "P1 actions, pinned baselines and coverage depth are unchanged; this milestone adds historical research context and no runtime experiments.",
+        "Passed contributor membership matching, complete author-query checks, archived snapshot hashes, metadata/link/publication checks, project-status and evidence validation, and both corresponding selftests."
       ]
     }
   ],

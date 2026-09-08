@@ -1,0 +1,604 @@
+{
+  "schema_version": "1.0",
+  "retrieved_at": "2026-09-08T10:12:31.223971+00:00",
+  "purpose": "Organization-contributor scenarios for project background; historical reports, not baseline execution evidence.",
+  "public_scenario_groups": 16,
+  "sources_membership_checked": true,
+  "membership_scope": "Authenticated organization member list at retrieval time; no employment or historical membership inference.",
+  "cases": [
+    {
+      "id": "O01",
+      "topic": "HLO editing API",
+      "sources": [
+        {
+          "url": "https://github.com/jax-ml/jax/issues/39023",
+          "author": "Iamleos",
+          "created_at": "2026-07-09T06:49:38Z",
+          "updated_at": "2026-07-09T06:49:38Z",
+          "state": "open",
+          "state_reason": null,
+          "snapshot": {
+            "issue.json": {
+              "sha256": "3d2a9786d218df72400a7c9744d79c231982249ac7d8254ce3517e1801757ac0",
+              "size_bytes": 3536
+            },
+            "comments.json": {
+              "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+              "size_bytes": 3
+            }
+          },
+          "kind": "issue"
+        }
+      ],
+      "runtime_verification": "not-performed"
+    },
+    {
+      "id": "O02",
+      "topic": "HLO callback and GIL",
+      "sources": [
+        {
+          "url": "https://github.com/jax-ml/jax/issues/38829",
+          "author": "hhhhsdxxxx",
+          "created_at": "2026-06-28T14:30:26Z",
+          "updated_at": "2026-08-11T08:59:20Z",
+          "state": "closed",
+          "state_reason": "completed",
+          "snapshot": {
+            "issue.json": {
+              "sha256": "b5770b75efbbc3b6518e9cdca87093cd8954d5263e8458f8433158e9cac2b4ab",
+              "size_bytes": 10773
+            },
+            "comments.json": {
+              "sha256": "06a2838efea0e8a6dc1376b8a3ed3b38183115b6f3ead97962c720d6b966ba71",
+              "size_bytes": 3167
+            }
+          },
+          "kind": "issue"
+        },
+        {
+          "url": "https://github.com/jax-ml/jax/pull/38943",
+          "author": "hhhhsdxxxx",
+          "created_at": "2026-07-06T10:37:31Z",
+          "updated_at": "2026-08-11T08:59:17Z",
+          "state": "closed",
+          "state_reason": null,
+          "snapshot": {
+            "issue.json": {
+              "sha256": "e0e3e09c43ac7e7c780d4c56a1291a5a7f64a9a644016eb190138d158744aa18",
+              "size_bytes": 4420
+            },
+            "comments.json": {
+              "sha256": "e0cc4cf754cf48b3b85ab9416999b40468999164caf8d3c972c28496596b6129",
+              "size_bytes": 10113
+            },
+            "pull.json": {
+              "sha256": "d48144330909e02d6c3e7dd6b82243d172588eef0668e0a37ed898af6a110897",
+              "size_bytes": 18548
+            }
+          },
+          "kind": "pull_request",
+          "merged_at": null,
+          "head_revision": "b764125f980f5d04600d1c190264ce1a52bcd7e4"
+        }
+      ],
+      "runtime_verification": "not-performed"
+    },
+    {
+      "id": "O03",
+      "topic": "Multi-slice identity transform verification",
+      "sources": [
+        {
+          "url": "https://github.com/openxla/xla/issues/47778",
+          "author": "hhhhsdxxxx",
+          "created_at": "2026-08-24T14:40:56Z",
+          "updated_at": "2026-08-27T12:37:07Z",
+          "state": "closed",
+          "state_reason": "completed",
+          "snapshot": {
+            "issue.json": {
+              "sha256": "4bfa78acebaf0c6e19cd9416843529ee20c8d168613a8254f994b2f78cadaa01",
+              "size_bytes": 11127
+            },
+            "comments.json": {
+              "sha256": "a0e32eb2a789562ca925bbaeeb8a695cfe7f940b7bb55ed99c66c365beb0d267",
+              "size_bytes": 2214
+            }
+          },
+          "kind": "issue"
+        }
+      ],
+      "runtime_verification": "not-performed"
+    },
+    {
+      "id": "O04",
+      "topic": "HLO transform alias preservation",
+      "sources": [
+        {
+          "url": "https://github.com/jax-ml/jax/issues/40280",
+          "author": "pathfinder-pf",
+          "created_at": "2026-08-28T03:40:15Z",
+          "updated_at": "2026-09-08T08:59:19Z",
+          "state": "closed",
+          "state_reason": "completed",
+          "snapshot": {
+            "issue.json": {
+              "sha256": "0c8dc441d0d2944a3bd99d25b0ad7401c01f4e5002e78aba0b207f03380145ac",
+              "size_bytes": 4391
+            },
+            "comments.json": {
+              "sha256": "2aca987af01400cdc609c78ff07169c5558d94fbaa57625768a182592f156d7e",
+              "size_bytes": 8151
+            }
+          },
+          "kind": "issue"
+        }
+      ],
+      "runtime_verification": "not-performed"
+    },
+    {
+      "id": "O05",
+      "topic": "Physical mesh axis selection",
+      "sources": [
+        {
+          "url": "https://github.com/jax-ml/jax/pull/39340",
+          "author": "wangfakang",
+          "created_at": "2026-07-21T06:43:37Z",
+          "updated_at": "2026-08-18T13:09:09Z",
+          "state": "closed",
+          "state_reason": null,
+          "snapshot": {
+            "issue.json": {
+              "sha256": "2c3c52602ed2d08f0b4cf0106df01940c91b9486431d2cb730edf6628efa9139",
+              "size_bytes": 9049
+            },
+            "comments.json": {
+              "sha256": "e95dfea695fa35e70b6181866db397635678f8e02facd27ad0452716c7a2a837",
+              "size_bytes": 12885
+            },
+            "pull.json": {
+              "sha256": "655b34ed943af03f7569f2763830bb0def1a9b22ea44727797a6f1ee79a72aea",
+              "size_bytes": 25309
+            }
+          },
+          "kind": "pull_request",
+          "merged_at": "2026-08-11T20:05:52Z",
+          "head_revision": "320933dcb61897d46f877243e312d6f34bcc50b5"
+        }
+      ],
+      "runtime_verification": "not-performed"
+    },
+    {
+      "id": "O06",
+      "topic": "SparseCore BF16 gather lowering",
+      "sources": [
+        {
+          "url": "https://github.com/jax-ml/jax/issues/39577",
+          "author": "pathfinder-pf",
+          "created_at": "2026-07-30T09:43:59Z",
+          "updated_at": "2026-08-07T09:21:28Z",
+          "state": "open",
+          "state_reason": null,
+          "snapshot": {
+            "issue.json": {
+              "sha256": "bce1e902471462a0f0c691321e22d8f85c53d4b6aabd85fac8147760cc22bb96",
+              "size_bytes": 8668
+            },
+            "comments.json": {
+              "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+              "size_bytes": 3
+            }
+          },
+          "kind": "issue"
+        }
+      ],
+      "runtime_verification": "not-performed"
+    },
+    {
+      "id": "O07",
+      "topic": "Pallas kernel-type-specific cumsum",
+      "sources": [
+        {
+          "url": "https://github.com/jax-ml/jax/issues/32991",
+          "author": "Iamleos",
+          "created_at": "2025-10-30T09:34:05Z",
+          "updated_at": "2025-10-30T18:35:29Z",
+          "state": "open",
+          "state_reason": null,
+          "snapshot": {
+            "issue.json": {
+              "sha256": "e8287e5979ff1d50d4dd5593aa8b8538189f90c2a7febef2833ffeb2ee89e15b",
+              "size_bytes": 7918
+            },
+            "comments.json": {
+              "sha256": "d95717bff9104abdca4479645b28b25f3b9410f0011fe77c4d01a1372d5daeed",
+              "size_bytes": 2492
+            }
+          },
+          "kind": "issue"
+        }
+      ],
+      "runtime_verification": "not-performed"
+    },
+    {
+      "id": "O08",
+      "topic": "FP8 precision and kernel scheduling tradeoff",
+      "sources": [
+        {
+          "url": "https://github.com/openxla/tokamax/issues/839",
+          "author": "pengchengneo",
+          "created_at": "2026-04-08T14:28:27Z",
+          "updated_at": "2026-04-08T14:29:30Z",
+          "state": "open",
+          "state_reason": null,
+          "snapshot": {
+            "issue.json": {
+              "sha256": "9a1c5a43683314a2928863d972e881170cf24c13018d179bcb63113925c5b7ee",
+              "size_bytes": 7166
+            },
+            "comments.json": {
+              "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+              "size_bytes": 3
+            }
+          },
+          "kind": "issue"
+        }
+      ],
+      "runtime_verification": "not-performed"
+    },
+    {
+      "id": "O09",
+      "topic": "Block-wise FP8 upstream proposal",
+      "sources": [
+        {
+          "url": "https://github.com/openxla/tokamax/pull/794",
+          "author": "sii-xinglong",
+          "created_at": "2026-03-24T14:04:35Z",
+          "updated_at": "2026-03-24T14:15:24Z",
+          "state": "closed",
+          "state_reason": null,
+          "snapshot": {
+            "issue.json": {
+              "sha256": "53b46cdde28661ca16e4842d239e58ecc31fb2129d53ce58fbae2ec0acdcc9d8",
+              "size_bytes": 5252
+            },
+            "comments.json": {
+              "sha256": "eeec6b7898b330e8e3ba825d01c232a050f2ba212e237899be2ccb3d0b877f0e",
+              "size_bytes": 4495
+            },
+            "pull.json": {
+              "sha256": "b3194dd471f9b5bbd87f45eec2bb3045b4281af44ee2b8e841171ce341f95352",
+              "size_bytes": 19468
+            }
+          },
+          "kind": "pull_request",
+          "merged_at": null,
+          "head_revision": "c6481327bfac7663bfa449a8b875fac54b5fe942"
+        }
+      ],
+      "runtime_verification": "not-performed"
+    },
+    {
+      "id": "O10",
+      "topic": "Runtime performance counters",
+      "sources": [
+        {
+          "url": "https://github.com/openxla/xprof/issues/2807",
+          "author": "pathfinder-pf",
+          "created_at": "2026-06-15T03:32:11Z",
+          "updated_at": "2026-06-16T12:07:05Z",
+          "state": "open",
+          "state_reason": null,
+          "snapshot": {
+            "issue.json": {
+              "sha256": "8f8adbdd5bb7f1796fa26e097787296b007cde0173f262c05708f49e7fefd2b1",
+              "size_bytes": 6453
+            },
+            "comments.json": {
+              "sha256": "7465223b8a7289af7168e2d9f1ba7af251048a750ebf32233e114eff3ce73c04",
+              "size_bytes": 6578
+            }
+          },
+          "kind": "issue"
+        }
+      ],
+      "runtime_verification": "not-performed"
+    },
+    {
+      "id": "O11",
+      "topic": "LLO and DMA visibility",
+      "sources": [
+        {
+          "url": "https://github.com/openxla/xprof/issues/2441",
+          "author": "Prayer3th",
+          "created_at": "2026-03-24T08:07:22Z",
+          "updated_at": "2026-05-21T22:56:16Z",
+          "state": "closed",
+          "state_reason": "completed",
+          "snapshot": {
+            "issue.json": {
+              "sha256": "90891686493a552d15cd2b77599855c4fdc7dcb97643fd5640f0d285101a192f",
+              "size_bytes": 4730
+            },
+            "comments.json": {
+              "sha256": "eded34100c6adb3ce7a70da36f8ed19f4c5f70b88af2b9cd148471fb0a84afc4",
+              "size_bytes": 4113
+            }
+          },
+          "kind": "issue"
+        },
+        {
+          "url": "https://github.com/openxla/xprof/issues/2416",
+          "author": "elbertwang",
+          "created_at": "2026-03-18T04:13:43Z",
+          "updated_at": "2026-05-21T22:56:06Z",
+          "state": "closed",
+          "state_reason": "completed",
+          "snapshot": {
+            "issue.json": {
+              "sha256": "fca1ae0f50723f9a0142b544e56d564f82aa95686c69106f6a7884c9cfb40bd4",
+              "size_bytes": 4363
+            },
+            "comments.json": {
+              "sha256": "746c01fcc119d714611adb2775421985b02e5b0a082d0c1e4e1ded7d189ff10d",
+              "size_bytes": 16441
+            }
+          },
+          "kind": "issue"
+        },
+        {
+          "url": "https://github.com/openxla/xprof/issues/2446",
+          "author": "pathfinder-pf",
+          "created_at": "2026-03-25T07:02:43Z",
+          "updated_at": "2026-03-25T07:02:43Z",
+          "state": "open",
+          "state_reason": null,
+          "snapshot": {
+            "issue.json": {
+              "sha256": "4c3409d1681b4ddaec2f5df757759d5df2ba15780f27fa57a129d68e2ede85f1",
+              "size_bytes": 2936
+            },
+            "comments.json": {
+              "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+              "size_bytes": 3
+            }
+          },
+          "kind": "issue"
+        }
+      ],
+      "runtime_verification": "not-performed"
+    },
+    {
+      "id": "O12",
+      "topic": "Counter interpretation and sampling",
+      "sources": [
+        {
+          "url": "https://github.com/openxla/xprof/issues/2481",
+          "author": "pathfinder-pf",
+          "created_at": "2026-04-07T06:52:17Z",
+          "updated_at": "2026-04-07T06:52:17Z",
+          "state": "open",
+          "state_reason": null,
+          "snapshot": {
+            "issue.json": {
+              "sha256": "5a5ed3e02d05f071cec14e76228c22f8d8f66cb6d893ced1890ef8a6b8a497bb",
+              "size_bytes": 3000
+            },
+            "comments.json": {
+              "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+              "size_bytes": 3
+            }
+          },
+          "kind": "issue"
+        },
+        {
+          "url": "https://github.com/openxla/xprof/issues/2482",
+          "author": "pathfinder-pf",
+          "created_at": "2026-04-07T09:23:17Z",
+          "updated_at": "2026-04-07T09:23:17Z",
+          "state": "open",
+          "state_reason": null,
+          "snapshot": {
+            "issue.json": {
+              "sha256": "1b0cbfc6c1eb063ad7545f8fb6db8ed6bd890b3bb9f0eeb1e6442e28f6c0d529",
+              "size_bytes": 3026
+            },
+            "comments.json": {
+              "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+              "size_bytes": 3
+            }
+          },
+          "kind": "issue"
+        },
+        {
+          "url": "https://github.com/openxla/xprof/issues/2483",
+          "author": "pathfinder-pf",
+          "created_at": "2026-04-07T09:26:38Z",
+          "updated_at": "2026-04-07T09:26:38Z",
+          "state": "open",
+          "state_reason": null,
+          "snapshot": {
+            "issue.json": {
+              "sha256": "50c9742e7650e4c8bca19e59c16b2c3f478e359abd3cc0c16d41fc7ae5dfc4d6",
+              "size_bytes": 2953
+            },
+            "comments.json": {
+              "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+              "size_bytes": 3
+            }
+          },
+          "kind": "issue"
+        }
+      ],
+      "runtime_verification": "not-performed"
+    },
+    {
+      "id": "O13",
+      "topic": "Version upgrade and numerical changes",
+      "sources": [
+        {
+          "url": "https://github.com/jax-ml/jax/issues/33111",
+          "author": "pathfinder-pf",
+          "created_at": "2025-11-05T09:57:23Z",
+          "updated_at": "2025-11-05T10:00:27Z",
+          "state": "open",
+          "state_reason": null,
+          "snapshot": {
+            "issue.json": {
+              "sha256": "e37ec39d2655b68bd5ca7558efab93965c0c4d47b867bd8ad08e81759ece11e9",
+              "size_bytes": 3655
+            },
+            "comments.json": {
+              "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+              "size_bytes": 3
+            }
+          },
+          "kind": "issue"
+        }
+      ],
+      "runtime_verification": "not-performed"
+    },
+    {
+      "id": "O14",
+      "topic": "Batch padding and numerical contracts",
+      "sources": [
+        {
+          "url": "https://github.com/jax-ml/jax/issues/34080",
+          "author": "aolemila",
+          "created_at": "2025-12-22T07:08:33Z",
+          "updated_at": "2026-07-10T02:11:44Z",
+          "state": "closed",
+          "state_reason": "completed",
+          "snapshot": {
+            "issue.json": {
+              "sha256": "054c2fb9a4c462a0d8a816c31beff73881f38f5a285d3fbcc24a4dce415f6b4f",
+              "size_bytes": 12723
+            },
+            "comments.json": {
+              "sha256": "4e6f51284d3b4044fed22b871593ea61361756accc5e2658dbc688e4e5b2ef88",
+              "size_bytes": 68333
+            }
+          },
+          "kind": "issue"
+        }
+      ],
+      "runtime_verification": "not-performed"
+    },
+    {
+      "id": "O15",
+      "topic": "Device subset and persistent cache",
+      "sources": [
+        {
+          "url": "https://github.com/jax-ml/jax/issues/38004",
+          "author": "Rodrian7",
+          "created_at": "2026-05-27T09:24:27Z",
+          "updated_at": "2026-06-22T09:10:32Z",
+          "state": "open",
+          "state_reason": null,
+          "snapshot": {
+            "issue.json": {
+              "sha256": "ea61235fb74429c6253f1178d4c1ea87f74e730bb9e67f1d775c56ede9f3fcd6",
+              "size_bytes": 6989
+            },
+            "comments.json": {
+              "sha256": "1785cea1077d812e0f5f38b65a8288b03df76dcb8956e98c7ca48db82516140e",
+              "size_bytes": 2112
+            }
+          },
+          "kind": "issue"
+        }
+      ],
+      "runtime_verification": "not-performed"
+    },
+    {
+      "id": "O16",
+      "topic": "KDA reference, kernel and upstream delivery",
+      "sources": [
+        {
+          "url": "https://github.com/openxla/tokamax/pull/1001",
+          "author": "0xaskr",
+          "created_at": "2026-07-02T05:35:29Z",
+          "updated_at": "2026-07-15T06:40:02Z",
+          "state": "closed",
+          "state_reason": null,
+          "snapshot": {
+            "issue.json": {
+              "sha256": "41794677ed65b13abfeec1b41b1bacd9953e68a2fdafe7e9f38f88b6298d9542",
+              "size_bytes": 4307
+            },
+            "comments.json": {
+              "sha256": "84160dd8a0be4504cabaae54758457c205996796234b0bbaba6e9669e4b8fb8a",
+              "size_bytes": 6484
+            },
+            "pull.json": {
+              "sha256": "16ff12721c933e5016b55005be113701340d39e6354c716631269e3ad72c1f55",
+              "size_bytes": 18578
+            }
+          },
+          "kind": "pull_request",
+          "merged_at": null,
+          "head_revision": "8fcb8ff59eeb88a8173fc348c3fd12a245e2e80e"
+        },
+        {
+          "url": "https://github.com/openxla/tokamax/pull/1103",
+          "author": "Fred33146",
+          "created_at": "2026-07-28T03:04:12Z",
+          "updated_at": "2026-08-25T03:11:29Z",
+          "state": "open",
+          "state_reason": null,
+          "snapshot": {
+            "issue.json": {
+              "sha256": "3c21ada0eb63df3200cea85d77f97f21565bc7fbdbe69fe1d812418884a6480d",
+              "size_bytes": 12108
+            },
+            "comments.json": {
+              "sha256": "aea1cdca158afbdb18ea51f4274ad3ad4c97377c67b940695868ec3e7ffd18cb",
+              "size_bytes": 58602
+            },
+            "pull.json": {
+              "sha256": "4adf4d5037f97d134348fe6754418cca3cf43486e77703c35af053eaac72352b",
+              "size_bytes": 27377
+            }
+          },
+          "kind": "pull_request",
+          "merged_at": null,
+          "head_revision": "939da5c24b90dca4c73ad50fba9b9021d9f35a27"
+        },
+        {
+          "url": "https://github.com/openxla/tokamax/pull/1327",
+          "author": "Fred33146",
+          "created_at": "2026-09-07T10:24:21Z",
+          "updated_at": "2026-09-07T14:34:22Z",
+          "state": "open",
+          "state_reason": null,
+          "snapshot": {
+            "issue.json": {
+              "sha256": "3934454baafd176d222127d97df9a51443157a3b4e53d3c409e2132969a3c2a0",
+              "size_bytes": 3756
+            },
+            "comments.json": {
+              "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+              "size_bytes": 3
+            },
+            "pull.json": {
+              "sha256": "639ec02c1e4d822161f460572dab75c2f2a3eb9a6bcefac3394d21cbdbdfd438",
+              "size_bytes": 19031
+            }
+          },
+          "kind": "pull_request",
+          "merged_at": null,
+          "head_revision": "d5082272fe7ceb7b9ce6955dd4d463d66ade41b3"
+        }
+      ],
+      "runtime_verification": "not-performed"
+    }
+  ],
+  "related_landing_commit": {
+    "url": "https://github.com/openxla/tokamax/commit/84c7a4fc3b0dafcde51b25d5b830724e30459a77",
+    "sha256": "a694af5e1c70c54861135caf503f43a968d17cebb5200a8ed4894c1c99c8c732"
+  },
+  "restricted_archive": {
+    "artifact_uri": "artifact:organization-engineering-cases-20260908-round2",
+    "manifest_sha256": "27b7c9409056abf08cf10aa48f204af6f1a3a039ef0f5fa5fe32530e377f9f81",
+    "retrieval": "Request the authorized local research archive from the project maintainer; private PR and membership snapshots are not distributed in Git."
+  }
+}
