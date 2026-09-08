@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jax-source-analysis.local/schema/topic.schema.json",
+  "title": "JAX source-analysis topic evidence bundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "topic_id",
+    "title",
+    "question",
+    "status",
+    "scope",
+    "provenance",
+    "readme",
+    "source_index",
+    "evidence"
+  ],
+  "properties": {
+    "$schema": {"type": "string"},
+    "schema_version": {"const": "1.0"},
+    "topic_id": {"$ref": "#/$defs/topicId"},
+    "title": {"type": "string", "minLength": 1},
+    "question": {"type": "string", "minLength": 1},
+    "status": {
+      "enum": ["draft", "verified", "stale"]
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["includes", "excludes"],
+      "properties": {
+        "includes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "excludes": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "provenance": {"$ref": "#/$defs/provenance"},
+    "readme": {"$ref": "#/$defs/relativePath"},
+    "source_index": {"$ref": "#/$defs/relativePath"},
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/evidence"}
+    }
+  },
+  "$defs": {
+    "topicId": {
+      "type": "string",
+      "pattern": "^[0-9]{2,3}-[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\u0000]+$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "patch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"$ref": "#/$defs/relativePath"},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "root", "revision", "dirty"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "root": {"$ref": "#/$defs/relativePath"},
+        "version": {"type": "string", "minLength": 1},
+        "revision": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "scope_paths": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/relativePath"}
+        },
+        "dirty": {"type": "boolean"},
+        "patches": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/patch"}
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"dirty": {"const": true}},
+            "required": ["dirty"]
+          },
+          "then": {"required": ["patches"]}
+        }
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["components"],
+      "properties": {
+        "components": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/component"}
+        }
+      }
+    },
+    "reproduction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cwd", "command"],
+      "properties": {
+        "cwd": {"$ref": "#/$defs/relativePath"},
+        "command": {"type": "string", "minLength": 1},
+        "required_environment": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "claim",
+        "label",
+        "source_refs",
+        "artifact_refs",
+        "reproduce",
+        "limitations"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "claim": {"type": "string", "minLength": 1},
+        "label": {
+          "enum": [
+            "SOURCE-ONLY",
+            "RUN-CPU",
+            "SIM-TPU",
+            "COMPILE-TPU",
+            "RUN-TPU",
+            "REPLAY-OFFLINE"
+          ]
+        },
+        "source_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"}
+        },
+        "artifact_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/relativePath"}
+        },
+        "capture_manifest": {"$ref": "#/$defs/relativePath"},
+        "reproduce": {"$ref": "#/$defs/reproduction"},
+        "limitations": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        }
+      },
+      "anyOf": [
+        {"properties": {"source_refs": {"minItems": 1}}},
+        {"properties": {"artifact_refs": {"minItems": 1}}}
+      ]
+    }
+  }
+}

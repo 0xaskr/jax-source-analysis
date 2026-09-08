@@ -1,0 +1,171 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jax-source-analysis.local/schema/source-index.schema.json",
+  "title": "JAX source-analysis symbol index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "schema_version",
+    "topic_id",
+    "components",
+    "entries"
+  ],
+  "properties": {
+    "$schema": {"type": "string"},
+    "schema_version": {"const": "1.0"},
+    "topic_id": {
+      "type": "string",
+      "pattern": "^[0-9]{2,3}-[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/component"}
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/entry"}
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\u0000]+$"
+    },
+    "component": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "root", "revision"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "name": {"type": "string", "minLength": 1},
+        "root": {"$ref": "#/$defs/relativePath"},
+        "version": {"type": "string", "minLength": 1},
+        "revision": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        }
+      }
+    },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start_line"],
+      "properties": {
+        "start_line": {"type": "integer", "minimum": 1},
+        "end_line": {"type": "integer", "minimum": 1}
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "component",
+        "path",
+        "symbol",
+        "kind",
+        "layer",
+        "language",
+        "role",
+        "location",
+        "stability",
+        "consumes",
+        "produces",
+        "callers",
+        "callees",
+        "evidence_refs"
+      ],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "component": {"$ref": "#/$defs/id"},
+        "path": {"$ref": "#/$defs/relativePath"},
+        "symbol": {"type": "string", "minLength": 1},
+        "kind": {
+          "enum": [
+            "function",
+            "method",
+            "class",
+            "primitive",
+            "op",
+            "dialect",
+            "pass",
+            "pipeline",
+            "abi",
+            "config",
+            "test",
+            "build-target",
+            "other"
+          ]
+        },
+        "layer": {
+          "enum": [
+            "jax-python",
+            "jaxlib",
+            "stablehlo",
+            "shardy",
+            "xla-hlo",
+            "pjrt",
+            "pallas",
+            "mosaic-tpu",
+            "libtpu",
+            "llo-runtime",
+            "hardware",
+            "build-tooling"
+          ]
+        },
+        "language": {
+          "enum": [
+            "python",
+            "cpp",
+            "c",
+            "mlir-tablegen",
+            "protobuf",
+            "starlark",
+            "other"
+          ]
+        },
+        "role": {"type": "string", "minLength": 1},
+        "location": {"$ref": "#/$defs/location"},
+        "stability": {
+          "enum": ["public", "internal", "experimental", "unknown"]
+        },
+        "consumes": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "produces": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "callers": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"}
+        },
+        "callees": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"}
+        },
+        "invariants": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "evidence_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/id"}
+        },
+        "notes": {"type": "string"}
+      }
+    }
+  }
+}

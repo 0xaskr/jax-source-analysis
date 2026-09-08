@@ -1,0 +1,52 @@
+{
+  "$schema": "../../../../manifests/schema/topic.schema.json",
+  "schema_version": "1.0",
+  "topic_id": "03-jit-cache",
+  "title": "jit tracing cache and input shape",
+  "question": "Does a repeated call with the same input shape retrace, and what changes when the shape changes?",
+  "status": "verified",
+  "scope": {
+    "includes": [
+      "Python tracing count for repeated and changed CPU input shapes"
+    ],
+    "excludes": [
+      "Persistent compilation cache",
+      "TPU compilation and execution"
+    ]
+  },
+  "provenance": {
+    "components": [
+      {
+        "name": "jax",
+        "root": "upstream/jax",
+        "version": "0.11.2.dev20260830+5832e86644",
+        "revision": "5832e866449a41c3eea6333416528039119a0fde",
+        "dirty": false
+      }
+    ]
+  },
+  "readme": "docs/contributing/examples/03-jit-cache/README.md",
+  "source_index": "docs/contributing/examples/03-jit-cache/source-index.json",
+  "evidence": [
+    {
+      "id": "shape-retrace",
+      "claim": "The second call with shape (4,) reuses the existing trace, while a call with shape (5,) creates another trace.",
+      "label": "RUN-CPU",
+      "source_refs": [
+        "jax.pjit.trace-for-jit"
+      ],
+      "artifact_refs": [
+        "docs/contributing/examples/03-jit-cache/captures/jit-cold-call/stdout.txt"
+      ],
+      "capture_manifest": "docs/contributing/examples/03-jit-cache/captures/jit-cold-call/manifest.json",
+      "reproduce": {
+        "cwd": ".",
+        "command": ".venv/bin/python labs/001-jit-cpu/probe.py --stage run",
+        "required_environment": []
+      },
+      "limitations": [
+        "This observes Python tracing count on the CPU backend; it does not prove TPU lowering, compilation, or execution behavior."
+      ]
+    }
+  ]
+}

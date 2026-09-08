@@ -68,6 +68,7 @@ git submodule update --init --depth 1 -- upstream/runtime/boringssl
 
 继续阅读：
 
+- [长期执行计划](PLAN.md)
 - [源码树、依赖关系与边界](docs/source-tree.md)
 - [CPU、GPU、TPU 阅读路径](docs/reading-paths.md)
 - [Lab 001：追踪 `jax.jit` 的 CPU 执行路径](labs/001-jit-cpu/README.md)（Marimo 实验台 + CodeTour 源码走读）

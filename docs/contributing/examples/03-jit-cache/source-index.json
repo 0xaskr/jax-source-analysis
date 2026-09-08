@@ -1,0 +1,46 @@
+{
+  "$schema": "../../../../manifests/schema/source-index.schema.json",
+  "schema_version": "1.0",
+  "topic_id": "03-jit-cache",
+  "components": [
+    {
+      "id": "jax",
+      "name": "JAX",
+      "root": "upstream/jax",
+      "version": "0.11.2.dev20260830+5832e86644",
+      "revision": "5832e866449a41c3eea6333416528039119a0fde"
+    }
+  ],
+  "entries": [
+    {
+      "id": "jax.pjit.trace-for-jit",
+      "component": "jax",
+      "path": "upstream/jax/jax/_src/pjit.py",
+      "symbol": "_trace_for_jit",
+      "kind": "function",
+      "layer": "jax-python",
+      "language": "python",
+      "role": "Traces a jitted callable after an inference-parameter cache miss and returns the parameters needed for lowering and compilation.",
+      "location": {
+        "start_line": 485
+      },
+      "stability": "internal",
+      "consumes": [
+        "Python callable",
+        "JIT configuration",
+        "abstract input values"
+      ],
+      "produces": [
+        "PjitParams containing traced jaxpr metadata"
+      ],
+      "callers": [],
+      "callees": [],
+      "invariants": [
+        "This function is entered on the Python inference-parameter cache-miss path."
+      ],
+      "evidence_refs": [
+        "shape-retrace"
+      ]
+    }
+  ]
+}

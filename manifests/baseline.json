@@ -1,0 +1,76 @@
+{
+  "external_inputs": {
+    "libtpu": null,
+    "tokamax": null,
+    "tpu_target": null
+  },
+  "repository": {
+    "root": {
+      "git_commit": "df923120f2b170248867a26e3b0f5596a4d049fd",
+      "path": ".",
+      "verification": "ancestor"
+    },
+    "sources": {
+      "jax": {
+        "git_commit": "5832e866449a41c3eea6333416528039119a0fde",
+        "path": "upstream/jax"
+      },
+      "llvm": {
+        "git_commit": "ab547095ead5464dc024d66264d9b8a987f429f3",
+        "path": "upstream/llvm-project"
+      },
+      "shardy": {
+        "git_commit": "eb23a98329aa70d991aa2d8a51a209af1f8df8fc",
+        "path": "upstream/shardy"
+      },
+      "stablehlo": {
+        "git_commit": "7b1b15781ccbd770f50c7eef4b0c3e03834649fd",
+        "path": "upstream/stablehlo"
+      },
+      "xla": {
+        "git_commit": "496bd4bd49db9ecbffd85da630b49c860b724604",
+        "path": "upstream/xla"
+      }
+    }
+  },
+  "runtime": {
+    "device": {
+      "default_platform": "cpu",
+      "platforms": [
+        "cpu"
+      ]
+    },
+    "jax": {
+      "git_hash": "5832e866449a41c3eea6333416528039119a0fde",
+      "install_type": "editable-source",
+      "reported_git_hash": null,
+      "version": "0.11.2.dev20260830+5832e86644"
+    },
+    "jaxlib": {
+      "git_hash": "2d66622450e2c8633cda2307688ef7aa294bd6eb",
+      "install_type": "installed-wheel",
+      "version": "0.11.1"
+    }
+  },
+  "schema_version": 1,
+  "status": {
+    "evidence_tags": [
+      "RUN-CPU",
+      "VERSION-SKEW"
+    ],
+    "jax_source_matches_jaxlib_build": false,
+    "reason": "The imported editable JAX source commit does not match the installed jaxlib build git hash; C++/XLA runtime observations are version-skewed.",
+    "runtime_source_alignment": "VERSION-SKEW"
+  },
+  "toolchain": {
+    "python": {
+      "project_constraint": "==3.12.*",
+      "repository_pin": "3.12.3",
+      "runtime": "3.12.3"
+    },
+    "uv": {
+      "project_constraint": "==0.12.9",
+      "runtime": "0.12.9"
+    }
+  }
+}
