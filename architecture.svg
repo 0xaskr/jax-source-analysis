@@ -1,0 +1,260 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1000" viewBox="0 0 1440 1000" role="img" aria-labelledby="title desc">
+  <title id="title">JAX 到硬件的源码分析架构</title>
+  <desc id="desc">展示 JAX 用户程序经过 tracing、jaxpr、MLIR lowering、StableHLO、Shardy 和 PJRT，分别进入 CPU、GPU 与 TPU 后端的架构；TPU 是研究主线，CPU 是开源参照，GPU 是有界对照，Pallas 作为独立专用 kernel 支线。</desc>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="arrow-head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+    <marker id="arrow-optional" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="optional-head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+    <marker id="arrow-boundary" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path class="boundary-head" d="M 0 0 L 10 5 L 0 10 z"/>
+    </marker>
+  </defs>
+
+  <style>
+    svg {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans CJK SC", sans-serif;
+    }
+    .canvas { fill: #f7f9fc; }
+    .section { fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.5; }
+    .lane { fill: #fbfcfe; stroke: #d9e1ec; stroke-width: 1.5; }
+    .pallas-lane { fill: #fbf9ff; stroke: #cfc3f3; stroke-width: 1.5; }
+    .node { fill: #edf4ff; stroke: #4f78c8; stroke-width: 1.5; }
+    .interface { fill: #f3efff; stroke: #7658c8; stroke-width: 1.5; }
+    .cpu-node { fill: #edf9f2; stroke: #36845a; stroke-width: 1.5; }
+    .gpu-node { fill: #fff8e8; stroke: #ae781b; stroke-width: 1.5; }
+    .tpu-node { fill: #f8efff; stroke: #874fbd; stroke-width: 1.5; }
+    .external { fill: #fff2ed; stroke: #cb5d37; stroke-width: 1.7; stroke-dasharray: 7 5; }
+    .hardware { fill: #24344d; stroke: #17243a; stroke-width: 1.5; }
+    .badge-cpu { fill: #dff3e8; stroke: #72ac8a; }
+    .badge-gpu { fill: #fff0c9; stroke: #d3a442; }
+    .badge-tpu { fill: #ead9fa; stroke: #a774d5; }
+    .badge-boundary { fill: #ffe3d8; stroke: #d77b59; }
+    .title { fill: #172033; font-size: 32px; font-weight: 700; }
+    .subtitle { fill: #617087; font-size: 16px; }
+    .section-title { fill: #26354d; font-size: 18px; font-weight: 700; }
+    .lane-title { fill: #26354d; font-size: 18px; font-weight: 700; }
+    .label { fill: #1f2d44; font-size: 17px; font-weight: 600; }
+    .small { fill: #617087; font-size: 14px; }
+    .badge-text { fill: #334155; font-size: 12px; font-weight: 700; }
+    .hardware-text { fill: #ffffff; font-size: 17px; font-weight: 700; }
+    .legend-text { fill: #526176; font-size: 13px; }
+    .flow { fill: none; stroke: #526176; stroke-width: 2; marker-end: url(#arrow); }
+    .bus { fill: none; stroke: #526176; stroke-width: 2; }
+    .optional-flow { fill: none; stroke: #7658c8; stroke-width: 2; stroke-dasharray: 7 5; marker-end: url(#arrow-optional); }
+    .boundary-flow { fill: none; stroke: #cb5d37; stroke-width: 2; marker-end: url(#arrow-boundary); }
+    .boundary-line { fill: none; stroke: #cb5d37; stroke-width: 1.7; stroke-dasharray: 7 5; }
+    .arrow-head { fill: #526176; }
+    .optional-head { fill: #7658c8; }
+    .boundary-head { fill: #cb5d37; }
+    .junction { fill: #526176; }
+    rect, path, line, circle { vector-effect: non-scaling-stroke; }
+
+    @media (prefers-color-scheme: dark) {
+      .canvas { fill: #0d1117; }
+      .section { fill: #161b22; stroke: #3d4652; }
+      .lane { fill: #111820; stroke: #35404e; }
+      .pallas-lane { fill: #171421; stroke: #574c79; }
+      .node { fill: #17243a; stroke: #7099e8; }
+      .interface { fill: #241d38; stroke: #9a7ce3; }
+      .cpu-node { fill: #12271d; stroke: #62b985; }
+      .gpu-node { fill: #2c2412; stroke: #d6a646; }
+      .tpu-node { fill: #281936; stroke: #b981e7; }
+      .external { fill: #321d18; stroke: #e1815e; }
+      .hardware { fill: #263a58; stroke: #7892b8; }
+      .badge-cpu { fill: #163422; stroke: #579974; }
+      .badge-gpu { fill: #3a2d12; stroke: #b98b31; }
+      .badge-tpu { fill: #362149; stroke: #9667bf; }
+      .badge-boundary { fill: #42231b; stroke: #bb684b; }
+      .title, .section-title, .lane-title, .label { fill: #eef3f8; }
+      .subtitle, .small, .legend-text { fill: #a9b4c2; }
+      .badge-text { fill: #dce4ee; }
+      .flow, .bus { stroke: #9eacbe; }
+      .optional-flow { stroke: #aa8ce8; }
+      .boundary-flow, .boundary-line { stroke: #e1815e; }
+      .arrow-head, .junction { fill: #9eacbe; }
+      .optional-head { fill: #aa8ce8; }
+      .boundary-head { fill: #e1815e; }
+    }
+  </style>
+
+  <rect class="canvas" width="1440" height="1000"/>
+
+  <g id="heading">
+    <text class="title" x="48" y="56">JAX → 硬件源码分析架构</text>
+    <text class="subtitle" x="48" y="85">TPU 主线 · CPU 开源参照 · GPU 有界对照</text>
+
+    <rect class="node" x="866" y="35" width="16" height="16" rx="3"/>
+    <text class="legend-text" x="891" y="48">公开源码</text>
+    <rect class="interface" x="984" y="35" width="16" height="16" rx="3"/>
+    <text class="legend-text" x="1009" y="48">可观察接口 / IR</text>
+    <rect class="external" x="1150" y="35" width="16" height="16" rx="3"/>
+    <text class="legend-text" x="1175" y="48">系统或闭源边界</text>
+  </g>
+
+  <g id="common-pipeline">
+    <rect class="section" x="48" y="120" width="410" height="680" rx="18"/>
+    <text class="section-title" x="76" y="158">共同编译 / 控制主干</text>
+    <text class="small" x="76" y="179">从 Python 语义到后端接口</text>
+
+    <path class="flow" d="M 253 262 L 253 290"/>
+    <path class="flow" d="M 253 362 L 253 390"/>
+    <path class="flow" d="M 253 462 L 253 490"/>
+    <path class="flow" d="M 253 562 L 253 590"/>
+    <path class="flow" d="M 253 662 L 253 700"/>
+
+    <rect class="node" x="88" y="190" width="330" height="72" rx="12"/>
+    <text class="label" x="253" y="220" text-anchor="middle">JAX 用户程序</text>
+    <text class="small" x="253" y="244" text-anchor="middle">jax.numpy · jit · pjit · sharding</text>
+
+    <rect class="node" x="88" y="290" width="330" height="72" rx="12"/>
+    <text class="label" x="253" y="320" text-anchor="middle">Tracing 与 primitives</text>
+    <text class="small" x="253" y="344" text-anchor="middle">transformations · 抽象求值</text>
+
+    <rect class="node" x="88" y="390" width="330" height="72" rx="12"/>
+    <text class="label" x="253" y="420" text-anchor="middle">jaxpr</text>
+    <text class="small" x="253" y="444" text-anchor="middle">类型化函数式中间表示</text>
+
+    <rect class="node" x="88" y="490" width="330" height="72" rx="12"/>
+    <text class="label" x="253" y="520" text-anchor="middle">JAX MLIR lowering</text>
+    <text class="small" x="253" y="544" text-anchor="middle">jaxlib bindings · FFI 边界</text>
+
+    <rect class="interface" x="88" y="590" width="330" height="72" rx="12"/>
+    <text class="label" x="253" y="620" text-anchor="middle">StableHLO ＋ Shardy</text>
+    <text class="small" x="253" y="644" text-anchor="middle">可移植计算 · 分片表达与传播</text>
+
+    <rect class="interface" x="88" y="700" width="330" height="72" rx="12"/>
+    <text class="label" x="253" y="730" text-anchor="middle">PJRT client / plugin / C API</text>
+    <text class="small" x="253" y="754" text-anchor="middle">compile · executable · buffer · execute</text>
+  </g>
+
+  <g id="backend-selection">
+    <path class="bus" d="M 418 736 H 494 V 231"/>
+    <path class="flow" d="M 494 231 H 548"/>
+    <path class="flow" d="M 494 451 H 540"/>
+    <path class="flow" d="M 494 705 H 548"/>
+    <circle class="junction" cx="494" cy="231" r="4"/>
+    <circle class="junction" cx="494" cy="451" r="4"/>
+    <circle class="junction" cx="494" cy="705" r="4"/>
+  </g>
+
+  <g id="cpu-lane">
+    <rect class="lane" x="520" y="120" width="872" height="200" rx="18"/>
+    <text class="lane-title" x="548" y="157">CPU 后端</text>
+    <rect class="badge-cpu" x="649" y="137" width="88" height="26" rx="13"/>
+    <text class="badge-text" x="693" y="155" text-anchor="middle">开源参照</text>
+
+    <path class="flow" d="M 738 231 H 770"/>
+    <path class="flow" d="M 1005 231 H 1037"/>
+    <path class="flow" d="M 1242 231 H 1274"/>
+
+    <rect class="cpu-node" x="548" y="190" width="190" height="82" rx="12"/>
+    <text class="label" x="643" y="222" text-anchor="middle">XLA CPU backend</text>
+    <text class="small" x="643" y="246" text-anchor="middle">HLO passes · codegen</text>
+
+    <rect class="cpu-node" x="770" y="190" width="235" height="82" rx="12"/>
+    <text class="label" x="887.5" y="218" text-anchor="middle">LLVM 机器码</text>
+    <text class="small" x="887.5" y="242" text-anchor="middle">oneDNN · Eigen · XNNPACK</text>
+    <text class="small" x="887.5" y="260" text-anchor="middle">ACL · OpenMP</text>
+
+    <rect class="cpu-node" x="1037" y="190" width="205" height="82" rx="12"/>
+    <text class="label" x="1139.5" y="222" text-anchor="middle">CPU PJRT runtime</text>
+    <text class="small" x="1139.5" y="246" text-anchor="middle">executable · collectives</text>
+
+    <rect class="hardware" x="1274" y="190" width="90" height="82" rx="12"/>
+    <text class="hardware-text" x="1319" y="237" text-anchor="middle">CPU</text>
+  </g>
+
+  <g id="gpu-lane">
+    <rect class="lane" x="520" y="340" width="872" height="240" rx="18"/>
+    <text class="lane-title" x="548" y="377">GPU 后端</text>
+    <rect class="badge-gpu" x="649" y="357" width="88" height="26" rx="13"/>
+    <text class="badge-text" x="693" y="375" text-anchor="middle">有界对照</text>
+
+    <path class="flow" d="M 690 451 H 710"/>
+    <path class="flow" d="M 865 451 H 885"/>
+    <path class="boundary-flow" d="M 1055 451 H 1075"/>
+    <path class="boundary-flow" d="M 1245 451 H 1265"/>
+
+    <rect class="gpu-node" x="540" y="410" width="150" height="82" rx="12"/>
+    <text class="label" x="615" y="442" text-anchor="middle">XLA GPU</text>
+    <text class="small" x="615" y="466" text-anchor="middle">fusion · emitter</text>
+
+    <rect class="gpu-node" x="710" y="410" width="155" height="82" rx="12"/>
+    <text class="label" x="787.5" y="442" text-anchor="middle">LLVM / Triton</text>
+    <text class="small" x="787.5" y="466" text-anchor="middle">kernel codegen</text>
+
+    <rect class="gpu-node" x="885" y="410" width="170" height="82" rx="12"/>
+    <text class="label" x="970" y="440" text-anchor="middle">StreamExecutor</text>
+    <text class="small" x="970" y="464" text-anchor="middle">PJRT GPU runtime</text>
+
+    <rect class="external" x="1075" y="410" width="170" height="82" rx="12"/>
+    <text class="label" x="1160" y="438" text-anchor="middle">厂商运行时</text>
+    <text class="small" x="1160" y="462" text-anchor="middle">CUDA · ROCm · SYCL</text>
+    <text class="small" x="1160" y="480" text-anchor="middle">驱动与二进制库</text>
+
+    <rect class="hardware" x="1265" y="410" width="90" height="82" rx="12"/>
+    <text class="hardware-text" x="1310" y="457" text-anchor="middle">GPU</text>
+
+    <text class="small" x="548" y="535">只选择一个厂商、一个版本和一个纵向案例，不展开全部 GPU 生态。</text>
+  </g>
+
+  <g id="tpu-lane">
+    <rect class="lane" x="520" y="600" width="872" height="200" rx="18"/>
+    <text class="lane-title" x="548" y="637">TPU 后端</text>
+    <rect class="badge-tpu" x="649" y="617" width="88" height="26" rx="13"/>
+    <text class="badge-text" x="693" y="635" text-anchor="middle">研究主线</text>
+
+    <path class="boundary-flow" d="M 788 705 H 850"/>
+    <path class="boundary-flow" d="M 1120 705 H 1240"/>
+    <line class="boundary-line" x1="820" y1="660" x2="820" y2="760"/>
+    <rect class="badge-boundary" x="776" y="646" width="88" height="24" rx="12"/>
+    <text class="badge-text" x="820" y="663" text-anchor="middle">源码边界</text>
+
+    <rect class="interface" x="548" y="664" width="240" height="82" rx="12"/>
+    <text class="label" x="668" y="696" text-anchor="middle">PJRT ABI</text>
+    <text class="small" x="668" y="720" text-anchor="middle">Mosaic TPU dialect · 可观察接口</text>
+
+    <rect class="external" x="850" y="664" width="270" height="82" rx="12"/>
+    <text class="label" x="985" y="696" text-anchor="middle">libtpu.so</text>
+    <text class="small" x="985" y="720" text-anchor="middle">闭源编译器 · runtime · driver</text>
+
+    <rect class="hardware" x="1240" y="664" width="100" height="82" rx="12"/>
+    <text class="hardware-text" x="1290" y="711" text-anchor="middle">TPU</text>
+  </g>
+
+  <g id="pallas-lane">
+    <rect class="pallas-lane" x="48" y="830" width="1344" height="160" rx="18"/>
+    <text class="section-title" x="76" y="862">Pallas 专用 kernel 支线</text>
+    <text class="small" x="76" y="883">独立于普通 JAX 程序的后续研究里程碑</text>
+
+    <path class="optional-flow" d="M 333 908 H 356 V 892 H 380"/>
+    <path class="optional-flow" d="M 356 908 V 948 H 380"/>
+    <path class="optional-flow" d="M 690 892 H 790"/>
+    <path class="optional-flow" d="M 690 948 H 790"/>
+    <circle class="optional-head" cx="356" cy="908" r="4"/>
+
+    <rect class="interface" x="165" y="884" width="168" height="48" rx="11"/>
+    <text class="label" x="249" y="914" text-anchor="middle">Pallas kernel DSL</text>
+
+    <rect class="gpu-node" x="380" y="866" width="310" height="52" rx="11"/>
+    <text class="label" x="535" y="888" text-anchor="middle">Triton / Mosaic GPU lowering</text>
+    <text class="small" x="535" y="907" text-anchor="middle">进入 GPU codegen / runtime</text>
+
+    <rect class="tpu-node" x="380" y="922" width="310" height="52" rx="11"/>
+    <text class="label" x="535" y="944" text-anchor="middle">Mosaic TPU lowering / dialect</text>
+    <text class="small" x="535" y="963" text-anchor="middle">经公开 dialect 进入 libtpu.so</text>
+
+    <rect class="gpu-node" x="790" y="866" width="244" height="52" rx="11"/>
+    <text class="label" x="912" y="898" text-anchor="middle">GPU 有界对照</text>
+
+    <rect class="external" x="790" y="922" width="244" height="52" rx="11"/>
+    <text class="label" x="912" y="954" text-anchor="middle">TPU 闭源边界</text>
+
+    <text class="small" x="1080" y="900">实线：共同主路径</text>
+    <text class="small" x="1080" y="930">虚线：Pallas 专用支线</text>
+  </g>
+</svg>
