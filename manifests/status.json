@@ -1,7 +1,7 @@
 {
   "$schema": "schema/project-status.schema.json",
   "schema_version": "1.0",
-  "updated_at": "2026-09-08T23:25:22+08:00",
+  "updated_at": "2026-09-13T15:15:03+08:00",
   "objective": "Build a version-pinned, coverage-measured, searchable and executable white-box account of JAX-to-TPU, including transformations, compiler passes, libtpu compiler/runtime, LLO and hardware mapping.",
   "plan_path": "PLAN.md",
   "baseline_path": "manifests/baseline.json",
@@ -138,6 +138,23 @@
     }
   ],
   "active_work": [
+    {
+      "id": "kickoff-documentation-validation",
+      "title": "Complete recovery-state validation for the kickoff documentation checkpoint",
+      "state": "blocked",
+      "artifacts": [
+        "kickoff.md",
+        "PLAN.md",
+        "manifests/status.json"
+      ],
+      "notes": [
+        "The requested kickoff document is written with background and motivation, objectives, research methods, acceptance criteria and task breakdown mapped to the existing plan.",
+        "Required-section, local-link, heading-spacing and code-fence checks passed. No baseline, coverage, historical evidence or P1 action dependency was changed.",
+        "On 2026-09-13 this checkout has no .venv and all five baseline source submodules are uninitialized. The prescribed venv commands cannot start; system Python project-status validation and its selftest fail because source and jaxlib files are missing.",
+        "This is a documentation checkpoint, not a completed project-state validation milestone. After environment synchronization, rerun project-status --check and selftest-project-status, close this validation item, and resume q005-native-dependency-capture."
+      ],
+      "next_command": "python3 -B tools/sync-environment.py sync"
+    },
     {
       "id": "q005-current-runtime-provenance",
       "title": "Close the current jaxlib wheel and dynamic-linker provenance capture",

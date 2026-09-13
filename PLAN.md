@@ -5,6 +5,9 @@
 > 当前阶段：P1 runtime provenance 与 source-built jaxlib
 > 当前工作重点：先补齐当前 wheel 的动态依赖/loader resolution，再完成可留证的源码构建、隔离安装和运行时 provenance 验证
 
+项目启动与团队对齐入口见 [kickoff.md](kickoff.md)，其中汇总背景与动机、目标、
+研究方法、验收标准和任务拆解；具体进度继续由本计划和状态清单维护。
+
 ## 1. 背景、动机与任务定义
 
 ### 1.1 工程背景
@@ -913,3 +916,15 @@ capture；缺失层必须保留原因和解除动作，不能用较弱 capture �
 - 核实 HLO 编辑 API 请求、多 slice verifier、alias、mesh 选择、Pallas lowering、FP8 和 XProf 可见性需求；对 PR 状态和实际代码落地分别留证。
 - 此次完善不改变 P1 队列与 coverage。下一恢复命令仍为 `.venv/bin/python -B tools/project-status.py --check`，再读取摘要中的 first-ready-action。
 - 通过成员匹配、作者限定查询完整性、快照哈希、元数据/链接和公开范围检查；project-status、evidence validator 及对应 selftest 均通过。
+
+### 2026-09-13：新增项目 Kickoff 文档
+
+- 新建 `kickoff.md`，汇总背景与动机、目标、研究方法、验收标准和任务拆解，并关联
+  现有 P0–P15 阶段及 Q005 后续队列。没有修改 baseline、coverage 或历史执行证据。
+- 本机 `.venv` 缺失，五个核心 submodule 均未初始化。文档章节、链接、代码围栏与
+  格式检查通过；系统 Python 下的 project-status 和对应 selftest 因缺少源码及
+  jaxlib 文件失败，完整状态验收仍待环境恢复，不能将本轮登记为已通过该门禁。
+- 文档及恢复记录作为独立检查点保存；`kickoff-documentation-validation` 跟踪剩余
+  状态验收。下一命令为 `python3 -B tools/sync-environment.py sync`，恢复后运行
+  `.venv/bin/python -B tools/project-status.py --check` 和
+  `.venv/bin/python -B tools/selftest-project-status.py`，再继续 Q005。
