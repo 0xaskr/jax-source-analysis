@@ -1,9 +1,9 @@
 # JAX → TPU 白盒源码分析项目 Kickoff
 
-本文用于项目启动与团队对齐，说明研究问题、交付目标、执行方法和验收方式。
-详细阶段计划以 [PLAN.md](PLAN.md) 为准；进度、版本和覆盖深度分别以
-[status](manifests/status.json)、[baseline](manifests/baseline.json) 和
-[coverage](manifests/coverage.json) 为准，本文不维护第二套执行状态。
+> 状态：启动讨论稿｜首期交付：CPU 上的源码构建、变换解释与图改写机制验证
+
+本文说明项目为什么做、交付什么、研究哪些问题，以及如何分工和验收。范围、术语、
+研究方法与阶段依赖均在文内说明，可独立用于启动讨论和团队对齐。
 
 ## 1. 背景与动机
 
@@ -12,10 +12,10 @@
 JAX 变换、编译器、运行时和设备观测逐层定位；修改位置、上下游接口和验证条件
 需要一起确定。
 
-仓库已整理的[组织工程场景](docs/research/organization-engineering-cases.md)
-包括 HLO 编辑能力需求、图改写后的 alias 与内存问题、分片与通信映射、Pallas
-lowering 支持，以及 profile 和 LLO 的可见性问题。这些历史记录用于提出研究问题；
-其中报告的根因和性能结果不构成本项目固定基线上的运行证据。
+例如，想合并两次矩阵乘法，需要先找到可以修改计算图的位置，再检查梯度、分片、
+缓冲区复用和执行顺序；发现通信或内存开销偏大，需要把模型表达、编译器选择与
+设备观测联系起来；编写 Pallas kernel 时，需要弄清算子如何被转换为后续表示，
+以及哪里能观察生成结果。研究要把这些工作所需的知识和实验条件沉淀下来。
 
 研究围绕四项工程需求展开：
 
@@ -32,6 +32,8 @@ lowering 支持，以及 profile 和 LLO 的可见性问题。这些历史记录
 的对照验证；资料建设本身也计入成本，不预先声称能够达到固定的效率或性能提升。
 
 ## 2. 目标
+
+### 2.1 总目标
 
 建立一套版本固定、可检索、可执行、可修改和可回滚的 JAX → TPU 白盒资料库，
 使使用者能够从工程问题找到干预位置，并用可复现的证据完成验收。
@@ -50,23 +52,99 @@ lowering 支持，以及 profile 和 LLO 的可见性问题。这些历史记录
 5. **沉淀可复用材料**：交付源码导读、双向索引、命令行 probe、IR/日志 capture、
    可逆补丁、分析文章和故障定位案例，支持团队学习与上游贡献。
 
+这里的 workload 指固定版本的计算入口及其输入、配置和数值参考；IR 指程序的中间
+表示；pass 指编译器中负责检查或变换程序的一步。probe 是用于检验一个问题的短小
+程序，capture 是一次固定条件下采集的产物及其来源记录。
+
+### 2.2 首期目标
+
+首期交付一个可以在 CPU 环境复现和演示的研究闭环：
+
+- 从固定源码构建匹配的 jaxlib，隔离安装，并证明实际使用了构建产物。
+- 对一个小型批量计算函数，先用 `vmap` 批量求值，再归约成标量损失，对损失使用
+  `grad` 和 `jit`。保存各阶段的程序表示和自动断言，解释变换及缓存行为。
+- 用 `sin → cos` 探针验证 HLO 变换回调确实生效，检查合法插入阶段、缓存隔离和
+  清理；这一探针的预期就是改变数值结果。
+- 检测“两条兼容矩阵乘法能否合并成一次更宽的矩阵乘法，再切分输出”的候选模式，
+  给出命中、拒绝原因和约束。实际保持语义的改写在后续阶段验收。
+- 完成一次 native 诊断修改的重编译、加载证明和回滚，交付可复现入口与说明。
+
+首期成功的标志是另一位工程师能够复现以上过程、解释观察结果，并恢复原始基线。
+
+## 3. 范围与启动条件
+
 分析从公开 JAX API 或纯 JAX/Pallas 入口开始。Tokamax 和自研框架只提供固定版本的
 workload、输入契约和数值参考；它们在 JAX 之上的框架设计不进入研究范围。
 
-按[现有架构划分](docs/architecture/00-whole-stack.md)，分别研究普通 JAX/XLA TPU
-路径和 Pallas/Mosaic TPU 路径，并将 host 控制调用链与编译载荷链分开记录。
-Mosaic TPU MLIR 不称为 LLO。libtpu 内部阶段、LLO 与具体硬件的对应关系，需要
-匹配源码、目标配置和编译或设备产物支持后才能形成结论。
+研究对象中的主要术语如下：
 
-## 3. 研究方法
+| 对象 | 本项目关注的含义与问题 |
+|---|---|
+| Jaxpr | JAX 的程序中间表示；研究其操作、变量、变换规则和源代码对应关系 |
+| MLIR、StableHLO、HLO | MLIR 是编译器基础设施；StableHLO 和 XLA HLO 是不同阶段的程序表示，研究表示之间的转换及变换约束 |
+| Shardy、sharding | Shardy 是分片相关编译基础设施；sharding 描述数组如何分布在设备上 |
+| jaxlib、IFRT/PJRT | JAX 的原生库与设备运行时接口；研究编译请求、可执行程序、缓冲区及同步的控制关系 |
+| Pallas、Mosaic TPU MLIR | Pallas kernel 的程序表达及其 TPU 中间表示；同时观察内层 kernel 和外层调用 |
+| libtpu、LLO | TPU 编译器和运行时实现，以及目标相关的低层表示；内部结构与硬件关系需取得匹配输入后核验 |
+| alias、donation | 缓冲区别名与允许执行复用输入缓冲区的约定；图改写需要检查其正确性和生命周期 |
+
+以下是要分别建立源码与产物对应关系的三条研究线。公共边界以固定版本的源码检查
+为起点（`SOURCE-ONLY`）；libtpu 内部阶段与硬件关系是待验证对象。
+
+| 研究线 | 主要观察点 |
+|---|---|
+| 普通 JAX/XLA TPU 编译 | Python 函数 → 变换后的 Jaxpr → StableHLO／按需携带 Shardy → PJRT 编译请求 → libtpu；后续研究 HLO passes、LLO 与机器产物 |
+| Pallas/Mosaic TPU 编译 | kernel Jaxpr → Mosaic TPU MLIR → 序列化并封装到外层 custom call → PJRT/libtpu；同时保留内层模块与外层调用，继续研究目标代码生成 |
+| host 控制与执行 | JAX dispatch/cache → jaxlib、IFRT/PJRT → plugin/libtpu；继续研究程序装载、启动、缓冲区、事件和设备完成状态 |
+
+Mosaic TPU MLIR 不称为 LLO。两条编译路径分别取证，控制调用链与编译器内部
+pass 顺序分别记录。真实 workload 中出现的其他扩展调用或导出入口另行登记。
+
+启动研究采用以下固定源码基线；后续实验同时记录实际加载的二进制身份：
+
+| 组件 | Git revision |
+|---|---|
+| JAX | `5832e866449a41c3eea6333416528039119a0fde` |
+| XLA | `496bd4bd49db9ecbffd85da630b49c860b724604` |
+| StableHLO | `7b1b15781ccbd770f50c7eef4b0c3e03834649fd` |
+| Shardy | `eb23a98329aa70d991aa2d8a51a209af1f8df8fc` |
+| LLVM | `ab547095ead5464dc024d66264d9b8a987f429f3` |
+
+已有启动记录使用 JAX `0.11.2.dev` 源码与 `jaxlib==0.11.1` CPU wheel，属于
+`RUN-CPU`、`VERSION-SKEW`，不能证明上述 XLA revision 已被运行。首期要完成的
+源码构建与隔离验证用于建立匹配关系；开始新实验前须恢复并检查执行环境。
+
+真实 workload 接入需要源码 revision、纯 JAX/Pallas 入口、输入和数值参考；
+TPU 编译研究需要匹配的 libtpu 源码、二进制、工具链与目标配置；真机研究还需要
+固定 TPU 代际、设备拓扑及运行环境。这些输入在启动阶段尚未齐备，对应任务按条件
+启动。环境缺口保留明确的解除动作，不以 CPU 结果代替缺失的 TPU 证据。
+
+## 4. 研究内容与搜索空间
+
+先明确有哪些可选修改位置、需要比较哪些条件，再由源码与实验决定具体方案。
+
+| 研究问题 | 需要探索的选择 | 用什么判断 |
+|---|---|---|
+| 为什么发生变换或再次编译 | 变换组合顺序、shape/dtype、静态参数、缓存条件 | tracing 次数、Jaxpr/IR、编译日志与数值断言 |
+| 应该在哪一层修改计算图 | JAX 表达、Jaxpr 规则、StableHLO/XLA pass、kernel 替换 | 接口、合法阶段、语义与副作用、修改和重建成本 |
+| 分片与通信为什么偏离预期 | 逻辑分片、约束传播、重新分片、collective 选择 | 分片前后 IR、通信语义与缓冲区；TPU 开销另取真机证据 |
+| 内存为什么无法按预期复用 | alias/donation、中间值存活期、重计算、调度 | 生命周期、内存分配产物、定向实验与峰值观测 |
+| kernel 为什么没有得到预期产物 | block、layout、流水安排、数据搬运和同步表达 | interpreter 断言、Mosaic IR、目标编译产物与设备 profile |
+| 改动是否值得推广 | 局部修改与上下游配套、构建成本、运行收益与维护成本 | 完整 workload 对照、失败样本、适用范围和回滚结果 |
+
+每个候选方向记录预期、假设、最小验证和停止条件。首次实验用于缩小搜索范围；
+性能目标在固定 workload 与测量口径后确定，理论估计、编译器静态报告和设备实测
+分别保留，差异需要继续解释。
+
+## 5. 研究方法
 
 每个研究单元以明确问题开始，最终形成可以审阅、复现和恢复的证据包。
 
 1. **定义问题与实验合同**。记录症状、预期行为、候选解释、允许修改的范围、输入
    shape/dtype、数值容差、资源预算和停止条件。真实 workload 接入后，先枚举其
    可达 feature，再据此决定专题优先级。
-2. **固定源码与运行来源**。以 [upstream-sources.lock](upstream-sources.lock)
-   和 manifests 锁定 revision、工具链、二进制 SHA-256、实际加载路径及编译配置。
+2. **固定源码与运行来源**。记录完整源码 revision、工具链、二进制 SHA-256、
+   实际加载路径及编译配置，形成机器可读的来源清单。
    优先检查固定本地源码，使用 symbol、caller/callee 和数据结构建立索引。
 3. **构造最小探针并留存观察**。从小规模 synthetic workload 开始，采集实际生成的
    Jaxpr、IR、日志与结构化断言；每次 capture 绑定 producer argv、输入、环境、
@@ -80,7 +158,7 @@ Mosaic TPU MLIR 不称为 LLO。libtpu 内部阶段、LLO 与具体硬件的对�
    对应语义校验器与 selftest。使用代表性任务比较常规资料与新增研究产物的使用
    效果，记录总成本、方向调整依据、恢复能力和验收可靠性。
 
-证据严格使用[证据规范](docs/contributing/evidence-conventions.md)中的等级：
+证据按实际完成的验证标记：
 
 | 等级 | 可记录的验证 |
 |---|---|
@@ -95,14 +173,46 @@ Mosaic TPU MLIR 不称为 LLO。libtpu 内部阶段、LLO 与具体硬件的对�
 用于推断 TPU runtime、LLO、硬件、通信、内存布局或性能；模拟与编译成功也不能
 替代真机验证。
 
-每个主题逐步形成 `README.md`、`topic.json`、`source-index.json`、probe 和 capture；
+每个主题逐步形成问题与结论说明、机器可读的结论清单、源码索引、probe 和 capture；
 修改类主题增加 patch、构建与回滚记录。大体积或私有产物保留在 Git 外，提交脱敏
 locator 和 hash。每个独立里程碑更新计划与状态，按范围运行检查，再提交并推送。
 
-## 4. 验收标准
+## 6. 工作拆分与里程碑
 
-验收以可复核产物和适用证据为依据。以下是目标门槛，当前完成情况从 coverage
-清单读取；其中 `covered` 只表示达到已记录深度。
+按依赖和可演示的交付结果推进。以下列出工作内容与进入条件；负责人、工作量和
+日历排期由参与者结合源码、构建时间和设备可用性在启动讨论中确定。
+
+| 工作包 | 主要交付物 | 依赖与启动条件 |
+|---|---|---|
+| 研究基础 | 版本与环境清单、证据规则、架构、覆盖清单和恢复工具 | 已有基础上持续维护；实验前检查环境 |
+| 运行来源与源码构建 | 动态依赖取证、Bazel 依赖闭包、jaxlib 构建及隔离验证、诊断修改与回滚 | 核心源码、CPU 环境和固定构建工具链 |
+| 真实 workload 接入 | Tokamax/自研框架入口、输入合同、数值参考及可达功能清单 | 获得对应源码与输入；先于真实专题取舍 |
+| 程序模型与变换 | 通用 Lab、Primitive/Tracer/Jaxpr、自动微分、批量化、组合实验和微型 JAX | 匹配 runtime 与可执行 Lab 基础 |
+| Lowering 与 Pass | 操作到 IR 索引、pass 观察工具、`sin → cos` 探针、矩阵乘法模式检测、原生 pass 构建入口 | 变换基础与 source-built jaxlib |
+| Runtime 与 Sharding | IFRT/PJRT 生命周期、异步执行、alias/donation、多 CPU 分片与 collective 实验 | 匹配 runtime；为安全改写建立合同 |
+| Pallas 与 Mosaic | 内外层程序、模拟器数值/越界/竞态检查、Mosaic IR 与序列化样本 | Pallas 可执行环境；TPU 编译另行取证 |
+| libtpu 与 TPU runtime | 目标与接口清单、两条编译路径、装载/启动/缓冲区/事件、源码修改与回滚 | 匹配 libtpu 和工具链；执行部分需要真实 TPU |
+| LLO 与硬件映射 | 目标相关的格式与 pass、源码到机器产物的对应关系、profile/counter 对照 | libtpu、固定 target 及编译/设备证据 |
+| 纵向案例与诊断 | 真实训练/推理案例、安全图改写、内存/通信/性能与故障定位 | workload、runtime/sharding 合同；TPU 部分依赖设备 |
+| 索引、文章与迁移 | 双向查询、IR 解析校验、修改及真机验收工具、分析文章、版本漂移检查 | 随研究积累交付，完整范围由真实 workload 确定 |
+
+首期构建工作按“当前二进制动态依赖取证 → 构建依赖闭包 → 正式构建 → 隔离验证
+→ 诊断修改与回滚 → 通用实验模板”的顺序推进。真实 workload 一旦具备输入即可
+接入，不必等待全部 synthetic 实验完成。
+
+| 里程碑 | 演示内容 | 退出标准 |
+|---|---|---|
+| M1：可归因的 CPU 基线 | 构建、隔离安装、诊断修改、实际加载与回滚 | 源码和二进制匹配，依赖可核验，定向测试通过，可恢复基线 |
+| M2：首期研究闭环 | 批量计算、标量损失求导与编译；HLO 变换及模式检测 | 源码、IR、断言相互对应，缓存和回调清理可复现，另一位工程师可重复演示 |
+| M3：真实 workload 修改 | 固定入口的功能清单，runtime/sharding 合同与安全图改写 | 前向、梯度及全部适用合同通过，命中和拒绝路径有证据，完成回滚 |
+| M4：TPU 纵向验证 | 两条适用编译路径到目标 LLO、运行时与设备观测 | 分别取得目标编译与真机证据，对关键内存、通信和性能差异给出解释 |
+| M5：团队交付 | 从症状或 IR 反查源码、复现实验、故障定位和基线迁移演示 | 适用主题达到目标深度，材料可检索与复现，版本漂移可以检测 |
+
+## 7. 验收与差异追踪
+
+### 7.1 验收标准
+
+验收以可复核产物和适用证据为依据。以下是交付门槛：
 
 | 验收项 | 通过条件 | 主要交付物 |
 |---|---|---|
@@ -115,56 +225,39 @@ locator 和 hash。每个独立里程碑更新计划与状态，按范围运行�
 | 检索与交接 | 从 API、symbol、IR op、pass 或故障症状找到源码与证据；新会话能从状态文件恢复下一动作 | 查询工具、源码导读、实验/回放入口、文章 |
 | 工程效果 | 在相同任务约束下记录成本、决策、失败与恢复过程；收益结论有对照并说明适用范围 | 代表性任务评价记录 |
 
-最近的阶段验收是：在 source-built CPU jaxlib 上解释固定 synthetic workload 的
-`jit(grad(vmap(f)))`，保存 Jaxpr/StableHLO 和断言，并完成隔离缓存的 `sin → cos`
-机制探针及 `dot` detection-only matcher。语义保持的真实 workload 改写在 intake、
-runtime 与 sharding 基础完成后验收。
+比较前固定代码与二进制版本、输入规模、dtype、编译参数、缓存条件、实现方案，
+涉及 TPU 时再固定 target 和拓扑。性能阈值在形成可测基线后由负责人和审阅者确认。
+每次 review 保留“预期—观察—差异—候选原因—下一验证”，避免只提交一个结果数字。
 
-长期完成时，workload census 中每个适用项达到审查后的目标深度；关键纵向路径达到
-L5，其余可达分支至少达到 L1，且满足各自更高的目标要求。适用项不再保留未收口的
-`unobserved` 或 `blocked`，`not-applicable` 有依据。L4/L5 的机器校验合同由
-Q016/I004 补齐，在此之前验证器继续拒绝相应深度声明，不通过修改文档提升覆盖。
+### 7.2 覆盖深度与完成标准
 
-## 5. 任务拆解
+| 深度 | 达成条件 |
+|---|---|
+| L0 | 术语定义和所属层级明确 |
+| L1 | 职责、输入输出及上下游接口明确 |
+| L2 | 固定 revision 的源码入口、调用关系和数据结构可定位 |
+| L3 | 有可运行探针、与结论关联的真实 IR 和自动断言 |
+| L4 | 完成源码修改、构建、测试、安装与回滚闭环 |
+| L5 | 在固定真实 TPU 上完成数值、LLO、内存、通信和性能验证 |
 
-任务对应 [PLAN.md](PLAN.md) 的既有阶段。表中的依赖表示进入该任务验收所需的
-基础，实际恢复顺序服从 `status.next_actions`。
+深度描述研究完成程度，证据标签描述实际采取的验证方式，两者分别记录。每个适用
+功能登记目标深度和已达到深度；“已覆盖”只表示达到登记深度。尚未观察、输入阻塞
+和不适用分别记录，其中阻塞项写解除动作，不适用项给出可复核依据。
 
-| 工作包 | 对应阶段/队列 | 主要任务与产物 | 依赖与启动条件 |
-|---|---|---|---|
-| 项目基础与恢复 | P0、Q001–Q004 | 维护计划、baseline、证据规范、coverage、架构与状态工具 | 已有基础上持续维护；实验前恢复本机环境 |
-| 运行来源与源码构建 | P1、Q005/Q006 | loader resolution、Bazel 依赖闭包、正式 jaxlib build、隔离验证、native 诊断与回滚 | 核心源码、CPU 环境和固定构建工具链就绪 |
-| 真实 workload 接入 | Q007/Q008 | 固定 Tokamax/自研框架入口、调用契约、数值参考和 feature census | 取得对应源码及可复现输入；先于真实专题取舍 |
-| 程序模型与变换 | P2/P3、Q009–Q014 | Lab 模板、Primitive/Tracer/Jaxpr、AD、batching、组合实验和微型 JAX | 匹配 runtime 与可执行 Lab 基础 |
-| Lowering 与 Pass 机制 | P4/P5、Q015 | primitive 到 IR 索引、pass runner、`sin → cos`、`dot` matcher、原生 pass 构建入口 | 变换基础及 source-built jaxlib；先验证机制 |
-| Runtime 与 Sharding | P6/P7 | IFRT/PJRT 生命周期、异步执行、alias/donation、多 CPU 分片与 collective 语义 | 匹配 runtime；为安全改写建立合同 |
-| Pallas 与 Mosaic | P8/P9 | 内外层 Jaxpr、interpreter、bounds/race、Mosaic MLIR 与 serde fixture | Pallas 可执行环境；TPU 编译行为另行验证 |
-| libtpu 与 TPU runtime | P10/P11、Q017 | 固定源码/ABI/target、两条 compiler 路径、load/launch/buffer/event、修改与回滚 | 匹配 libtpu 与工具链；运行部分需要真实 TPU |
-| LLO 与硬件映射 | P12 | target-bound schema、pass、source lineage、bundle 与 profile/counter 对照 | libtpu、固定 target 和对应编译/设备证据 |
-| 纵向案例与故障诊断 | P13/P14 | 真实训练/推理 dossier、安全 topology rewrite、内存/通信/性能与故障案例 | workload census、runtime/sharding 合同；TPU 结论依赖设备证据 |
-| 索引、文章与迁移 | Q016/I001–I004、P15 | 全局索引与查询、IR parser gate、L4/L5 合同、文章、漂移检测和基线迁移 | 随主题积累交付；完整索引覆盖依赖真实 census |
+长期完成时，真实 workload 中每个适用项达到审查后的目标深度；关键纵向路径达到
+L5，其余可达分支至少达到 L1 并满足各自更高目标，不留下未收口的适用阻塞项。
+L4/L5 的机器校验合同也属于交付内容；合同和证据齐备前，不接受相应深度声明。
 
-当前 P1 队列依次为：
+## 8. 协作与待决事项
 
-1. `q005-native-dependency-capture`：补齐当前 `VERSION-SKEW` runtime 的动态依赖取证。
-2. `p1-bazel-dependency-closure`：归档并校验 Bazel 外部依赖闭包。
-3. `p1-official-build`：完成 wrapper 管理的正式构建，记录 wheel 与持久日志。
-4. `p1-isolated-validation`：隔离安装并验证 provenance 和 Lab 001。
-5. `p1-native-diagnostic-patch`：重编译诊断改动，证明实际加载并回滚。
-6. `q009-lab-template`：建立通用 Lab 与无界面验证入口。
+启动讨论确认首期范围、代表性任务和验收方式。每个工作包明确执行负责人和审阅者；
+里程碑 review 展示可复现结果、剩余风险和下一步选择。范围、接口、资源预算与
+方案变化保留决策依据，进展按“已验证、待验证、阻塞、下一动作”同步。
 
-2026-09-13 本机启动检查发现 `.venv` 不存在，JAX、XLA、StableHLO、Shardy 和 LLVM
-五个核心 submodule 尚未初始化。指定状态命令无法启动，系统 Python 下的状态校验
-也因缺少源码和运行库失败。此项是本机恢复前置条件，历史环境通过记录保留原意。
-恢复入口如下；检查通过后继续工具打印的 `first-ready-action`：
+需要参与者确定的事项：
 
-```bash
-python3 -B tools/sync-environment.py sync
-python3 -B tools/sync-environment.py check
-.venv/bin/python -B tools/project-status.py --check
-.venv/bin/python -B tools/project-status.py
-```
-
-正式源码构建另需通过[固定 Docker 工具链入口](docs/building/source-built-jaxlib.md)
-的严格 preflight。Tokamax、自研框架、libtpu 和 TPU target/device 的取得情况继续
-由状态清单记录；相关输入到位后按依赖启动对应工作包。
+- 项目负责人、各工作包负责人和审阅者，以及具体工作量与排期。
+- 首批真实训练/推理入口、输入规模、数值参考及其提供者。
+- libtpu 源码与工具链的取得方式、首个 TPU target、拓扑和设备窗口。
+- 每轮实验的构建与设备预算、停止条件，以及形成基线后的性能验收阈值。
+- 里程碑评审节奏、结果交付对象和资料维护责任。
