@@ -1,7 +1,7 @@
 {
   "$schema": "schema/project-status.schema.json",
   "schema_version": "1.0",
-  "updated_at": "2026-09-08T23:25:22+08:00",
+  "updated_at": "2026-09-13T21:05:42+08:00",
   "objective": "Build a version-pinned, coverage-measured, searchable and executable white-box account of JAX-to-TPU, including transformations, compiler passes, libtpu compiler/runtime, LLO and hardware mapping.",
   "plan_path": "PLAN.md",
   "baseline_path": "manifests/baseline.json",
@@ -138,6 +138,26 @@
     }
   ],
   "active_work": [
+    {
+      "id": "kickoff-documentation-validation",
+      "title": "Complete recovery-state validation for the standalone kickoff documentation checkpoint",
+      "state": "blocked",
+      "artifacts": [
+        "kickoff.md",
+        "PLAN.md",
+        "manifests/status.json",
+        ".gitignore"
+      ],
+      "notes": [
+        "The kickoff is self-contained: background, overall and first-phase goals, scope, terminology, pinned source revisions, research search space, methods, work packages, milestone exit criteria, evidence levels, coverage depths and open decisions are explained inline. Repository links, recovery commands and P/Q/I queue identifiers have been removed from its reading flow.",
+        "Two user-designated internal kickoff documents were read through the official Outline MCP using authorized read-only OAuth. They inform document organization only; their project designs, performance values, private identities and schedules are not copied into Git. Codex MCP configuration and authentication are local user settings outside this repository.",
+        "Restricted writing-reference archive: artifact:kickoff-reference-20260913; manifest SHA-256 23c38525d879a8d4da16a68990ff3ea5baa932d01ff2261648d95e08d0d90a61. Retrieval: request the authorized local archive from the project maintainer. This is a writing-reference snapshot, not baseline execution evidence.",
+        "Independent-reading, section/table formatting, pinned-revision consistency, status JSON Schema, restricted archive hash and git diff --check validations passed. No baseline, coverage, historical evidence or P1 action dependency was changed.",
+        "On 2026-09-13 this checkout still has no .venv and all five baseline source submodules are uninitialized. The prescribed venv commands cannot start; system Python project-status validation and its selftest fail because source and jaxlib files are missing.",
+        "This remains a documentation checkpoint, not a completed project-state validation milestone. After environment synchronization, rerun project-status --check and selftest-project-status, close this validation item, and resume q005-native-dependency-capture."
+      ],
+      "next_command": "python3 -B tools/sync-environment.py sync"
+    },
     {
       "id": "q005-current-runtime-provenance",
       "title": "Close the current jaxlib wheel and dynamic-linker provenance capture",

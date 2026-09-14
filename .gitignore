@@ -6,4 +6,5 @@ __pycache__/
 __marimo__/
 /artifacts/builds/
 /artifacts/environment/
+/artifacts/research/kickoff-reference-20260913/
 /manifests/build-fingerprints/**/.*.tmp
