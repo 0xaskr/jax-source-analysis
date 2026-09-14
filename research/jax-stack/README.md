@@ -4,7 +4,7 @@
 新建研究。完整要求和未完成项保留在 [PLAN.md](PLAN.md)，没有沿用已删除的旧进度。
 
 - [软件栈与 API 总览](overview.md)：组件、控制链、普通 CPU/TPU 与 Pallas 两层表示。
-- [源码索引](source-index.json)：63 个入口、17 条带调用位置及分支条件的关系，含锁定的 XProf tooling 源码。
+- [源码索引](source-index.json)：74 个入口、21 条带调用位置及分支条件的关系，含锁定的 XProf tooling 源码。
 - [Pallas 对照](pallas-comparison.md)：相同输入的普通 JAX、generic 与 TPU interpret。
 - [三类 profiling 区间](profiling.md)：host、编译 pass、设备标记的实验证据与验收边界。
 - [扩展实验结果](extension-results.json)：四组 capture、62 个产物的独立复查。
@@ -13,6 +13,8 @@
 - [属性、HLO 编辑与成本](attributes-and-cost.md)：六种 metadata 情形、属性丢失边界、HLO 改写执行与成本读取。
 - [属性/cost Notebook](attributes-cost.ipynb) 与 [验证结果](attributes-results.json)：60 个产物的独立复查。
 - [Roofline 模块与边界](roofline.md)：XProf 处理链、硬件/时间输入、Unknown 与零值，以及修正位置。
+- [Fusion 与内存复用](fusion-and-memory.md)：11 组 CPU 对照，区分 fusion、donation、实际指针、allocation 与逻辑 peak。
+- [Fusion/memory Notebook](fusion-memory.ipynb) 与 [结果](fusion-memory-results.json)：2028 个产物的独立复查。
 - [CPU 实验结果](cpu-results.json)：数值、pass 边界、静态 cost/memory、ELF 目标文件及 capture 指纹。
 - [生产脚本](matmul_probe.py)：生成四组样本、原始 IR/日志、二进制和来源记录。
 - [交互 Notebook](matmul-lowering.ipynb)：六个代码单元已在真实 Jupyter 内核中执行通过。
