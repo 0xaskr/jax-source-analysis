@@ -1,0 +1,2 @@
+# Canonical diff context can be a single space; preserve patch bytes and hashes.
+*.patch whitespace=-blank-at-eol

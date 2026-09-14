@@ -1,0 +1,199 @@
+diff --git a/xla/hlo/pass/BUILD b/xla/hlo/pass/BUILD
+index 2d106ab69ae82a6401ed061bf116586aae29d917..f87909005678d134a70f58fc4c9a0b6aa8051b2b 100644
+--- a/xla/hlo/pass/BUILD
++++ b/xla/hlo/pass/BUILD
+@@ -155,6 +155,7 @@ xla_cc_test(
+         "//xla/tsl/lib/core:status_test_util",
+         "//xla/tsl/platform:statusor",
+         "//xla/tsl/platform:test_main",
++        "//xla/tsl/profiler/backends/cpu:traceme_recorder",
+         "@com_google_absl//absl/algorithm:container",
+         "@com_google_absl//absl/container:flat_hash_set",
+         "@com_google_absl//absl/status",
+@@ -162,5 +163,6 @@ xla_cc_test(
+         "@com_google_absl//absl/strings",
+         "@com_google_absl//absl/strings:string_view",
+         "@com_google_googletest//:gtest",
++        "@tsl//tsl/platform:status_matchers",
+     ],
+ )
+diff --git a/xla/hlo/pass/hlo_pass_pipeline.cc b/xla/hlo/pass/hlo_pass_pipeline.cc
+index f493932b44acbd73da73dfacebeb383bd06490fe..c32329f17b22718654d615cd620f94bb980c1652 100644
+--- a/xla/hlo/pass/hlo_pass_pipeline.cc
++++ b/xla/hlo/pass/hlo_pass_pipeline.cc
+@@ -245,7 +245,28 @@ absl::StatusOr<bool> HloPassPipeline::RunPassesInternal(
+     if (!pass->IsPassPipeline()) {
+       compilation_stats_->StartPass(pass_name);
+     }
+-    auto status_or_changed = RunHelper<HloT>(pass, hlo, execution_threads);
++    auto status_or_changed = [&]() {
++      std::optional<tsl::profiler::TraceMe> research_trace;
++      if (!pass->IsPassPipeline()) {
++        research_trace.emplace([&] {
++          return tsl::profiler::TraceMeEncode(
++              "research_hlo_pass_run",
++              {{"pass", pass_name}, {"pipeline", pipeline_name},
++               {"module", hlo->name()}, {"program_id", UniqueId(*hlo)},
++               {"research_program_id", UniqueId(*hlo)}});
++        });
++      }
++      auto result = RunHelper<HloT>(pass, hlo, execution_threads);
++      if (research_trace.has_value()) {
++        research_trace->AppendMetadata([&] {
++          return tsl::profiler::TraceMeEncode(
++              {{"status", absl::StatusCodeToString(result.status().code())},
++               {"changed", result.ok() ? (*result ? "true" : "false")
++                                       : "unknown"}});
++        });
++      }
++      return result;
++    }();
+     if (auto status = status_or_changed.status(); !status.ok()) {
+       compilation_stats_->RecordPassError(
+           pass_name, absl::StatusCodeToString(status.code()));
+diff --git a/xla/hlo/pass/hlo_pass_pipeline_test.cc b/xla/hlo/pass/hlo_pass_pipeline_test.cc
+index 6ad921642136180df84c72e01076cef77c0cfb1e..9109bf873ca23052cd0ae4d7f7d97bb94ff5af81 100644
+--- a/xla/hlo/pass/hlo_pass_pipeline_test.cc
++++ b/xla/hlo/pass/hlo_pass_pipeline_test.cc
+@@ -27,6 +27,7 @@ limitations under the License.
+ #include "absl/status/statusor.h"
+ #include "absl/strings/str_cat.h"
+ #include "absl/strings/string_view.h"
++#include "tsl/platform/status_matchers.h"
+ #include "xla/hlo/ir/hlo_computation.h"
+ #include "xla/hlo/ir/hlo_instruction.h"
+ #include "xla/hlo/ir/hlo_module.h"
+@@ -37,12 +38,14 @@ limitations under the License.
+ #include "xla/service/hlo.pb.h"
+ #include "xla/tsl/lib/core/status_test_util.h"
+ #include "xla/tsl/platform/statusor.h"
++#include "xla/tsl/profiler/backends/cpu/traceme_recorder.h"
+ #include "xla/util.h"
+ 
+ namespace xla {
+ namespace {
+ 
+ using ::testing::ElementsAre;
++using ::testing::HasSubstr;
+ using ::testing::SizeIs;
+ using ::testing::StrEq;
+ 
+@@ -796,5 +799,118 @@ TEST_F(HloPassPipelineTest, DisableByPassIdNested) {
+   EXPECT_THAT(run_log, ElementsAre("pa", "sc", "pd"));
+ }
+ 
++// Insert inside the existing hlo_pass_pipeline_test.cc anonymous namespace.
++std::vector<tsl::profiler::TraceMeRecorder::Event> CollectResearchPassEvents(
++    const tsl::profiler::TraceMeRecorder::Events& recorded) {
++  std::vector<tsl::profiler::TraceMeRecorder::Event> selected;
++  for (const tsl::profiler::TraceMeRecorder::ThreadEvents& thread : recorded) {
++    for (const tsl::profiler::TraceMeRecorder::Event& event : thread.events) {
++      if (event.name.rfind("research_hlo_pass_run#", 0) == 0) {
++        selected.push_back(event);
++      }
++    }
++  }
++  return selected;
++}
++
++TEST_F(HloPassPipelineTest, ResearchLeafEventsDescribeChangesAndNestedPipeline) {
++  ASSERT_OK_AND_ASSIGN(std::unique_ptr<VerifiedHloModule> module,
++                       ParseAndReturnVerifiedModule(kSimpleModule));
++  std::vector<std::string> run_log;
++  HloPassPipeline pipeline("research_outer");
++  pipeline.AddPass<FooToBarModulePass>();
++  HloPassPipeline& nested = pipeline.AddPass<HloPassPipeline>("research_inner");
++  nested.AddPass<RecordingPass>("noop", "ran", &run_log);
++
++  ASSERT_TRUE(tsl::profiler::TraceMeRecorder::Start(3));
++  absl::StatusOr<bool> result = pipeline.Run(module.get());
++  tsl::profiler::TraceMeRecorder::Events recorded =
++      tsl::profiler::TraceMeRecorder::Stop();
++  ASSERT_OK(result.status());
++  EXPECT_TRUE(*result);
++  EXPECT_THAT(run_log, ElementsAre("ran"));
++  std::vector<tsl::profiler::TraceMeRecorder::Event> events =
++      CollectResearchPassEvents(recorded);
++  ASSERT_THAT(events, SizeIs(2));
++  EXPECT_TRUE(events[0].IsComplete());
++  EXPECT_THAT(events[0].name, HasSubstr("pass=foo2bar"));
++  EXPECT_THAT(events[0].name, HasSubstr("pipeline=research_outer"));
++  EXPECT_THAT(events[0].name, HasSubstr("module=test_module"));
++  EXPECT_THAT(events[0].name,
++              HasSubstr(absl::StrCat("program_id=", module->unique_id())));
++  EXPECT_THAT(events[0].name,
++              HasSubstr(absl::StrCat("research_program_id=", module->unique_id())));
++  EXPECT_THAT(events[0].name, HasSubstr("status=OK"));
++  EXPECT_THAT(events[0].name, HasSubstr("changed=true"));
++  EXPECT_TRUE(events[1].IsComplete());
++  EXPECT_THAT(events[1].name, HasSubstr("pass=noop"));
++  EXPECT_THAT(events[1].name, HasSubstr("research_inner"));
++  EXPECT_THAT(events[1].name, HasSubstr("status=OK"));
++  EXPECT_THAT(events[1].name, HasSubstr("changed=false"));
++}
++
++TEST_F(HloPassPipelineTest, ResearchFilteredLeafDoesNotEmitEvent) {
++  ASSERT_OK_AND_ASSIGN(std::unique_ptr<VerifiedHloModule> module,
++                       ParseAndReturnVerifiedModule(kSimpleModule));
++  module->mutable_config().mutable_debug_options().add_xla_disable_hlo_passes(
++      "algsimp");
++  std::vector<std::string> run_log;
++  HloPassPipeline pipeline("research_filtered");
++  pipeline.AddPass<RecordingPass>("algsimp", "filtered", &run_log);
++  pipeline.AddPass<RecordingPass>("dce", "ran", &run_log);
++
++  ASSERT_TRUE(tsl::profiler::TraceMeRecorder::Start(3));
++  absl::StatusOr<bool> result = pipeline.Run(module.get());
++  tsl::profiler::TraceMeRecorder::Events recorded =
++      tsl::profiler::TraceMeRecorder::Stop();
++  ASSERT_OK(result.status());
++  EXPECT_FALSE(*result);
++  EXPECT_THAT(run_log, ElementsAre("ran"));
++  std::vector<tsl::profiler::TraceMeRecorder::Event> events =
++      CollectResearchPassEvents(recorded);
++  ASSERT_THAT(events, SizeIs(1));
++  EXPECT_TRUE(events[0].IsComplete());
++  EXPECT_THAT(events[0].name, HasSubstr("pass=dce"));
++  EXPECT_THAT(events[0].name, HasSubstr("changed=false"));
++}
++
++TEST_F(HloPassPipelineTest, ResearchErrorEventStopsAndPreservesStatus) {
++  ASSERT_OK_AND_ASSIGN(std::unique_ptr<VerifiedHloModule> module,
++                       ParseAndReturnVerifiedModule(kSimpleModule));
++  module->entry_computation()->root_instruction()->SetAndSanitizeName("bar");
++  HloPassPipeline pipeline("research_error");
++  pipeline.AddPass<BarBlowerUpper>();
++
++  ASSERT_TRUE(tsl::profiler::TraceMeRecorder::Start(3));
++  absl::StatusOr<bool> result = pipeline.Run(module.get());
++  tsl::profiler::TraceMeRecorder::Events recorded =
++      tsl::profiler::TraceMeRecorder::Stop();
++  EXPECT_FALSE(result.ok());
++  EXPECT_EQ(result.status().code(), absl::StatusCode::kInternal);
++  std::vector<tsl::profiler::TraceMeRecorder::Event> events =
++      CollectResearchPassEvents(recorded);
++  ASSERT_THAT(events, SizeIs(1));
++  EXPECT_TRUE(events[0].IsComplete());
++  EXPECT_THAT(events[0].name, HasSubstr("pass=bar-blower-upper"));
++  EXPECT_THAT(events[0].name, HasSubstr("status=INTERNAL"));
++  EXPECT_THAT(events[0].name, HasSubstr("changed=unknown"));
++}
++
++TEST_F(HloPassPipelineTest, ResearchDisabledRecorderPreservesPassResult) {
++  ASSERT_OK_AND_ASSIGN(std::unique_ptr<VerifiedHloModule> module,
++                       ParseAndReturnVerifiedModule(kSimpleModule));
++  HloPassPipeline pipeline("research_no_recorder");
++  pipeline.AddPass<FooToBarModulePass>();
++
++  ASSERT_TRUE(tsl::profiler::TraceMeRecorder::Start(0));
++  absl::StatusOr<bool> result = pipeline.Run(module.get());
++  tsl::profiler::TraceMeRecorder::Events recorded =
++      tsl::profiler::TraceMeRecorder::Stop();
++  ASSERT_OK(result.status());
++  EXPECT_TRUE(*result);
++  EXPECT_EQ(module->entry_computation()->root_instruction()->name(), "bar");
++  EXPECT_TRUE(CollectResearchPassEvents(recorded).empty());
++}
++
+ }  // namespace
+ }  // namespace xla

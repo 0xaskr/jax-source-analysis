@@ -4,9 +4,10 @@
 [结果](runtime-environment-results.json) 与 [验证器](verify_runtime_environment.py) 保留复制、
 导入路径、事件和数值检查。初始环境使用继承的旧 wheel，已完成负对照验证。
 002 源码 wheel 后来在固定镜像中安装并导入，但缺少 `_git_hash`，身份验收被拒绝；
-宿主机还缺少验证器要求的固定 Clang。后续使用同一固定镜像和带 Git identity 的 003
-构建，见 [构建记录](source-build.md)。**源码 wheel 运行验收和补丁事件均未通过**。
-下文原宿主机直接运行的源码安装命令是最初入口，不能按已经验收的成功步骤使用。
+宿主机还缺少验证器要求的固定 Clang。003 已在同一固定镜像中完成 Git/native 绑定、
+pass 基线和 18 组数值复验，见 [源码运行基线](source-runtime-baseline.md)。最终补丁另在
+独立环境通过 127/124 个事件及过滤/warm 对照；新回滚环境重新加载 003 后事件归零。
+源码 wheel 的安装与完整身份审计命令须在固定镜像内执行。
 
 ## 已完成的独立环境
 
@@ -41,13 +42,13 @@ capture 的 native 文件复查会失败。
   --output artifacts/jax-stack/runtime-environment-new
 ```
 
-`kickoff-cpu-source-002` 成功结束后，用以下命令新建环境、离线安装它的 wheel，并运行
-匹配源码的默认/过滤 absent 两组。此命令本轮尚未通过源码 wheel 安装分支：
+源码基线 003 已通过以下入口的新环境安装和默认/过滤 absent 两组。须在固定构建镜像
+及相同只读挂载下执行，并为新输出目录提供可写挂载；宿主机 Clang 条件不同：
 
 ```bash
 .venv/bin/python -B research/jax-stack/prepare_pass_runtime.py \
-  --output artifacts/jax-stack/runtime-source-baseline-001 \
-  --jaxlib-build-manifest manifests/build-fingerprints/kickoff-cpu-source-002.json \
+  --output artifacts/jax-stack/runtime-source-baseline-new \
+  --jaxlib-build-manifest manifests/build-fingerprints/kickoff-cpu-source-003.json \
   --expected-events absent
 ```
 
@@ -75,8 +76,8 @@ capture 的 native 文件复查会失败。
 
 该验证器专门检查初始 inherited 环境：元数据哈希、完整依赖清单、当前文件/inode、
 解释器身份、事件/数值和两个入口拒绝。它会拒绝三种错误元数据清单，且不修改原始证据。
-未来源码 wheel 的默认/过滤 pair 使用 `verify_pass_events.py --default ... --filtered ...`
-复查，不把初始环境验证当作安装分支已经执行。
+源码 wheel 的默认/过滤 pair 使用 `verify_pass_events.py --default ... --filtered ...`
+在固定镜像中复查；初始环境与源码安装分支各自保留证据。
 
 ## 完整 CPU 实验的源码身份与复验
 
@@ -101,15 +102,15 @@ matmul、fusion/memory 和 overlap 生产脚本现均支持 `--jaxlib-build-mani
 构建拒绝已实际测试，发生在运行采集前；另用两个反例检查构建选择缺失与不一致。
 记录保存在 `artifacts/jax-stack/source-revalidation-gates-001`。这不是成功构建分支的证据。
 
-无补丁源码环境成功建立后，以下命令执行完整 matmul，并复查实际加载身份及原始产物：
+无补丁源码环境已建立。在固定镜像中，以下命令执行新的 matmul，并复查加载身份及产物：
 
 ```bash
-artifacts/jax-stack/runtime-source-baseline-001/venv/bin/python -B \
+artifacts/jax-stack/source-runtime-002/baseline-env/venv/bin/python -B \
   research/jax-stack/matmul_probe.py \
-  --output artifacts/jax-stack/cpu-matmul-source-001 \
-  --jaxlib-build-manifest manifests/build-fingerprints/kickoff-cpu-source-002.json
-artifacts/jax-stack/runtime-source-baseline-001/venv/bin/python -B \
-  research/jax-stack/verify_research.py --capture artifacts/jax-stack/cpu-matmul-source-001
+  --output artifacts/jax-stack/cpu-matmul-source-new \
+  --jaxlib-build-manifest manifests/build-fingerprints/kickoff-cpu-source-003.json
+artifacts/jax-stack/source-runtime-002/baseline-env/venv/bin/python -B \
+  research/jax-stack/verify_research.py --capture artifacts/jax-stack/cpu-matmul-source-new
 ```
 
 fusion/memory 和 overlap 同样传入该 manifest，在各自新目录采集；对应验证器均支持

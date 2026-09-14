@@ -131,13 +131,13 @@ def selftest():
     fixture = [event("pass_probe_lower", 0, 8), event("pass_probe_python_trace", 1, 2),
                event("pass_probe_compile", 10, 80), *[event("pass_probe_warm", 100+i*10, 5) for i in range(3)],
                event("algsimp", 20, 30, 9), event("algsimp", 24, 12, 9),
-               event(EVENT, 21, 20, 9, {"pass": "algsimp", "pipeline": "simplification", "module": "fixture", "program_id": "1", "status": "OK", "changed": "true"}),
-               event(EVENT, 25, 5, 9, {"pass": "algsimp", "pipeline": "simplification", "module": "fixture", "program_id": "1", "status": "OK", "changed": "false"})]
+               event(EVENT, 21, 20, 9, {"pass": "algsimp", "pipeline": "simplification", "module": "fixture", "research_program_id": "1", "status": "OK", "changed": "true"}),
+               event(EVENT, 25, 5, 9, {"pass": "algsimp", "pipeline": "simplification", "module": "fixture", "research_program_id": "1", "status": "OK", "changed": "false"})]
     stats = analyze(fixture, "fixture", "present")["groups"][0]
     require(stats["inclusive_total_us"] == 25 and stats["span_union_us"] == 20, "nested interval accounting differs")
     for mode in ["metadata", "warm", "warm-overlap", "outside", "parent", "status", "filtered", "driver"]:
         bad = copy.deepcopy(fixture)
-        if mode == "metadata": del bad[-1]["args"]["program_id"]
+        if mode == "metadata": del bad[-1]["args"]["research_program_id"]
         elif mode == "warm": bad[-1]["ts"] = 101
         elif mode == "warm-overlap": bad.append(event("constant_folding", 99, 3, 9))
         elif mode == "outside": bad[-1]["ts"] = 95

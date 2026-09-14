@@ -151,6 +151,12 @@ SITES = [
     ("xla.trace-json", "xla", "Trace export", "xla/tsl/profiler/convert/trace_events_to_json.cc", "inline void AddTraceEvent(", 87,
      "TraceEvent 的 ps 时间、device/resource ID、名称和 args", "Chrome Trace Event JSON 的 X 事件",
      "ts/dur 转成微秒；displayTimeUnit=ns 不改变这些数值的单位。嵌套时长不可直接求和当作 wall time。"),
+    ("xla.xplane-trace-events", "xla", "Trace export", "xla/tsl/profiler/convert/xplane_to_trace_events.cc", "void ConvertXPlaneToTraceEvents(", 62,
+     "XPlaneVisitor 的事件、共享 metadata 与 occurrence stats", "TraceContainer 中的 TraceEvent 及可见 args",
+     "跳过 IsInternalStat 命中的字段；原始 XSpace 有 program_id 不保证 Chrome trace JSON 保留它。"),
+    ("xla.internal-trace-stat", "xla", "Profiler schema", "xla/tsl/profiler/utils/xplane_schema.cc", "bool IsInternalStat(", 615,
+     "可选 StatType", "该字段是否属于不向 trace viewer 导出的内部 stat",
+     "kProgramId 返回 true，未知的自定义字段返回 false；本次 Hack 使用 research_program_id 副本供导出分组。"),
     ("jax.metadata-api", "jax", "Metadata API", "jax/_src/xla_metadata.py", "def set_xla_metadata(", 109,
      "可选数组值或 kwargs metadata", "标记 producer op 的 identity primitive 或 metadata context",
      "Python 值转成字符串（布尔小写）；属性能被传递不代表 backend 有消费逻辑。"),
@@ -381,6 +387,7 @@ SITES = [
 
 # Edges are limited to calls or dispatch interfaces read in the pinned source.
 EDGES = [
+    ("xla.xplane-trace-events", "xla.internal-trace-stat", "            if (IsInternalStat(stat.Type())) return;", "direct", "转换每个有值的 metadata/occurrence stat 时。"),
     ("xla.ir-compile", "xla.llvm-pass-manager", "          RunIrPasses(module, target_machine->get())) {", "direct", "目标机器创建成功后。"),
     ("xla.ir-compile", "xla.emit-object", "      EmitMachineCode(module, target_machine->get());", "direct", "LLVM IR passes 成功后。"),
     ("xla.llvm-pass-manager", "llvm.default-pipeline", "    pm.addPass(pb.buildPerModuleDefaultPipeline(opt_level));", "direct", "优化等级不是 O0。"),
@@ -496,6 +503,9 @@ def main():
     for entry in entries:
         entry["callers"] = sorted({edge["caller"] for edge in edges if edge["callee"] == entry["id"]})
         entry["callees"] = sorted({edge["callee"] for edge in edges if edge["caller"] == entry["id"]})
+        if entry["id"] in {"xla.pass-events", "xla.xplane-trace-events", "xla.internal-trace-stat", "xla.trace-json"}:
+            entry["related_experiments"] = ["research/jax-stack/pass-event-patch.md",
+                                            "research/jax-stack/pass-hack-results.json"]
     index = {
         "schema_version": "1.0", "kickoff_revision": 51,
         "source_roots": {name: {"path": s["path"], "revision": s["git_commit"]} for name, s in sources.items()},

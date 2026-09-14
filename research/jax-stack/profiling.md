@@ -1,14 +1,16 @@
 # XProf：host、编译 pass、设备执行
 
 用户已确认三类区间全部研究（U04）。Host 与现有 CPU wheel 的编译期事件已运行验证；
-设备侧已验证开放源码 lowering 产生的 Mosaic 标记。TPU 真机事件和自建编译器补丁尚未验收。
+设备侧已验证开放源码 lowering 产生的 Mosaic 标记。自建编译器补丁已完成 CPU 构建、加载
+及三状态对照，见 [pass 事件验收](pass-event-acceptance.md)；TPU 真机事件仍未验收。
 结果见 [extension-results.json](extension-results.json)，独立复查入口为
-[verify_extensions.py](verify_extensions.py)。所有当前 native 观测保留 `VERSION-SKEW`。
+[verify_extensions.py](verify_extensions.py)。该历史 capture 保留 `VERSION-SKEW`；新增
+源码基线与补丁事件另有 build/native 绑定，不带该限定。
 
 | 区间 | 插入入口 | 当前证据 | 尚未证明 |
 |---|---|---|---|
 | Host 函数/请求 | `TraceAnnotation`、`StepTraceAnnotation` | 15 个自定义事件，生命周期和时间包含关系通过 | 跨线程起止、任意异步任务关联 |
-| 编译 pipeline/pass | C++ `tsl::profiler::TraceMe`，XLA 已有 pass 范围 | 冷编译同线程范围内 171 个子事件，包含已知 pass | 自建源码执行、定制 pass 标记补丁 |
+| 编译 pipeline/pass | C++ `tsl::profiler::TraceMe`，leaf RunHelper 范围 | 自建补丁默认/过滤 127/124 个事件，algsimp 3→0，数值与 warm 对照通过 | TPU 编译路径覆盖与 instrumentation 开销 |
 | Pallas TPU kernel 内部 | kernel 内 `jax.named_scope` → `tpu.trace_start/stop` | 无标记/三组标记对照，真实生产 lowering | libtpu 接受、LLO 保留、TPU 执行与 trace 可见性 |
 | 普通 JAX TPU 运算 | 源码名称信息 + 设备 profiler | 固定源码/API 定位 | 不能据名称 metadata 宣称存在任意设备区间的 start/stop |
 
