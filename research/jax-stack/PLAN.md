@@ -28,7 +28,7 @@
 ## 本轮进度与恢复入口
 
 CPU matmul、两种 Pallas 解释路径、host/编译事件和开放源码 Mosaic 标记已有可复查材料；
-完整 kickoff 尚未完成。源码索引扩展至 166 个入口、53 条关系，包括固定 XProf 源码；Pallas/profiling
+完整 kickoff 尚未完成。源码索引扩展至 198 个入口、77 条关系，包括固定 XProf 源码；Pallas/profiling
 Notebook 的 7 个代码单元已真实执行。
 原始 capture 继续留在忽略目录；验证器校验清单、哈希与关键语义。
 
@@ -111,7 +111,10 @@ CPU executable 与运行时分支已进一步取证，见 [cpu-executable-and-tr
 派生 flow 不是 XProf 原生预处理或 UI 验收。
 [覆盖复查](coverage-review.md) 已逐项对应三组交付及 R01–R12，修正总览过期的构建/标记状态；
 CPU 参考和编译诊断子项保留完成结果，不将穷举内部调用或完整缓存闭包新增为验收要求。
-下一步补普通 TPU 的公开提交、完成和等待接口；TPU 运行与业务实验继续等待 U01–U03。
+普通 TPU 的 [公开执行接口](tpu-runtime-boundary.md) 已完成源码子项：新增 32 个入口、
+24 条关系，分开 Python/C++ 提交分支、buffer/执行 status/effect 等待及 callback 生存期。
+12 项结论、15 个源码检索条件和九个结构反例通过来源检查；没有新增设备运行。
+下一步补 Shardy import/export 与 HLO round trip 关键接口；TPU 运行与业务实验继续等待 U01–U03。
 
 [独立环境](runtime-environment.md) 的旧 wheel 复验与新增源码 wheel 复验分别保留，
 不改写旧证据。源码基线仍观察到 logical peak 诊断差异，不能据此推导物理内存峰值。

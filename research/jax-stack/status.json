@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "updated_at": "2026-09-14T23:44:34.130795+00:00",
+  "updated_at": "2026-09-14T23:58:01.764765+00:00",
   "goal_state": "active",
   "objective": "按 Outline kickoff revision 51 完成软件栈总览、源码/API 索引和实际推理场景 Hack 实验。",
   "kickoff_source": "research/jax-stack/kickoff-source.json",
@@ -198,6 +198,11 @@
       "id": "kickoff-coverage-audit",
       "result": "按 revision 51 对照三组交付与 R01–R12，区分 CPU/诊断已完成子项、公开运行接口缺口及 U01–U03 依赖；修正总览中过期的构建/标记未完成说明。未增加设备运行或宣称整个 kickoff 完成。",
       "evidence": "research/jax-stack/coverage-review.md"
+    },
+    {
+      "id": "regular-tpu-runtime-source-chain",
+      "result": "补齐公开运行接口的 32 个入口/24 条关系：Python execute_sharded 与 C++ fastpath、内部/对外 status、buffer ready、tokens、C API ownership 与 profiler type 14。12 项 SOURCE-ONLY 结论、15 个检索条件及九个结构反例通过；未执行 libtpu/TPU，也未把 reference wrapper 当作私有实现。",
+      "evidence": "research/jax-stack/tpu-runtime-boundary.md"
     }
   ],
   "requirements": [
@@ -211,9 +216,11 @@
         "research/jax-stack/matmul-pass-walkthrough.md",
         "research/jax-stack/cpu-executable-and-trace.md",
         "research/jax-stack/cpu-thunk-results.json",
-        "research/jax-stack/cpu-thunk-execution.ipynb"
+        "research/jax-stack/cpu-thunk-execution.ipynb",
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
       ],
-      "remaining": "主要组件、编译分支和 CPU LLVM/MC/ORC/runtime 已有材料；普通 TPU 的公开提交/完成/等待接口仍需串联。匹配 libtpu/LLO/设备验收需 U03；不要求穷举所有内部调用。"
+      "remaining": "普通 TPU 公开提交/完成/等待接口已补 SOURCE-ONLY；Shardy import/export、HLO round trip 的关键接口仍需展开。匹配 libtpu/LLO/设备验收需 U03；不要求穷举所有内部调用。"
     },
     {
       "id": "R02",
@@ -231,7 +238,9 @@
         "research/jax-stack/source-codegen-results.json",
         "research/jax-stack/cpu-executable-and-trace.md",
         "research/jax-stack/cpu-thunk-results.json",
-        "research/jax-stack/cpu-thunk-execution.ipynb"
+        "research/jax-stack/cpu-thunk-execution.ipynb",
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
       ],
       "remaining": "匹配源码 CPU 关键 passes、布局/fusion、LLVM/object、序列化 thunk 和实际 warm dispatch 已对照。TPU lowering/后端产物、libtpu/LLO 与硬件部分仍需目标环境；未声明内部 Eigen/YNN microkernel或性能。"
     },
@@ -304,7 +313,9 @@
         "research/jax-stack/overlap-scheduling.ipynb",
         "research/jax-stack/latency-model.md",
         "research/jax-stack/cpu-revalidation-results.json",
-        "research/jax-stack/source-runtime-results.json"
+        "research/jax-stack/source-runtime-results.json",
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
       ],
       "remaining": "匹配源码 CPU async/control 复验完成，显式 layout 的异步控制仍因 Host 未注册 all-reduce-start 失败；真正 overlap 需 U03 的拓扑、设备 trace 和时间测量。"
     },
@@ -364,9 +375,11 @@
         "research/jax-stack/cpu-thunk-execution.ipynb",
         "research/jax-stack/xspace-contexts.md",
         "research/jax-stack/xspace-context-results.json",
-        "research/jax-stack/xspace-contexts.ipynb"
+        "research/jax-stack/xspace-contexts.ipynb",
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
       ],
-      "remaining": "host 生命周期、跨线程 context、CPU 编译 pass 与 CPU thunk 起止已有运行证据；XProf native preprocessing/UI 尚未执行。目标 TPU 编译、设备事件/LLO、开销仍需 U03。"
+      "remaining": "host、CPU 编译/thunk 已有运行证据；普通 TPU 公开提交、完成与 type 14 profiler linkage 已补 SOURCE-ONLY。目标 TPU 编译、设备事件/LLO、开销需 U03；XProf native preprocessing/UI 未验收。"
     }
   ],
   "pending_user_inputs": [
@@ -388,13 +401,13 @@
   ],
   "next_actions": [
     {
-      "id": "regular-tpu-runtime-source-chain",
+      "id": "shardy-round-trip-source-chain",
       "ready": true,
       "depends_on": [
-        "kickoff-coverage-audit"
+        "regular-tpu-runtime-source-chain"
       ],
-      "action": "沿固定源码的 PyLoadedExecutable::ExecuteSharded → IFRT Execute → PJRT C API Execute/Event/等待接口补普通 TPU 公开运行链，记录输入输出、所有权、提交与完成边界；保留 SOURCE-ONLY，不推导 libtpu 私有实现或实际设备行为。",
-      "next_command": "sed -n '426,520p' upstream/jax/jaxlib/py_executable.cc"
+      "action": "沿固定 MlirToXlaComputation 的 Shardy/GSPMD gate、sdy round trip、propagation 与 export 核对关键接口；对照已有 matmul 产物，分清源码分支和已执行路径。不把单 CPU 无分片样例当成完整分片或 TPU 实验。",
+      "next_command": "sed -n '99,165p' upstream/xla/xla/pjrt/mlir_to_hlo.cc"
     },
     {
       "id": "tpu-device-profile",
@@ -416,7 +429,7 @@
     }
   ],
   "validation": {
-    "source_index": "166 source entries / 53 call edges checked against pinned clean source trees.",
+    "source_index": "198 source entries / 77 call edges checked against pinned clean source trees.",
     "capture": "1062 artifact sizes and SHA-256 verified",
     "numerics": "4 cases; NumPy float64 forward/analytic gradients",
     "serialized_executable": "4 in-process reloads, bit-for-bit comparison passed",
@@ -495,7 +508,8 @@
     "xspace_contexts": "17 host + 45 replay artifacts, 49 pairs (13 cross-thread), 98 raw/JSON counterparts and 18 zero-duration clamps; producer build 003 bound to actual native payload.",
     "xspace_selftest": "20 negative cases and six positive boundaries passed, including legacy and FlowV2 presence guards.",
     "xspace_notebook": "Five real Jupyter code cells executed; pure protobuf archive parsing, exact IDs, independent NumPy and boundary checks. No new XProf converter or viewer execution.",
-    "coverage_review": "Three deliverable groups and R01-R12 checked against revision 51 and current result documents; stale overview claims repaired; no new device evidence."
+    "coverage_review": "Three deliverable groups and R01-R12 checked against revision 51 and current result documents; stale overview claims repaired; no new device evidence.",
+    "public_runtime_chain": "32 source roles / 24 edges, 12 reviewed claims / 15 lexical guards, nine rejected scope/branch/reference mutations. SOURCE-ONLY provenance and contract integrity; not independent proof of runtime semantics."
   },
   "completion_claim": "本状态未宣称 kickoff 的任一完整交付组已经验收。",
   "artifact_fingerprints": {
@@ -504,12 +518,12 @@
       "size_bytes": 114
     },
     "PLAN.md": {
-      "sha256": "0a89598d621e1a6a953c2a9f899976a8ff67cfc66b7cb792d212a20b9aadd4ea",
-      "size_bytes": 13366
+      "sha256": "395a82b9b551550961fe70770e15f1ac78b5e5d56e8f07ece7bc70da77906799",
+      "size_bytes": 13694
     },
     "README.md": {
-      "sha256": "255dcea9e14fe93dfa235962b69e36d8ff5dfa52a6e14e6480361353416d09b2",
-      "size_bytes": 10405
+      "sha256": "00948c1b0b59ad48866117ec555da2f78865dff8c18da456ed3f507f032f51ac",
+      "size_bytes": 10557
     },
     "attributes-and-cost.md": {
       "sha256": "026265fc41df52be91ccdee9d462dcaf36f132b3af4f0bdc69a6a361522052ee",
@@ -547,6 +561,10 @@
       "sha256": "a1064d03551dd1e20b848657fcc4a3900be503b860964d800f261d996db2452d",
       "size_bytes": 12122
     },
+    "audit_runtime_chain.py": {
+      "sha256": "3271d38c4031c02103d35e8bcbdcd34d2186198430bd1e905e2f4f68e9426db6",
+      "size_bytes": 11261
+    },
     "audit_xspace_contexts.py": {
       "sha256": "e9b4099475fcde4ca09a4bb5865b226fdbac94cec66431cc895a56aab1429a03",
       "size_bytes": 12977
@@ -560,8 +578,8 @@
       "size_bytes": 3471
     },
     "build_source_index.py": {
-      "sha256": "51e250c031e70446450137e823ed4cafcf96f40cab55f5e705550d92f8f56a00",
-      "size_bytes": 73942
+      "sha256": "c764ffd63178f0147bc9bba4b82b14046f85989629b8f2aac20eb9a7ff00eeea",
+      "size_bytes": 74506
     },
     "capture_runtime.py": {
       "sha256": "7f040f7a36aea060ed57c217d109dc498cfe96082a81a0fe297ede87d540b025",
@@ -580,8 +598,8 @@
       "size_bytes": 7467
     },
     "coverage-review.md": {
-      "sha256": "91345fdbee298dedc6287929432b876048ca96e79e72b8939863e123c68b70c2",
-      "size_bytes": 6801
+      "sha256": "1698fbd84fa5d01ed037fb9df534b8510d568c4dfd707c451f7e177e9a91496a",
+      "size_bytes": 6985
     },
     "cpu-executable-and-trace.md": {
       "sha256": "279e91be7bfbedbb772c56adcb3e580a30d6cc422be447b463cb8b5ff03653cf",
@@ -708,8 +726,8 @@
       "size_bytes": 13399
     },
     "overview.md": {
-      "sha256": "ef68bb1c0512de0346fe84ad3c1c097f6fd3d2ff9d34eb42175808784cf203d4",
-      "size_bytes": 9064
+      "sha256": "5c967ffc74cd810bdf1f9688bb1645f48f67ec87af812e2bf128b0d45d6f3b84",
+      "size_bytes": 9618
     },
     "pallas-comparison.md": {
       "sha256": "6c7577ccc2315b8d1bf4c7663e3ea75d0d1d54cc0a7dabe69ba63654a24e7a0a",
@@ -784,12 +802,16 @@
       "size_bytes": 10002
     },
     "profiling.md": {
-      "sha256": "a0407c02515731a299529cb5bc7bb9c4cc8ec542650f382a4fadf7e935257a09",
-      "size_bytes": 7560
+      "sha256": "70422e4894d7f6e42cfb3420872d8ca703aa6a4b5b424350596bc82726699e44",
+      "size_bytes": 7852
     },
     "roofline.md": {
       "sha256": "4a7c4f5e44f316b31820cec469f26e4fa58cbd6702f25644449808ed3c982bce",
       "size_bytes": 6576
+    },
+    "runtime-chain-results.json": {
+      "sha256": "4426b3b1a35d77339212b68c6ca7843468c427f8101fb85c94d4ffd6b55ad39b",
+      "size_bytes": 63387
     },
     "runtime-environment-results.json": {
       "sha256": "5477aaa7d6a86e782a93d1f4c1918a18d70b867013918e6e23adda19fbaa6331",
@@ -798,6 +820,10 @@
     "runtime-environment.md": {
       "sha256": "48ff51db4faf26a9bdd25a37afadb8fec3eaaa638e366986019640056ba99606",
       "size_bytes": 8466
+    },
+    "runtime_chain_index.py": {
+      "sha256": "73f56c6b67aeff2ffc248d93073b320ef3196b2d4b8bbac315eb122e60e43035",
+      "size_bytes": 14218
     },
     "source-build-results.json": {
       "sha256": "d346de81789cbd1d6f2e18365dd38380d99a23fff6279c5eca8045fd3dcce4f0",
@@ -812,8 +838,8 @@
       "size_bytes": 17589
     },
     "source-index.json": {
-      "sha256": "3502c732182ffceffdc843ca240cf651adc62ffe6eb4b70bc4e31c7f01ca4cb2",
-      "size_bytes": 209439
+      "sha256": "662d077eb2b5771d12ae5e439749bc2c3db37824e32887db66b69a50c5b81931",
+      "size_bytes": 262348
     },
     "source-metadata-baseline.md": {
       "sha256": "325c1e550d94f56d36a4cb6954dda2ce9b4a44fe3dad80103895a5b646634ed6",
@@ -834,6 +860,10 @@
     "source_runtime_suite.py": {
       "sha256": "ff3328621f785166b2c7128b82cc57919c97a75b4ba963bfe40e322f0ea59eeb",
       "size_bytes": 4063
+    },
+    "tpu-runtime-boundary.md": {
+      "sha256": "ae4832d0d43b215cb158bba905ee1b2d96b24766983c6ffca77b277b50ed9a28",
+      "size_bytes": 11804
     },
     "verify_attributes.py": {
       "sha256": "256bf701a562c48b50d30ac2a55f4467174f71b236805a7ee235761800bad9b9",
@@ -956,7 +986,7 @@
     "log": "artifacts/builds/kickoff-cpu-pass-events-002/attempts/0001/build.log"
   },
   "publication": {
-    "local_commit": "6d5504d2ff212813387cb0715d1479d76e425be3",
+    "local_commit": "b4883065338a4b03252299465275b5d166008478",
     "original_staged_diff_preserved": true,
     "push_attempt": {
       "command": "git push origin main",
@@ -967,9 +997,9 @@
     },
     "remaining": "Root worktree retains its local research history and staged cleanup; remote merge integration is performed only in the isolated publication worktree.",
     "state": "pushed",
-    "integration_commit": "5457564a63ac3c27aac5bf8a6629d45588d69eb0",
+    "integration_commit": "4eb84f214a5df54f804903bfe3af04dc5613e7a7",
     "push_result": "normal push origin HEAD:main",
-    "latest_milestone": "cpu-xspace-context-correlation"
+    "latest_milestone": "kickoff-coverage-audit"
   },
   "additional_sources": [
     {
@@ -1054,10 +1084,13 @@
     }
   ],
   "kickoff_last_checked": {
+    "checked_at": "2026-09-14T23:58:01.764765+00:00",
+    "document_id": "a36682df-e271-4500-9325-6c0ab7c47692",
     "revision": 51,
     "updated_at": "2026-09-14T11:26:38.696Z",
-    "checked_at": "2026-09-14T22:38:13+00:00",
-    "source": "Outline fetch; revision and timestamp unchanged"
+    "result": "Metadata unchanged; fetched body differs from saved snapshot only by one trailing newline. Saved canonical source bytes were not modified.",
+    "fetched_body_sha256": "1a1d3ab41177332913a0acbf235d0b1183a8e18b720010ce81f28ec29d92f508",
+    "saved_body_sha256": "7f54e8d6f7316aa57cf2f22ee40a6082f7dcb7dbb056831219d87bf168d56a0c"
   },
   "prepared_compiler_patch": {
     "path": "research/jax-stack/xla-hlo-pass-events-exportable.patch",
@@ -1364,12 +1397,19 @@
     ],
     "deliverable_groups_reviewed": 3,
     "overall_complete": false,
-    "ready_public_source_gap": "regular-tpu-runtime-source-chain",
+    "ready_public_source_gap": "shardy-round-trip-source-chain",
     "pending_user_inputs": [
       "U01",
       "U02",
       "U03"
     ],
     "scope": "Artifact and requirement review only; no new CPU/TPU capture."
+  },
+  "public_runtime_chain": {
+    "evidence_level": "SOURCE-ONLY",
+    "result": "research/jax-stack/runtime-chain-results.json",
+    "runtime_execution_verified": false,
+    "libtpu_implementation_identified": false,
+    "followup_issue": "ConvertCEventToCppFuture callback-registration error cleanup is not fault-injected or repaired; success-path cleanup must not be generalized."
   }
 }

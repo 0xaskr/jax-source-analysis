@@ -3748,9 +3748,1100 @@
         "research/jax-stack/xspace-contexts.md",
         "research/jax-stack/xspace-context-results.json"
       ]
+    },
+    {
+      "id": "jax.fastpath-gate",
+      "component": "jax",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "_get_fastpath_data",
+      "revision": "5832e866449a41c3eea6333416528039119a0fde",
+      "path": "upstream/jax/jax/_src/pjit.py",
+      "line": 190,
+      "end_line": 229,
+      "anchor": "def _get_fastpath_data(",
+      "source_url": "https://github.com/jax-ml/jax/blob/5832e866449a41c3eea6333416528039119a0fde/jax/_src/pjit.py#L190",
+      "source_sha256": "72b55c479e6e8a0aa2dc18354a7610991f98bd067e18e14899678ba4b4cc0bf1",
+      "inputs": "executable、effects、输出与 PGLE",
+      "outputs": "fastpath metadata 或 None",
+      "constraint": "ordered/unordered/ref effects、部分 PGLE/no_execution 和非 Array 输出等拒绝 fastpath；不能把所有 warm 调用统一画到 C++ 快路径。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "jax.execute-replicated",
+      "component": "jax",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "__call__",
+      "revision": "5832e866449a41c3eea6333416528039119a0fde",
+      "path": "upstream/jax/jax/_src/interpreters/pxla.py",
+      "line": 400,
+      "end_line": 443,
+      "anchor": "  def __call__(self, *args):",
+      "source_url": "https://github.com/jax-ml/jax/blob/5832e866449a41c3eea6333416528039119a0fde/jax/_src/interpreters/pxla.py#L400",
+      "source_sha256": "f7440fac9aaa0455ad00f9db933031fa000e87cae150a23077f39d8dd7593985",
+      "inputs": "Python 参数、输入/输出 handlers 与 effects",
+      "outputs": "结果 PyArray 与 token 注册",
+      "constraint": "ordered/unordered effects 或 host callbacks 时 with_tokens=True；否则默认不向 Python 返回完成 status。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [],
+      "callees": [
+        "jaxlib.execute-sharded"
+      ],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "jax.pjit-fast-execute",
+      "component": "jax",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "PjitFunction::Call",
+      "revision": "5832e866449a41c3eea6333416528039119a0fde",
+      "path": "upstream/jax/jaxlib/pjit.cc",
+      "line": 632,
+      "end_line": null,
+      "anchor": "absl::StatusOr<nb::object> PjitFunction::Call(nb::handle callable,",
+      "source_url": "https://github.com/jax-ml/jax/blob/5832e866449a41c3eea6333416528039119a0fde/jaxlib/pjit.cc#L632",
+      "source_sha256": "5237ad1b91951ae71779516c84cc28854440e3cb6f7ec66a6e3debae8250cab6",
+      "inputs": "Python 参数与缓存 executable",
+      "outputs": "包装 IFRT 输出的 PyArray",
+      "constraint": "满足 fastpath 条件后直接调用 IFRT Execute，未经过 PyLoadedExecutable::ExecuteSharded；返回 wrapper 不等于设备完成。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [],
+      "callees": [
+        "ifrt.pjrt-execute"
+      ],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "jaxlib.execute-sharded",
+      "component": "jax",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "PyLoadedExecutable::ExecuteSharded",
+      "revision": "5832e866449a41c3eea6333416528039119a0fde",
+      "path": "upstream/jax/jaxlib/py_executable.cc",
+      "line": 485,
+      "end_line": null,
+      "anchor": "absl::StatusOr<PyExecuteResults> PyLoadedExecutable::ExecuteSharded(",
+      "source_url": "https://github.com/jax-ml/jax/blob/5832e866449a41c3eea6333416528039119a0fde/jaxlib/py_executable.cc#L485",
+      "source_sha256": "8fe9ec49c610d53ceb3f9b7e2536138f3505e5c5e95fe0160ef9c38cb8558100",
+      "inputs": "PyArray、with_tokens、可选 launch_id",
+      "outputs": "PyExecuteResults",
+      "constraint": "fill_status=with_tokens；执行 stream 缺省取 host thread ID；不得外推 C API/provider 的实际调度。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [
+        "jax.execute-replicated"
+      ],
+      "callees": [
+        "jaxlib.execute-local"
+      ],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "jaxlib.execute-local",
+      "component": "jax",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "ExecuteShardedOnLocalDevicesInternal",
+      "revision": "5832e866449a41c3eea6333416528039119a0fde",
+      "path": "upstream/jax/jaxlib/py_executable.cc",
+      "line": 426,
+      "end_line": null,
+      "anchor": "absl::StatusOr<PyExecuteResults> ExecuteShardedOnLocalDevicesInternal(",
+      "source_url": "https://github.com/jax-ml/jax/blob/5832e866449a41c3eea6333416528039119a0fde/jaxlib/py_executable.cc#L426",
+      "source_sha256": "8fe9ec49c610d53ceb3f9b7e2536138f3505e5c5e95fe0160ef9c38cb8558100",
+      "inputs": "IFRT executable、参数 shards、options",
+      "outputs": "输出与可选 ShardedToken/status",
+      "constraint": "检查每个参数的 addressable shard 数；释放 GIL 后调用 IFRT；同一个 IFRT joined status 可填入多个 token，不是再次拆分 native per-device future。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [
+        "jaxlib.execute-sharded"
+      ],
+      "callees": [
+        "ifrt.pjrt-execute"
+      ],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "ifrt.execute-options",
+      "component": "xla",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "{",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/python/ifrt/executable.h",
+      "line": 125,
+      "end_line": null,
+      "anchor": "struct ExecuteOptions {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/python/ifrt/executable.h#L125",
+      "source_sha256": "21ff03d284f7808e5b53a448cd24133a15631d30d24d81f8824a64f8f245fa71",
+      "inputs": "launch/donation/stream/status 配置",
+      "outputs": "IFRT 运行选项",
+      "constraint": "fill_status 只控制 ExecuteResult.status 的有效性；execution_stream_id 的接口合同不能证明每种 adapter 都完整转发。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "ifrt.execute-contract",
+      "component": "xla",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "Execute",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/python/ifrt/executable.h",
+      "line": 317,
+      "end_line": null,
+      "anchor": "  virtual absl::StatusOr<ExecuteResult> Execute(",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/python/ifrt/executable.h#L317",
+      "source_sha256": "21ff03d284f7808e5b53a448cd24133a15631d30d24d81f8824a64f8f245fa71",
+      "inputs": "设备上的输入 Arrays、options、可选 devices",
+      "outputs": "ExecuteResult",
+      "constraint": "声明附近明确没有严格 barrier 语义；输入可用与输出 ready 的粒度由 backend 决定。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "ifrt.pjrt-execute",
+      "component": "xla",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "PjRtLoadedExecutable::Execute",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/python/pjrt_ifrt/pjrt_executable.cc",
+      "line": 840,
+      "end_line": null,
+      "anchor": "PjRtLoadedExecutable::Execute(absl::Span<ArrayRef> args,",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/python/pjrt_ifrt/pjrt_executable.cc#L840",
+      "source_sha256": "33209a11b5c567039e9f2f7dc9ae68103933f3712860b13fa4d7caa3e1163446",
+      "inputs": "PjRtCompatibleArray 列表与选项",
+      "outputs": "IFRT Array 输出及可选 joined status",
+      "constraint": "非 portable 分支始终请求 PJRT futures 并 JoinFutures，fill_status 只控制最终返回字段；不是对 TPU runtime 的实测。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [
+        "jax.pjit-fast-execute",
+        "jaxlib.execute-local"
+      ],
+      "callees": [
+        "pjrt.capi-execute"
+      ],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "pjrt.c-execute-options",
+      "component": "xla",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "{",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/pjrt/c/pjrt_c_api.h",
+      "line": 1992,
+      "end_line": null,
+      "anchor": "struct PJRT_ExecuteOptions {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/pjrt/c/pjrt_c_api.h#L1992",
+      "source_sha256": "a38827698466b7ac81b2402ad144d027a8566714d94d649fba74a37be464ece4",
+      "inputs": "调用选项与回调地址",
+      "outputs": "C ABI 字段",
+      "constraint": "此 pin 没有 execution_stream_id 字段；callback 函数寿命超过提交调用，call_location 指针只需覆盖调用。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "pjrt.c-execute-args",
+      "component": "xla",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "{",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/pjrt/c/pjrt_c_api.h",
+      "line": 2051,
+      "end_line": null,
+      "anchor": "struct PJRT_LoadedExecutable_Execute_Args {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/pjrt/c/pjrt_c_api.h#L2051",
+      "source_sha256": "a38827698466b7ac81b2402ad144d027a8566714d94d649fba74a37be464ece4",
+      "inputs": "本地设备×参数列表、输出存储、可选完成事件",
+      "outputs": "buffer handles 与每设备完成事件",
+      "constraint": "输出列表由 caller 分配；输出 buffer/event 由 caller Destroy；调用直接报错时完成事件不会被填充。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [
+        "pjrt.capi-execute"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "pjrt.capi-execute-args",
+      "component": "xla",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "PjRtCApiLoadedExecutable::GetCommonExecuteArgs",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/pjrt/c_api_client/pjrt_c_api_client.cc",
+      "line": 3273,
+      "end_line": null,
+      "anchor": "PjRtCApiLoadedExecutable::GetCommonExecuteArgs(",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/pjrt/c_api_client/pjrt_c_api_client.cc#L3273",
+      "source_sha256": "06f958c522e826f8a030f4ab16e5dfdd2d67ce8ffaf69111a71fd8d0d90ac187",
+      "inputs": "C++ PJRT buffers、options 与 backing storage",
+      "outputs": "PJRT_LoadedExecutable_Execute_Args",
+      "constraint": "映射 launch/non-donatable/callback 等；字段版本 gate 和 storage 生存期必须保留。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [
+        "pjrt.capi-execute"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "pjrt.capi-execute",
+      "component": "xla",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "PjRtCApiLoadedExecutable::Execute",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/pjrt/c_api_client/pjrt_c_api_client.cc",
+      "line": 3412,
+      "end_line": null,
+      "anchor": "PjRtCApiLoadedExecutable::Execute(",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/pjrt/c_api_client/pjrt_c_api_client.cc#L3412",
+      "source_sha256": "06f958c522e826f8a030f4ab16e5dfdd2d67ce8ffaf69111a71fd8d0d90ac187",
+      "inputs": "C++ inputs、options、可选 returned_futures",
+      "outputs": "C++ 输出 buffer 包装与 future",
+      "constraint": "经函数指针进入 plugin；本索引未证明 libtpu 使用开源 wrapper_impl；库调用 TraceMe 不是设备事件。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [
+        "ifrt.pjrt-execute"
+      ],
+      "callees": [
+        "pjrt.c-execute-args",
+        "pjrt.capi-execute-args",
+        "pjrt.event-to-future",
+        "pjrt.profiler-link"
+      ],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "pjrt.c-wrapper-execute",
+      "component": "xla",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "PJRT_LoadedExecutable_Execute",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/pjrt/c/pjrt_c_api_wrapper_impl.cc",
+      "line": 2313,
+      "end_line": null,
+      "anchor": "PJRT_Error* PJRT_LoadedExecutable_Execute(",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/pjrt/c/pjrt_c_api_wrapper_impl.cc#L2313",
+      "source_sha256": "bfedacfcff7b73e3b658f5f2a64b45a92a37fb80fc72813629a990c6f711f6a5",
+      "inputs": "C Execute Args",
+      "outputs": "调用内层 C++ PJRT provider 后包装结果",
+      "constraint": "开源参考 adapter，仅 SOURCE-ONLY；不能无证据把它放进 libtpu.so 内部调用栈。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [],
+      "callees": [
+        "pjrt.profiler-context"
+      ],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "pjrt.event-to-future",
+      "component": "xla",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "ConvertCEventToCppFuture",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/pjrt/c/pjrt_c_api_helpers.cc",
+      "line": 374,
+      "end_line": null,
+      "anchor": "xla::Future<> ConvertCEventToCppFuture(PJRT_Event* c_event,",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/pjrt/c/pjrt_c_api_helpers.cc#L374",
+      "source_sha256": "76afacbce304566491668b0d562c792c662ff1eac0acd77efdefa7104b1996ff",
+      "inputs": "拥有的 PJRT_Event 与 API 表",
+      "outputs": "C++ future",
+      "constraint": "通过 OnReady 回调置 promise 并释放事件；注册失败分支另返错误 future，不能据成功分支宣称所有错误路径资源处理已验证。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [
+        "pjrt.capi-execute"
+      ],
+      "callees": [
+        "pjrt.event-callback-contract"
+      ],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "pjrt.event-ready-contract",
+      "component": "xla",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "PJRT_Event_IsReady",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/pjrt/c/pjrt_c_api.h",
+      "line": 330,
+      "end_line": null,
+      "anchor": "typedef PJRT_Error* PJRT_Event_IsReady(PJRT_Event_IsReady_Args* args);",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/pjrt/c/pjrt_c_api.h#L330",
+      "source_sha256": "a38827698466b7ac81b2402ad144d027a8566714d94d649fba74a37be464ece4",
+      "inputs": "PJRT_Event",
+      "outputs": "is_ready",
+      "constraint": "ready 包含错误完成；必须检查 Error 或 future status，不能等同数值成功。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [
+        "pjrt.buffer-track-event"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "pjrt.event-callback-contract",
+      "component": "xla",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "{",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/pjrt/c/pjrt_c_api.h",
+      "line": 368,
+      "end_line": null,
+      "anchor": "struct PJRT_Event_OnReady_Args {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/pjrt/c/pjrt_c_api.h#L368",
+      "source_sha256": "a38827698466b7ac81b2402ad144d027a8566714d94d649fba74a37be464ece4",
+      "inputs": "event、callback、user_arg",
+      "outputs": "注册 ready callback 的参数",
+      "constraint": "回调接收并负责销毁 PJRT_Error；user_arg 所有权仍在 caller，不指定设备或回调执行线程。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [
+        "pjrt.buffer-track-event",
+        "pjrt.event-to-future"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "pjrt.buffer-ready-contract",
+      "component": "xla",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "{",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/pjrt/c/pjrt_c_api.h",
+      "line": 2641,
+      "end_line": null,
+      "anchor": "struct PJRT_Buffer_ReadyEvent_Args {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/pjrt/c/pjrt_c_api.h#L2641",
+      "source_sha256": "a38827698466b7ac81b2402ad144d027a8566714d94d649fba74a37be464ece4",
+      "inputs": "PJRT_Buffer",
+      "outputs": "caller 拥有的 ready event",
+      "constraint": "数据 ready 或错误均触发；删除/捐赠与先取得 event 的时序有单独合同，不等同整个 executable 完成。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [
+        "pjrt.buffer-ready-event"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "pjrt.buffer-ready-event",
+      "component": "xla",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "PjRtCApiBuffer::GetReadyEvent",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/pjrt/c_api_client/pjrt_c_api_client.cc",
+      "line": 3993,
+      "end_line": null,
+      "anchor": "PJRT_Event* PjRtCApiBuffer::GetReadyEvent() {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/pjrt/c_api_client/pjrt_c_api_client.cc#L3993",
+      "source_sha256": "06f958c522e826f8a030f4ab16e5dfdd2d67ce8ffaf69111a71fd8d0d90ac187",
+      "inputs": "buffer",
+      "outputs": "缓存的 PJRT_Buffer_ReadyEvent",
+      "constraint": "readiness_event_ 管理 C event 的寿命；与执行完成事件是不同 API 入口。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [
+        "pjrt.buffer-track-event"
+      ],
+      "callees": [
+        "pjrt.buffer-ready-contract"
+      ],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "pjrt.buffer-track-event",
+      "component": "xla",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "PjRtCApiBuffer::MakePromiseTrackEvent",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/pjrt/c_api_client/pjrt_c_api_client.cc",
+      "line": 4006,
+      "end_line": null,
+      "anchor": "void PjRtCApiBuffer::MakePromiseTrackEvent() {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/pjrt/c_api_client/pjrt_c_api_client.cc#L4006",
+      "source_sha256": "06f958c522e826f8a030f4ab16e5dfdd2d67ce8ffaf69111a71fd8d0d90ac187",
+      "inputs": "readiness promise 与 event",
+      "outputs": "ready/error promise",
+      "constraint": "先 IsReady，已就绪则 Error 并立即 Set，否则 OnReady；不直接调用 PJRT_Event_Await。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [
+        "pjrt.buffer-ready-future"
+      ],
+      "callees": [
+        "pjrt.buffer-ready-event",
+        "pjrt.event-callback-contract",
+        "pjrt.event-ready-contract"
+      ],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "pjrt.buffer-ready-future",
+      "component": "xla",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "PjRtCApiBuffer::GetReadyFuture",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/pjrt/c_api_client/pjrt_c_api_client.cc",
+      "line": 4060,
+      "end_line": null,
+      "anchor": "Future<> PjRtCApiBuffer::GetReadyFuture() {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/pjrt/c_api_client/pjrt_c_api_client.cc#L4060",
+      "source_sha256": "06f958c522e826f8a030f4ab16e5dfdd2d67ce8ffaf69111a71fd8d0d90ac187",
+      "inputs": "buffer 的删除状态与 readiness cache",
+      "outputs": "缓存的 C++ future 或错误",
+      "constraint": "删除/捐赠先拒绝；mutex 下只建立一次 promise，ready 不等同 status.ok。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [
+        "ifrt.array-ready"
+      ],
+      "callees": [
+        "pjrt.buffer-track-event"
+      ],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "ifrt.array-ready",
+      "component": "xla",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "PjRtArray::GetReadyFuture",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/python/pjrt_ifrt/pjrt_array.cc",
+      "line": 616,
+      "end_line": null,
+      "anchor": "tsl::Future<> PjRtArray::GetReadyFuture() const {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/python/pjrt_ifrt/pjrt_array.cc#L616",
+      "source_sha256": "b37e4d790965f40688f5a073697a763beb7d65265aa5aa68900069f8466a35b1",
+      "inputs": "一个 IFRT Array 的本地 PJRT buffers",
+      "outputs": "一个或 JoinFutures 的 ready future",
+      "constraint": "只覆盖该 Array 所持 buffers，不是全设备/全进程 barrier。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [
+        "jaxlib.buffers-wait"
+      ],
+      "callees": [
+        "pjrt.buffer-ready-future"
+      ],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "ifrt.values-ready",
+      "component": "xla",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "PjRtClient::GetReadyFuture",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/python/pjrt_ifrt/pjrt_client.cc",
+      "line": 1930,
+      "end_line": null,
+      "anchor": "tsl::Future<> PjRtClient::GetReadyFuture(absl::Span<const ValueRef> values) {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/python/pjrt_ifrt/pjrt_client.cc#L1930",
+      "source_sha256": "a66a9bdf1c3920799bfd446e488830f649334e06d5c68d16b811cfdda21bca5d",
+      "inputs": "若干 IFRT Value",
+      "outputs": "JoinFutures",
+      "constraint": "批量等待针对传入 values，不凭空加入其他计算或其他 host。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [
+        "jaxlib.buffers-wait"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "jaxlib.array-wait",
+      "component": "jax",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "PyArray::BlockUntilReady",
+      "revision": "5832e866449a41c3eea6333416528039119a0fde",
+      "path": "upstream/jax/jaxlib/py_array.cc",
+      "line": 858,
+      "end_line": null,
+      "anchor": "absl::Status PyArray::BlockUntilReady() const {",
+      "source_url": "https://github.com/jax-ml/jax/blob/5832e866449a41c3eea6333416528039119a0fde/jaxlib/py_array.cc#L858",
+      "source_sha256": "7d62b5146d82c43cd8c1ee19668dfd4d79d8b82369cd5df1d98d2212ce0cf231",
+      "inputs": "一个 PyArray",
+      "outputs": "ready 或错误 status",
+      "constraint": "释放 GIL，调用 AwaitBuffersReady；本入口没有等同于整个运行的 result_status。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [
+        "jax.block-until-ready"
+      ],
+      "callees": [
+        "jaxlib.buffers-wait"
+      ],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "jaxlib.buffers-wait",
+      "component": "jax",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "AwaitBuffersReady",
+      "revision": "5832e866449a41c3eea6333416528039119a0fde",
+      "path": "upstream/jax/jaxlib/util.cc",
+      "line": 56,
+      "end_line": null,
+      "anchor": "absl::Status AwaitBuffersReady(absl::Span<ifrt::Array* const> ifrt_arrays) {",
+      "source_url": "https://github.com/jax-ml/jax/blob/5832e866449a41c3eea6333416528039119a0fde/jaxlib/util.cc#L56",
+      "source_sha256": "5c376e954d1676ecc8279802e9d522aa3d4fd1ff8681da6ec15f9f97442ece0c",
+      "inputs": "IFRT Arrays",
+      "outputs": "ready/status",
+      "constraint": "一个 array 直接取 GetReadyFuture；多个通过 client 批量取 future；随后等待并取 status。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [
+        "jaxlib.array-wait"
+      ],
+      "callees": [
+        "ifrt.array-ready",
+        "ifrt.values-ready",
+        "jaxlib.wait-with-signals"
+      ],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "jaxlib.wait-with-signals",
+      "component": "jax",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "BlockUntilReadyWithCancel",
+      "revision": "5832e866449a41c3eea6333416528039119a0fde",
+      "path": "upstream/jax/jaxlib/util.cc",
+      "line": 40,
+      "end_line": null,
+      "anchor": "void BlockUntilReadyWithCancel(xla::Future<>& future) {",
+      "source_url": "https://github.com/jax-ml/jax/blob/5832e866449a41c3eea6333416528039119a0fde/jaxlib/util.cc#L40",
+      "source_sha256": "5c376e954d1676ecc8279802e9d522aa3d4fd1ff8681da6ec15f9f97442ece0c",
+      "inputs": "一个 C++ Future",
+      "outputs": "host 等待或 Python 信号异常",
+      "constraint": "每 200 ms 检查 Python signals；本函数未调用设备 CancelExecution，名称中的 Cancel 不证明设备已取消。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [
+        "jaxlib.buffers-wait"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "jaxlib.token-wait",
+      "component": "jax",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "PyToken::Await",
+      "revision": "5832e866449a41c3eea6333416528039119a0fde",
+      "path": "upstream/jax/jaxlib/py_executable.cc",
+      "line": 118,
+      "end_line": null,
+      "anchor": "absl::Status PyToken::Await() {",
+      "source_url": "https://github.com/jax-ml/jax/blob/5832e866449a41c3eea6333416528039119a0fde/jaxlib/py_executable.cc#L118",
+      "source_sha256": "8fe9ec49c610d53ceb3f9b7e2536138f3505e5c5e95fe0160ef9c38cb8558100",
+      "inputs": "有效 execution status future",
+      "outputs": "等待后的 status",
+      "constraint": "释放 GIL Await，返回 Python 前展开 UserContext；不同于 output buffer ready。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "jaxlib.sharded-token-wait",
+      "component": "jax",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "PyShardedToken::Await",
+      "revision": "5832e866449a41c3eea6333416528039119a0fde",
+      "path": "upstream/jax/jaxlib/py_executable.cc",
+      "line": 141,
+      "end_line": null,
+      "anchor": "absl::Status PyShardedToken::Await() {",
+      "source_url": "https://github.com/jax-ml/jax/blob/5832e866449a41c3eea6333416528039119a0fde/jaxlib/py_executable.cc#L141",
+      "source_sha256": "8fe9ec49c610d53ceb3f9b7e2536138f3505e5c5e95fe0160ef9c38cb8558100",
+      "inputs": "一组 future",
+      "outputs": "等待全部后的合成 status",
+      "constraint": "本 Python adapter 可把同一个 IFRT joined status 复制到多个 token，不能据 token 个数推导独立设备计时。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "jax.effects-barrier",
+      "component": "jax",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "effects_barrier",
+      "revision": "5832e866449a41c3eea6333416528039119a0fde",
+      "path": "upstream/jax/jax/_src/api.py",
+      "line": 2747,
+      "end_line": 2749,
+      "anchor": "def effects_barrier():",
+      "source_url": "https://github.com/jax-ml/jax/blob/5832e866449a41c3eea6333416528039119a0fde/jax/_src/api.py#L2747",
+      "source_sha256": "1e14432e7e4600d8fc92eedbfb752a6e856acefab2f3325fb3be925bfc2cf60b",
+      "inputs": "当前线程的 runtime_tokens",
+      "outputs": "等待已记录 effects",
+      "constraint": "runtime_tokens 为 threading.local；不是跨线程/跨 host 的通用 barrier。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [],
+      "callees": [
+        "jax.runtime-tokens"
+      ],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "jax.runtime-tokens",
+      "component": "jax",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "RuntimeTokenSet",
+      "revision": "5832e866449a41c3eea6333416528039119a0fde",
+      "path": "upstream/jax/jax/_src/dispatch.py",
+      "line": 115,
+      "end_line": 172,
+      "anchor": "class RuntimeTokenSet(threading.local):",
+      "source_url": "https://github.com/jax-ml/jax/blob/5832e866449a41c3eea6333416528039119a0fde/jax/_src/dispatch.py#L115",
+      "source_sha256": "b6c62a781a75228e529a8c886f9f0786cdb851d067a0d26b23c4cbd5e9fa9a09",
+      "inputs": "线程局部 effect/runtime token",
+      "outputs": "按 effect/device 保存 token",
+      "constraint": "block_until_ready 等待后清空当前线程记录；不能保证其他线程的 token 被看到。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [
+        "jax.effects-barrier"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "jax.block-until-ready",
+      "component": "jax",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "block_until_ready",
+      "revision": "5832e866449a41c3eea6333416528039119a0fde",
+      "path": "upstream/jax/jax/_src/api.py",
+      "line": 2751,
+      "end_line": 2786,
+      "anchor": "def block_until_ready(x):",
+      "source_url": "https://github.com/jax-ml/jax/blob/5832e866449a41c3eea6333416528039119a0fde/jax/_src/api.py#L2751",
+      "source_sha256": "1e14432e7e4600d8fc92eedbfb752a6e856acefab2f3325fb3be925bfc2cf60b",
+      "inputs": "pytree 的 leaves",
+      "outputs": "同结构、所选 JAX array leaves ready",
+      "constraint": "单 Array 或批量分支；不把未传入的工作自动纳入等待范围。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [],
+      "callees": [
+        "jaxlib.array-wait"
+      ],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "pjrt.profiler-link",
+      "component": "xla",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "CreatePjrtProfilerExtension",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/pjrt/c/pjrt_c_api_helpers.cc",
+      "line": 1055,
+      "end_line": null,
+      "anchor": "PJRT_Profiler_Extension CreatePjrtProfilerExtension(",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/pjrt/c/pjrt_c_api_helpers.cc#L1055",
+      "source_sha256": "76afacbce304566491668b0d562c792c662ff1eac0acd77efdefa7104b1996ff",
+      "inputs": "库调用 trace 名称",
+      "outputs": "带 context ID 的 Profiler extension",
+      "constraint": "短生命周期 TraceMeProducer 使用 kPjrtLibraryCall=14；不是 kernel 区间，也未由此前仅支持 0/15 的 matcher 验证。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [
+        "pjrt.capi-execute"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
+    },
+    {
+      "id": "pjrt.profiler-context",
+      "component": "xla",
+      "layer": "Public PJRT execution and completion",
+      "symbol": "GetTracemeContextId",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/pjrt/c/pjrt_c_api_helpers.h",
+      "line": 328,
+      "end_line": null,
+      "anchor": "int64_t GetTracemeContextId(InputType* args) {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/pjrt/c/pjrt_c_api_helpers.h#L328",
+      "source_sha256": "7f515acbc7d47a49aea8391113e7b23ca2b57174b94db5186679e24226dda4a8",
+      "inputs": "API 或 Args 的 extension 链",
+      "outputs": "context ID，缺失时 -1",
+      "constraint": "调用方读取 API extension 与传给 plugin 的 Args extension 必须区分；缺失 ID 不能当作唯一关联。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation.",
+      "callers": [
+        "pjrt.c-wrapper-execute"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/tpu-runtime-boundary.md",
+        "research/jax-stack/runtime-chain-results.json"
+      ]
     }
   ],
   "edges": [
+    {
+      "caller": "jax.execute-replicated",
+      "callee": "jaxlib.execute-sharded",
+      "kind": "interface",
+      "condition": "Python effect/host-callback 分支。",
+      "path": "upstream/jax/jax/_src/interpreters/pxla.py",
+      "line": 413,
+      "anchor": "        results = self.xla_executable.execute_sharded(input_bufs, with_tokens=True)",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "jax.execute-replicated",
+      "callee": "jaxlib.execute-sharded",
+      "kind": "interface",
+      "condition": "Python 无 effect 分支。",
+      "path": "upstream/jax/jax/_src/interpreters/pxla.py",
+      "line": 420,
+      "anchor": "        results = self.xla_executable.execute_sharded(input_bufs)",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "jax.pjit-fast-execute",
+      "callee": "ifrt.pjrt-execute",
+      "kind": "interface",
+      "condition": "fastpath 成立且动态 IFRT 实现是 PjRtLoadedExecutable；不经过 execute_sharded。",
+      "path": "upstream/jax/jaxlib/pjit.cc",
+      "line": 852,
+      "anchor": "                        cache_entry->executable->ifrt_executable()->Execute(",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "jaxlib.execute-sharded",
+      "callee": "jaxlib.execute-local",
+      "kind": "direct",
+      "condition": "",
+      "path": "upstream/jax/jaxlib/py_executable.cc",
+      "line": 512,
+      "anchor": "  return ExecuteShardedOnLocalDevicesInternal(options, client_,",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "jaxlib.execute-local",
+      "callee": "ifrt.pjrt-execute",
+      "kind": "interface",
+      "condition": "动态 IFRT 实现为 PjRtLoadedExecutable。",
+      "path": "upstream/jax/jaxlib/py_executable.cc",
+      "line": 453,
+      "anchor": "    TF_ASSIGN_OR_RETURN(auto result, ifrt_loaded_executable->Execute(",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "ifrt.pjrt-execute",
+      "callee": "pjrt.capi-execute",
+      "kind": "interface",
+      "condition": "非 portable；底层 provider 为 PjRtCApiLoadedExecutable。",
+      "path": "upstream/xla/xla/python/pjrt_ifrt/pjrt_executable.cc",
+      "line": 1007,
+      "anchor": "                     pjrt_loaded_executable_->Execute(argument_handles, opts,",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "pjrt.capi-execute",
+      "callee": "pjrt.capi-execute-args",
+      "kind": "direct",
+      "condition": "",
+      "path": "upstream/xla/xla/pjrt/c_api_client/pjrt_c_api_client.cc",
+      "line": 3450,
+      "anchor": "      GetCommonExecuteArgs(argument_handles, options, c_options,",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "pjrt.capi-execute",
+      "callee": "pjrt.c-execute-args",
+      "kind": "C API",
+      "condition": "进入 plugin 函数指针；不声称真实 libtpu 内部使用开源 wrapper_impl。",
+      "path": "upstream/xla/xla/pjrt/c_api_client/pjrt_c_api_client.cc",
+      "line": 3472,
+      "anchor": "      pjrt_c_api()->PJRT_LoadedExecutable_Execute(&args), pjrt_c_api());",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "pjrt.capi-execute",
+      "callee": "pjrt.event-to-future",
+      "kind": "direct",
+      "condition": "请求了设备完成事件。",
+      "path": "upstream/xla/xla/pjrt/c_api_client/pjrt_c_api_client.cc",
+      "line": 3478,
+      "anchor": "      device_complete_futures.push_back(pjrt::ConvertCEventToCppFuture(",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "pjrt.event-to-future",
+      "callee": "pjrt.event-callback-contract",
+      "kind": "C API",
+      "condition": "注册 host callback，回调错误状态与注册错误分开。",
+      "path": "upstream/xla/xla/pjrt/c/pjrt_c_api_helpers.cc",
+      "line": 400,
+      "anchor": "  PJRT_Error* error = c_api->PJRT_Event_OnReady(&event_onready_args);",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "jaxlib.array-wait",
+      "callee": "jaxlib.buffers-wait",
+      "kind": "direct",
+      "condition": "array 未删除。",
+      "path": "upstream/jax/jaxlib/py_array.cc",
+      "line": 868,
+      "anchor": "    status = AwaitBuffersReady(absl::MakeConstSpan(&ifrt_array, 1));",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "jaxlib.buffers-wait",
+      "callee": "ifrt.array-ready",
+      "kind": "interface",
+      "condition": "单数组且实现为 PjRtArray。",
+      "path": "upstream/jax/jaxlib/util.cc",
+      "line": 63,
+      "anchor": "    future = ifrt_arrays[0]->GetReadyFuture();",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "jaxlib.buffers-wait",
+      "callee": "ifrt.values-ready",
+      "kind": "interface",
+      "condition": "多个数组且 client 为 PjRtClient。",
+      "path": "upstream/jax/jaxlib/util.cc",
+      "line": 71,
+      "anchor": "    future = client->GetReadyFuture(values);",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "jaxlib.buffers-wait",
+      "callee": "jaxlib.wait-with-signals",
+      "kind": "direct",
+      "condition": "",
+      "path": "upstream/jax/jaxlib/util.cc",
+      "line": 73,
+      "anchor": "  BlockUntilReadyWithCancel(future);",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "ifrt.array-ready",
+      "callee": "pjrt.buffer-ready-future",
+      "kind": "interface",
+      "condition": "一个本地 buffer 且 provider 为 C API buffer。",
+      "path": "upstream/xla/xla/python/pjrt_ifrt/pjrt_array.cc",
+      "line": 619,
+      "anchor": "    return pjrt_buffers_.front()->GetReadyFuture();",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "pjrt.buffer-ready-future",
+      "callee": "pjrt.buffer-track-event",
+      "kind": "direct",
+      "condition": "首次创建 readiness promise。",
+      "path": "upstream/xla/xla/pjrt/c_api_client/pjrt_c_api_client.cc",
+      "line": 4070,
+      "anchor": "    MakePromiseTrackEvent();",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "pjrt.buffer-track-event",
+      "callee": "pjrt.buffer-ready-event",
+      "kind": "direct",
+      "condition": "",
+      "path": "upstream/xla/xla/pjrt/c_api_client/pjrt_c_api_client.cc",
+      "line": 4018,
+      "anchor": "  is_ready_args.event = GetReadyEvent();",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "pjrt.buffer-ready-event",
+      "callee": "pjrt.buffer-ready-contract",
+      "kind": "C API",
+      "condition": "首次取得 cached ready event。",
+      "path": "upstream/xla/xla/pjrt/c_api_client/pjrt_c_api_client.cc",
+      "line": 4000,
+      "anchor": "    pjrt::LogFatalIfPjrtError(api->PJRT_Buffer_ReadyEvent(&args), api);",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "pjrt.buffer-track-event",
+      "callee": "pjrt.event-ready-contract",
+      "kind": "C API",
+      "condition": "先查询 ready，包括失败终态。",
+      "path": "upstream/xla/xla/pjrt/c_api_client/pjrt_c_api_client.cc",
+      "line": 4020,
+      "anchor": "      api->PJRT_Event_IsReady(&is_ready_args), pjrt::MakeErrorDeleter(api)};",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "pjrt.buffer-track-event",
+      "callee": "pjrt.event-callback-contract",
+      "kind": "C API",
+      "condition": "尚未 ready 时。",
+      "path": "upstream/xla/xla/pjrt/c_api_client/pjrt_c_api_client.cc",
+      "line": 4054,
+      "anchor": "      api->PJRT_Event_OnReady(&args), ::pjrt::MakeErrorDeleter(api)};",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "jax.effects-barrier",
+      "callee": "jax.runtime-tokens",
+      "kind": "direct",
+      "condition": "当前线程局部 RuntimeTokenSet。",
+      "path": "upstream/jax/jax/_src/api.py",
+      "line": 2749,
+      "anchor": "  dispatch.runtime_tokens.block_until_ready()",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "jax.block-until-ready",
+      "callee": "jaxlib.array-wait",
+      "kind": "interface",
+      "condition": "leaf 是本例 PyArray；其他类型按 duck typing 处理。",
+      "path": "upstream/jax/jax/_src/api.py",
+      "line": 2764,
+      "anchor": "      return x.block_until_ready()",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "pjrt.capi-execute",
+      "callee": "pjrt.profiler-link",
+      "kind": "direct",
+      "condition": "提交给 plugin 的 linkage producer。",
+      "path": "upstream/xla/xla/pjrt/c_api_client/pjrt_c_api_client.cc",
+      "line": 3467,
+      "anchor": "      pjrt::CreatePjrtProfilerExtension(",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "pjrt.c-wrapper-execute",
+      "callee": "pjrt.profiler-context",
+      "kind": "direct",
+      "condition": "仅开源 reference wrapper 的 Args extension 路径。",
+      "path": "upstream/xla/xla/pjrt/c/pjrt_c_api_wrapper_impl.cc",
+      "line": 2325,
+      "anchor": "  int64_t traceme_context_id = pjrt::GetTracemeContextId(args);",
+      "evidence_level": "SOURCE-ONLY"
+    },
     {
       "caller": "xla.trace-context-producer",
       "callee": "xla.trace-new-activity",
