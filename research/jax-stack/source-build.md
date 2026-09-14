@@ -35,6 +35,10 @@ XLA、Bazel 8.7.0、Clang 18.1.3。工作区另建 JAX/XLA 的同 revision 克�
    `--lockfile_mode=off`；在外部依赖闭包补齐前，不宣称整个构建可完整离线重放。
 4. 做一个有预期日志变化的可逆诊断修改，重新编译、加载、对照并回滚。
 
+[独立运行环境](runtime-environment.md) 已创建并用旧 wheel 完成 CPU 负对照；源码 wheel
+成功后可由同一入口在新环境离线安装、核对 native payload 并运行默认/过滤对照。
+目前尚未执行成功构建 wheel 的安装分支。
+
 容器预检通过不等于构建成功；wheel 构建成功不等于运行验证或 Hack 验收完成。
 
 ## 当前 attempt

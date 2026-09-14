@@ -71,6 +71,8 @@ wrapper 要求生成规范 Git diff。未修改当前运行中的 clone/config�
 的最大绝对误差低于 5.56e-9，自定义事件计数均为 0。正对照要求成功的指定补丁构建及
 wheel/native payload 字节绑定，目前仍未执行。完成构建后先做无补丁 wheel 加载基线，
 再应用补丁、重编译和回滚。下一命令仍是 inspect 当前构建容器。目标 TPU overlap 仍需 U03。
+[独立环境](runtime-environment.md) 已创建并完成真实 CPU 负对照，12,603 个依赖文件的
+字节与独立 inode 已核对；源码构建 wheel 的安装入口已准备，但仍待构建成功后实际执行。
 完整恢复队列、已确认 U04 和未回答 U01–U03 保存在 [status.json](status.json)。
 
 ## 执行次序
