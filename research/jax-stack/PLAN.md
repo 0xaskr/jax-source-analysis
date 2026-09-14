@@ -29,7 +29,7 @@
 
 CPU matmul、两种 Pallas 解释路径、host/编译事件和开放源码 Mosaic 标记已有可复查材料；
 完整 kickoff 尚未完成。源码索引扩展至 120 个入口、38 条关系，包括固定 XProf 源码；Pallas/profiling
-Notebook 的 5 个代码单元已真实执行。
+Notebook 的 7 个代码单元已真实执行。
 原始 capture 继续留在忽略目录；验证器校验清单、哈希与关键语义。
 
 固定源码构建已在唯一容器 `jax-kickoff-cpu-source-002` 中运行，原始上游树保持干净。
@@ -66,8 +66,11 @@ runtime load 证据。matmul Notebook 扩展为 8 个单元，已真实执行。
 
 [编译事件补丁](pass-event-patch.md) 已在独立副本应用、反向应用并恢复原始字节；按构建
 wrapper 要求生成规范 Git diff。未修改当前运行中的 clone/config，也未编译加载该补丁。
-构建期间继续准备 cold/warm/filter 的自定义事件验收脚本；完成构建后先做无补丁 wheel
-加载基线，再应用补丁、重编译和回滚。目标 TPU overlap 仍需 U03。
+构建期间已完成 [cold/warm/filter 验收脚本](pass-event-acceptance.md)：当前 wheel 的两组
+负对照、运行中构建拒绝、事件语义反例和 Notebook 新进程重跑均通过；两组各三次输出
+的最大绝对误差低于 5.56e-9，自定义事件计数均为 0。正对照要求成功的指定补丁构建及
+wheel/native payload 字节绑定，目前仍未执行。完成构建后先做无补丁 wheel 加载基线，
+再应用补丁、重编译和回滚。下一命令仍是 inspect 当前构建容器。目标 TPU overlap 仍需 U03。
 完整恢复队列、已确认 U04 和未回答 U01–U03 保存在 [status.json](status.json)。
 
 ## 执行次序

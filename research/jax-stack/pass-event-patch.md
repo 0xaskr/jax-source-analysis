@@ -4,6 +4,8 @@
 结果为 [pass-event-patch-results.json](pass-event-patch-results.json)。当前仅完成
 `SOURCE-ONLY` 的补丁生成、应用/反向应用与字节核对，**没有把它应用到正在运行的构建 clone**。
 `native_compiled`、`patched_binary_loaded`、`custom_event_observed` 均为 false。
+后续运行使用的 [事件验收脚本与负对照](pass-event-acceptance.md) 已完成 CPU 检查，
+包括 cold/warm/filter、构建状态拒绝和 wheel/native payload 身份约束。
 
 ## 为什么放在 RunHelper 周围
 
