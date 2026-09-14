@@ -262,7 +262,9 @@
       "callers": [
         "jax.cached-mlir-lowering"
       ],
-      "callees": []
+      "callees": [
+        "jax.donation-aliases"
+      ]
     },
     {
       "id": "jax.dot-lowering",
@@ -587,7 +589,9 @@
       "callers": [
         "xla.cpu-codegen"
       ],
-      "callees": []
+      "callees": [
+        "xla.buffer-assignment-entry"
+      ]
     },
     {
       "id": "xla.dot-cost",
@@ -1354,6 +1358,238 @@
       "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
       "callers": [],
       "callees": []
+    },
+    {
+      "id": "jax.donation-aliases",
+      "component": "jax",
+      "layer": "Donation lowering",
+      "symbol": "_set_up_aliases",
+      "revision": "5832e866449a41c3eea6333416528039119a0fde",
+      "path": "upstream/jax/jax/_src/interpreters/mlir.py",
+      "line": 1487,
+      "end_line": 1589,
+      "anchor": "def _set_up_aliases(",
+      "source_url": "https://github.com/jax-ml/jax/blob/5832e866449a41c3eea6333416528039119a0fde/jax/_src/interpreters/mlir.py#L1487",
+      "source_sha256": "e45f2c880bc3598c1c379d0e2082989c7991bc217b9efe9dc3de14a6911dac5b",
+      "inputs": "donated arguments、输入输出 avals、memory kinds、layouts/shardings",
+      "outputs": "input-output aliases 与交给 XLA 的 donation 标记",
+      "constraint": "优先精确匹配，另有相同元素数量的 fallback；最终 backend 合法性、临时量和运行时复用仍需检查。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
+      "callers": [
+        "jax.mlir-module"
+      ],
+      "callees": []
+    },
+    {
+      "id": "xla.cpu-fusion-decision",
+      "component": "xla",
+      "layer": "CPU fusion",
+      "symbol": "CpuInstructionFusion::ShouldFuse",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/service/cpu/cpu_instruction_fusion.cc",
+      "line": 403,
+      "end_line": null,
+      "anchor": "FusionDecision CpuInstructionFusion::ShouldFuse(",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/service/cpu/cpu_instruction_fusion.cc#L403",
+      "source_sha256": "ed0eab2ca154b14fa355a95d826969bed073a399636fcb880729cc5ee3ecaf76",
+      "inputs": "consumer 与 producer operand index",
+      "outputs": "Allow/Forbid 及原因",
+      "constraint": "考虑可发射性、库调用边界、重复计算、concatenate/reduction 限制及公共 fusion 条件；不是数学可合并就必融合。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
+      "callers": [],
+      "callees": [
+        "xla.common-fusion-decision"
+      ]
+    },
+    {
+      "id": "xla.common-fusion-decision",
+      "component": "xla",
+      "layer": "Fusion legality",
+      "symbol": "InstructionFusion::ShouldFuse",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/service/instruction_fusion.cc",
+      "line": 1133,
+      "end_line": null,
+      "anchor": "FusionDecision InstructionFusion::ShouldFuse(HloInstruction*",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/service/instruction_fusion.cc#L1133",
+      "source_sha256": "e6e8c249552539acec198fae8086ae3e7ae9de1bbce05c8952a06ac9795afeaf",
+      "inputs": "consumer 与 producer operand index",
+      "outputs": "公共 fusion 合法性/启发式判断",
+      "constraint": "CPU 的专用条件仍需额外满足；调用本层不能保证最终形成目标 fusion。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
+      "callers": [
+        "xla.cpu-fusion-decision"
+      ],
+      "callees": []
+    },
+    {
+      "id": "xla.cpu-fusion-wrapper",
+      "component": "xla",
+      "layer": "CPU codegen preparation",
+      "symbol": "FusionWrapper::MustWrapInstruction",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/service/cpu/fusion_wrapper.cc",
+      "line": 29,
+      "end_line": null,
+      "anchor": "bool FusionWrapper::MustWrapInstruction(",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/service/cpu/fusion_wrapper.cc#L29",
+      "source_sha256": "5eed0e791bf110437f3200213319156f6cf638c31a7da07978b605423b816330",
+      "inputs": "单个 HloInstruction 与 emitter 配置",
+      "outputs": "是否包装成 fusion computation",
+      "constraint": "单算子 wrapper 也有 kFusion；关闭 fusion pass 后仍可能有 wrapper 和库 fusion。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
+      "callers": [],
+      "callees": []
+    },
+    {
+      "id": "xla.buffer-assignment-entry",
+      "component": "xla",
+      "layer": "Buffer assignment",
+      "symbol": "BufferAssigner::Run",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/service/buffer_assignment.cc",
+      "line": 1835,
+      "end_line": null,
+      "anchor": "absl::StatusOr<std::unique_ptr<BufferAssignment>> BufferAssigner::Run(",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/service/buffer_assignment.cc#L1835",
+      "source_sha256": "9e6e664fac0de16b5177adeb419eccf5c8c8ceb1806ce6869416c643f3008c9e",
+      "inputs": "module、ordering、buffer sizes、alias info、alignment 与 options",
+      "outputs": "BufferAssignment",
+      "constraint": "分配依赖 schedule 和数据流/alias；静态 allocation 不是进程或设备实测峰值。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
+      "callers": [
+        "xla.cpu-buffers"
+      ],
+      "callees": []
+    },
+    {
+      "id": "xla.buffer-reuse",
+      "component": "xla",
+      "layer": "Buffer reuse",
+      "symbol": "BufferAssigner::MaybeAssignBuffer",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/service/buffer_assignment.cc",
+      "line": 1911,
+      "end_line": null,
+      "anchor": "absl::StatusOr<bool> BufferAssigner::MaybeAssignBuffer(",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/service/buffer_assignment.cc#L1911",
+      "source_sha256": "9e6e664fac0de16b5177adeb419eccf5c8c8ceb1806ce6869416c643f3008c9e",
+      "inputs": "候选 allocation 与 HloBuffer",
+      "outputs": "可复用判定及分配",
+      "constraint": "检查颜色/空间兼容、容量、只读、live-out、可复用性与存活区间；同一 allocation 的不同 offset 也可能只是打包。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
+      "callers": [],
+      "callees": [
+        "xla.buffer-interference"
+      ]
+    },
+    {
+      "id": "xla.buffer-interference",
+      "component": "xla",
+      "layer": "Buffer liveness",
+      "symbol": "BufferAssigner::LiveRangeInterferes",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/service/buffer_assignment.cc",
+      "line": 1845,
+      "end_line": null,
+      "anchor": "bool BufferAssigner::LiveRangeInterferes(",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/service/buffer_assignment.cc#L1845",
+      "source_sha256": "9e6e664fac0de16b5177adeb419eccf5c8c8ceb1806ce6869416c643f3008c9e",
+      "inputs": "两个 HloValue 及各自 live ranges",
+      "outputs": "是否干涉",
+      "constraint": "端点相接不自动等于干涉或安全；还需验证 producer/user 能否共享 buffer，copy 有专门限制。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
+      "callers": [
+        "xla.buffer-reuse"
+      ],
+      "callees": []
+    },
+    {
+      "id": "xla.live-range",
+      "component": "xla",
+      "layer": "Liveness analysis",
+      "symbol": "HloLiveRange::Run",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/hlo/utils/hlo_live_range.cc",
+      "line": 53,
+      "end_line": null,
+      "anchor": "absl::StatusOr<std::unique_ptr<HloLiveRange>> HloLiveRange::Run(",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/hlo/utils/hlo_live_range.cc#L53",
+      "source_sha256": "605cf9156032c1ec63488e6b114573f2a34761fd50ce8e5406e8cfb29d7b8510",
+      "inputs": "HloSchedule、alias analysis、computation",
+      "outputs": "以 instruction order 为逻辑时钟的 live ranges",
+      "constraint": "逻辑时间不是微秒；输出和输入的范围、alias normalization 与 physical allocation 要分开解释。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
+      "callers": [],
+      "callees": []
+    },
+    {
+      "id": "xla.live-range-peak",
+      "component": "xla",
+      "layer": "Memory diagnostics",
+      "symbol": "HloLiveRange::ComputePeakMemoryMoment",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/hlo/utils/hlo_live_range.cc",
+      "line": 325,
+      "end_line": null,
+      "anchor": "int64_t HloLiveRange::ComputePeakMemoryMoment()",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/hlo/utils/hlo_live_range.cc#L325",
+      "source_sha256": "605cf9156032c1ec63488e6b114573f2a34761fd50ce8e5406e8cfb29d7b8510",
+      "inputs": "buffer live ranges 和 HLO shapes",
+      "outputs": "诊断 peak moment",
+      "constraint": "此算法同一时刻先处理 start 再处理 end+1；本次捕获的 reduce 诊断选点不是打印闭区间总量的最大值，需复验匹配 binary。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
+      "callers": [],
+      "callees": []
+    },
+    {
+      "id": "xla.runtime-donation-hold",
+      "component": "xla",
+      "layer": "PJRT ownership",
+      "symbol": "CommonPjRtBuffer::GetBufferForDonationHoldLocked",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/pjrt/abstract_tracked_device_buffer.cc",
+      "line": 233,
+      "end_line": null,
+      "anchor": "CommonPjRtBuffer::GetBufferForDonationHoldLocked()",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/pjrt/abstract_tracked_device_buffer.cc#L233",
+      "source_sha256": "9f687b23123341a52a60e5cc95e5a666e5c9bcf95f3b032956dc16e04e75bf8c",
+      "inputs": "buffer 状态与 usage/external/donation holds",
+      "outputs": "取得 donation storage 或返回错误",
+      "constraint": "固定公共实现拒绝已有外部引用的 donation；当前 CPU wheel 的具体 fallback 路径仍受 VERSION-SKEW 限制。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
+      "callers": [],
+      "callees": []
+    },
+    {
+      "id": "xla.cpu-memory-stats",
+      "component": "xla",
+      "layer": "CPU executable introspection",
+      "symbol": "PjRtCpuExecutable::GetCompiledMemoryStats",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/pjrt/cpu/cpu_client.cc",
+      "line": 1050,
+      "end_line": null,
+      "anchor": "absl::StatusOr<CompiledMemoryStats> PjRtCpuExecutable::GetCompiledMemoryStats()",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/pjrt/cpu/cpu_client.cc#L1050",
+      "source_sha256": "d419daaabf4039b93d7693f430a25f2b51d111318fe49a2c8d8d92a0744e177b",
+      "inputs": "CPU executable 的 allocation/HLO proto",
+      "outputs": "CompiledMemoryStats 与静态 heap 信息",
+      "constraint": "不能用 alias_size 直接证明运行时指针复用；CPU 外部 NumPy view 对照已展示区别。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
+      "callers": [],
+      "callees": []
     }
   ],
   "edges": [
@@ -1525,6 +1761,46 @@
       "path": "upstream/tooling/xprof/xprof/convert/op_stats_to_roofline_model.cc",
       "line": 93,
       "anchor": "  SetRooflineMetrics(metrics, op_stats.perf_env(), op_stats.run_environment(),",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "jax.mlir-module",
+      "callee": "jax.donation-aliases",
+      "kind": "direct",
+      "condition": "满足该 lowering 的 donation/alias 分支条件时。",
+      "path": "upstream/jax/jax/_src/interpreters/mlir.py",
+      "line": 1384,
+      "anchor": "    input_output_aliases, donated_args, xla_donated_args = _set_up_aliases(",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.cpu-fusion-decision",
+      "callee": "xla.common-fusion-decision",
+      "kind": "direct",
+      "condition": "前面的 CPU 专用 early return 未结束判定时。",
+      "path": "upstream/xla/xla/service/cpu/cpu_instruction_fusion.cc",
+      "line": 473,
+      "anchor": "  RETURN_IF_NOT_FUSIBLE(InstructionFusion::ShouldFuse(consumer, operand_index));",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.cpu-buffers",
+      "callee": "xla.buffer-assignment-entry",
+      "kind": "direct",
+      "condition": "",
+      "path": "upstream/xla/xla/service/cpu/cpu_compiler.cc",
+      "line": 2464,
+      "anchor": "  return BufferAssigner::Run(",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.buffer-reuse",
+      "callee": "xla.buffer-interference",
+      "kind": "direct",
+      "condition": "total_order_scheduled 分支；另有 partial ordering fallback。",
+      "path": "upstream/xla/xla/service/buffer_assignment.cc",
+      "line": 2029,
+      "anchor": "        if (LiveRangeInterferes(new_value, *cached_new_live_ranges[i],",
       "evidence_level": "SOURCE-ONLY"
     }
   ],

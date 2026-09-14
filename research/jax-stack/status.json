@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "updated_at": "2026-09-14T15:01:12.955105+00:00",
+  "updated_at": "2026-09-14T15:31:52.307727+00:00",
   "goal_state": "active",
   "objective": "按 Outline kickoff revision 51 完成软件栈总览、源码/API 索引和实际推理场景 Hack 实验。",
   "kickoff_source": "research/jax-stack/kickoff-source.json",
@@ -17,7 +17,7 @@
     },
     {
       "id": "source-entry-index",
-      "result": "已核对 63 个源码入口、17 条调用/接口关系；包含锁定的 XProf tooling 源码。完整调用图仍在补充。",
+      "result": "已核对 74 个源码入口、21 条调用/接口关系；五个核心源树与固定 XProf 干净。完整调用图仍在补充。",
       "evidence": "research/jax-stack/source-index.json"
     },
     {
@@ -68,6 +68,21 @@
     {
       "id": "publication-repaired",
       "result": "在隔离 worktree 中无冲突合并双方提交，正常推送 merge 771068b；原暂存 diff 按字节比对未变。"
+    },
+    {
+      "id": "fusion-memory-comparison",
+      "result": "11 组 CPU 对照：fusion/wrapper、donation 与 external NumPy view、reshape counterfactual、unused donation、matmul epilogue；2028 个产物通过独立验证。",
+      "evidence": "research/jax-stack/fusion-memory-results.json"
+    },
+    {
+      "id": "liveness-allocation-explanation",
+      "result": "将 schedule、value ranges、allocation/offset 与实际 pointer/invalidation 对应；记录逻辑 peak 诊断选点与闭区间重算的差异。",
+      "evidence": "research/jax-stack/fusion-and-memory.md"
+    },
+    {
+      "id": "fusion-memory-notebook",
+      "result": "真实 Jupyter kernel 执行 4 个代码单元，含重新运行 owned/external-view donation 对照。",
+      "evidence": "research/jax-stack/fusion-memory.ipynb"
     }
   ],
   "requirements": [
@@ -85,7 +100,8 @@
       "state": "partial",
       "evidence": [
         "research/jax-stack/cpu-results.json",
-        "research/jax-stack/matmul-lowering.ipynb"
+        "research/jax-stack/matmul-lowering.ipynb",
+        "research/jax-stack/fusion-memory-results.json"
       ],
       "remaining": "消除 native VERSION-SKEW，补齐转换中间阶段的语义与关键 pass 解释；TPU 部分按实际条件继续。"
     },
@@ -112,17 +128,21 @@
       "id": "R05",
       "state": "partial",
       "evidence": [
-        "research/jax-stack/cpu-results.json"
+        "research/jax-stack/cpu-results.json",
+        "research/jax-stack/fusion-and-memory.md",
+        "research/jax-stack/fusion-memory-results.json"
       ],
-      "remaining": "完整 fusion 条件分析，指定实际推理图的两算子 fusion 和 Pallas 注入。"
+      "remaining": "CPU fusion/library/wrapper 条件与 pass 前后结构已对照；指定实际推理图的 fusion/Pallas 注入及目标 TPU 证据仍需完成。"
     },
     {
       "id": "R06",
-      "state": "artifacts-collected",
+      "state": "partial",
       "evidence": [
-        "research/jax-stack/cpu-results.json"
+        "research/jax-stack/cpu-results.json",
+        "research/jax-stack/fusion-and-memory.md",
+        "research/jax-stack/fusion-memory-results.json"
       ],
-      "remaining": "逐值解释 liveness/alias/donation、实际分配与复用约束；当前仅有 CPU compiler 记录。"
+      "remaining": "CPU liveness/allocation/alias/donation 与运行时指针对照已完成；需匹配源码 binary 复验及 U03 的真实 TPU 内存证据，不能以逻辑 peak 或静态 accounted bytes 代替。"
     },
     {
       "id": "R07",
@@ -201,9 +221,22 @@
       "action": "通过 docker inspect 核对容器 5cd1c2485f1b6960a9ddcb522b145d343fb4b61047466de2320b96843b2680c3；读取现有 attempt 0001 日志。运行中不要启动重复构建；结束后验证 wheel 与外部依赖闭包。"
     },
     {
-      "id": "hlo-pass-explanations",
+      "id": "build-dependency-closure",
       "ready": true,
-      "action": "基于现有 native HLO/dump，补齐关键 pass 的 before/after 解释；运行 fusion、alias/donation、schedule/liveness 与 buffer 复用的对照，保持 CPU 与 TPU 证据分离。"
+      "action": "构建运行期间检查本次 Bazel 已解析的外部依赖与 archive/repository cache，记录与固定 JAX/XLA/LLVM 等版本的关系；不修改运行中的 source/config。"
+    },
+    {
+      "id": "overlap-scheduling-reference",
+      "ready": true,
+      "action": "阅读固定 collective async/scheduler 路径与配置；以受控多 CPU 设备作 API/IR 参考，保持其与真实 TPU overlap 验收分离。"
+    },
+    {
+      "id": "liveness-diagnostic-followup",
+      "ready": false,
+      "depends_on": [
+        "source-built-wheel-validation"
+      ],
+      "action": "在匹配 binary 上复验 reduction live-range peak 诊断差异；区分事件排序、逻辑值总量与 physical allocation。"
     },
     {
       "id": "compiler-custom-event",
@@ -233,7 +266,7 @@
     }
   ],
   "validation": {
-    "source_index": "63 entries / 17 edges verified; five core sources plus pinned XProf are clean",
+    "source_index": "74 entries / 21 edges verified",
     "capture": "1062 artifact sizes and SHA-256 verified",
     "numerics": "4 cases; NumPy float64 forward/analytic gradients",
     "serialized_executable": "4 in-process reloads, bit-for-bit comparison passed",
@@ -251,17 +284,20 @@
     "project_status_selftest": "PASS: positive summary and 20 negative contracts",
     "attributes": "60 artifact inventories/hashes, six NumPy cases, native HLO metadata/opcode parsing, cost reads, semantic edit outputs verified",
     "attributes_selftest": "3 corrupted manifests plus metadata-as-FLOPs claim rejected",
-    "notebook_attributes": "4 code cells executed using a real Jupyter kernel"
+    "notebook_attributes": "4 code cells executed using a real Jupyter kernel",
+    "fusion_memory": "2028 artifact sizes/hashes and inventories; 11 numerical cases, native HLO structures, schedules, allocation bounds, reuse intervals, alias/temp sizes and raw pointer observations verified",
+    "fusion_memory_selftest": "3 corrupted manifests and out-of-bounds allocation rejected",
+    "notebook_fusion_memory": "4 code cells executed using real Jupyter kernel, including fresh runtime donation/view comparison"
   },
   "completion_claim": "本状态未宣称 kickoff 的任一完整交付组已经验收。",
   "artifact_fingerprints": {
     "PLAN.md": {
-      "sha256": "0a71347c581c5e7cb9944cbbc5835191557528ba9c90780d603acc8664fe8bc2",
-      "size_bytes": 6670
+      "sha256": "d6c83bc1f285b322b93eea5f86c859b3892e7c1fdd0c9a6fdd5729e6c16fb5cb",
+      "size_bytes": 7060
     },
     "README.md": {
-      "sha256": "44df038b3755e11e5e4fcf4d0ffb5f917f33974546aa4b15239f25d42d925260",
-      "size_bytes": 7339
+      "sha256": "8f097b5b475c0af3abb1d2cb567890afb7f45bb04ba4bb02055845ee6dbd6221",
+      "size_bytes": 7605
     },
     "attributes-and-cost.md": {
       "sha256": "2e8e638ee4cfbf9add3d47ac7b50702b5ed7f9a66a6d86f8dba4fc26be825463",
@@ -280,20 +316,36 @@
       "size_bytes": 13707
     },
     "build_source_index.py": {
-      "sha256": "36ba19b86085787deaf1ee64245c0ecc8e69792ce4d05bf2b433c029e0a55297",
-      "size_bytes": 28525
+      "sha256": "98765bf47ce8c256c393b5beb1e7a10830e284e682163ff03ed88535aff6c8b7",
+      "size_bytes": 33380
     },
     "compiler_events_probe.py": {
       "sha256": "98659bc1df7d2c0afb830e6ac01dc9b3bf845003b53e37e3b02f080b69d7eadc",
       "size_bytes": 7467
     },
     "cpu-results.json": {
-      "sha256": "36a6e4af109988ff03cddf77a7cb8cbf5889e04f6a20a6f83e914fc03e033087",
+      "sha256": "be684b6da7fc597e8b7a813f238b116bc591c8c16f75bed5e0efe4caea0fdc59",
       "size_bytes": 91475
     },
     "extension-results.json": {
       "sha256": "3e9e3f1909236e94fe278be96918df1055dcb6e19647d5a701778f6ddc1c8e61",
       "size_bytes": 18092
+    },
+    "fusion-and-memory.md": {
+      "sha256": "810807a3356f43a404d4e4077735631d7f32d072a78fdb756b21bee1ef7529af",
+      "size_bytes": 9429
+    },
+    "fusion-memory-results.json": {
+      "sha256": "76151a0517289e2b20f605d0b8a3ca934c91f2953f48895b5a63a7b58a639ca9",
+      "size_bytes": 89554
+    },
+    "fusion-memory.ipynb": {
+      "sha256": "f8c7902aba2a4d884af650e79b628cff50895b00c5e62a4e002fc0a9e38ff862",
+      "size_bytes": 10230
+    },
+    "fusion_memory_probe.py": {
+      "sha256": "6e45d91ec9d6d0b86d41f167f3ce4201555ef095dd0fcbc8b27f2e5ca238502c",
+      "size_bytes": 11159
     },
     "kickoff-source.json": {
       "sha256": "e2cfb5ecf84838c67ae2c42a40c35420b8743025de53cf4846a8cee3386c4703",
@@ -312,8 +364,8 @@
       "size_bytes": 7289
     },
     "overview.md": {
-      "sha256": "12f6f9aa0c69eeda103656d7cbef880a7dba1e4a19a077725057c31236771752",
-      "size_bytes": 8167
+      "sha256": "1aa9f27e21aa8c5e8abfe5fdbd524497b00edc92896053c6d14b29e5703636e4",
+      "size_bytes": 8398
     },
     "pallas-comparison.md": {
       "sha256": "6c7577ccc2315b8d1bf4c7663e3ea75d0d1d54cc0a7dabe69ba63654a24e7a0a",
@@ -344,8 +396,8 @@
       "size_bytes": 3353
     },
     "source-index.json": {
-      "sha256": "87d4e94ed9aa113c692b7220bfa3b6014e8030ab7bffac35dc0b00a8db0546c9",
-      "size_bytes": 72959
+      "sha256": "6f26f4470e3b81b1f3962dac164472c12803e7616051c872b88ff635c8e7c959",
+      "size_bytes": 86807
     },
     "verify_attributes.py": {
       "sha256": "cb58cee7f4e3b5b553dc00c77a907e20b4ae2c57af4c52d7e0005ffac00a6e60",
@@ -354,6 +406,10 @@
     "verify_extensions.py": {
       "sha256": "d4343988e980e21f5669dc73e186a8414b64524adff8e87d1f0f33806afa4267",
       "size_bytes": 10759
+    },
+    "verify_fusion_memory.py": {
+      "sha256": "52aad093f1ea79126b56cea97215dd961c157b78e9e26cda59781a8e694ed647",
+      "size_bytes": 11779
     },
     "verify_research.py": {
       "sha256": "00686b56facc06456ccc278ee5e7073b21512cb2f3a9c55b04c80f97d4185b93",
@@ -382,10 +438,10 @@
     "launch_record": "artifacts/jax-stack/source-build-001/launch.json",
     "log": "artifacts/builds/kickoff-cpu-source-001/attempts/0001/build.log",
     "pid_namespace_warning": "Inspect the Docker container; wrapper PIDs are container-local.",
-    "inspected_at": "2026-09-14T14:37:34.557715+00:00"
+    "inspected_at": "2026-09-14T15:31:52.307727+00:00"
   },
   "publication": {
-    "local_commit": "5ef59201b5dc9abdb7246ca9c7738afa7a4973c5",
+    "local_commit": "2729faef5997775c9d81b2ad1107f01716c13439",
     "original_staged_diff_preserved": true,
     "push_attempt": {
       "command": "git push origin main",
@@ -396,8 +452,9 @@
     },
     "remaining": "Current worktree HEAD kept unchanged to preserve its staged cleanup; remote integration was performed in an isolated worktree.",
     "state": "pushed",
-    "integration_commit": "771068b52d96d5c86c6ba24b187fbfe920ba4ab9",
-    "push_result": "519c3e5..771068b HEAD -> main; normal fast-forward push"
+    "integration_commit": "50bd4ced6aa4e653f22b51e93daef1d58867ffa3",
+    "push_result": "771068b..50bd4ce HEAD -> main; normal fast-forward push",
+    "latest_milestone": "attributes-cost-and-roofline-source"
   },
   "additional_sources": [
     {

@@ -28,7 +28,7 @@
 ## 本轮进度与恢复入口
 
 CPU matmul、两种 Pallas 解释路径、host/编译事件和开放源码 Mosaic 标记已有可复查材料；
-完整 kickoff 尚未完成。源码索引扩展至 63 个入口，包括固定 XProf 源码；Pallas/profiling
+完整 kickoff 尚未完成。源码索引扩展至 74 个入口，包括固定 XProf 源码；Pallas/profiling
 Notebook 的 5 个代码单元已真实执行。
 原始 capture 继续留在忽略目录；验证器校验清单、哈希与关键语义。
 
@@ -42,8 +42,13 @@ HLO 属性 setter、HLO add→subtract 的编译执行、opaque custom-call 未�
 [attributes-and-cost.md](attributes-and-cost.md)。已有 roofline 模块与修正位置见
 [roofline.md](roofline.md)，其中 XProf native converter 与目标 TPU 运行尚未验证。
 
-上一里程碑已在隔离 worktree 合并远端文档并正常推送（merge `771068b`），主工作区和原暂存
-修改保留。构建运行期间的下一项独立工作是 HLO pass/fusion 与内存分配/复用解释和对照。
+属性/cost 里程碑已在隔离 worktree 合并并正常推送（merge `50bd4ce`），主工作区和原暂存
+修改保留。Fusion/memory 已新增 11 组 CPU 对照及 2028 个产物：普通 fusion、单算子 wrapper、
+donation 的静态/运行时差异、临时量与存储复用，以及逻辑 peak 诊断差异，见
+[fusion-and-memory.md](fusion-and-memory.md)。这些结果不计为真实业务 split 或 TPU 内存验收。
+
+构建运行期间，下一项独立工作是编译依赖闭包核查，以及通信/计算调度和 overlap 的公共源码
+入口与受控 CPU 参考；目标 TPU overlap 仍需 U03。
 完整恢复队列、已确认 U04 和未回答 U01–U03 保存在 [status.json](status.json)。
 
 ## 执行次序
