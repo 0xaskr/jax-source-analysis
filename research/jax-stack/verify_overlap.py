@@ -7,6 +7,7 @@ import argparse
 from collections import Counter
 import copy
 import json
+from pathlib import Path
 import re
 
 import numpy as np
@@ -65,7 +66,10 @@ def control_edge(path):
 
 def verify(capture):
     result = audit(capture)
+    manifest = read_json(capture / "manifest.json")
     env = read_json(capture / "environment.json")
+    from capture_runtime import verify_binding
+    build_binding = verify_binding(capture, env, manifest)
     check(env["runtime"]["device"]["device_count"] == 2, "capture did not use two CPU devices")
     for binary in env["runtime"]["jaxlib"]["native_binaries"]:
         check(sha256(local_path(binary["artifact_path"])) == binary["sha256"], "current native binary changed")
@@ -114,16 +118,40 @@ def verify(capture):
                       "stablehlo_targets": expected, "optimized": optimized, "control_edge_after_rewriter": edge,
                       "native_module_prefix": prefix, "selected_boundaries": rederived})
     failures = []
-    for name, fragment in [("scheduled-varying-checked", "requires varying manual axes to match"),
-                           ("scheduled-varying-unchecked", "has no attribute done"),
-                           ("scheduled-invariant-default-layout", "incorrect layout dense<>"),
-                           ("explicit-layout-backend-error", "is live and cannot be removed")]:
-        saved = read_json(capture / name / "expected-error.json")
-        check(fragment in saved["message"], "expected error differs")
-        failures.append({"case": name, "phase": saved["phase"], "error_type": saved["type"], "error_fragment": fragment})
-    check_lowered_targets(mlir_targets(capture / "explicit-layout-backend-error/stablehlo.mlir"),
-                          {"all-reduce-start": 1, "all-reduce-done": 1, "control_dep": 2})
-    result.update(topology=summary["topology"], cases=cases, expected_failures=failures, limits=summary["limits"],
+    observed_prior_cases = []
+    if manifest.get("observe_prior_failures"):
+        observations = read_json(capture / "prior-failure-observations.json")
+        expected_names = {"scheduled-varying-checked", "scheduled-varying-unchecked", "scheduled-invariant-default-layout", "explicit-layout-backend-error"}
+        check(len(observations) == 4 and {item["case"] for item in observations} == expected_names, "historical case set differs")
+        for item in observations:
+            directory = capture / item["case"]
+            varying = item["case"] in {"scheduled-varying-checked", "scheduled-varying-unchecked"}
+            check(item["varying_math"] == varying, "historical case expression differs")
+            if item["outcome"] == "error":
+                check(item == read_json(directory / "observed-error.json"), "saved prior error differs")
+                check(item["phase"] in {"lowering", "CPU-native-compilation", "CPU-execution"} and item["type"] and item["message"], "invalid failure phase or message")
+                check(not (directory / "output.npy").exists(), "failed prior case has a successful output")
+            else:
+                check(item["outcome"] == "numerical-pass" and item["phase"] == "CPU-execution", "invalid prior-case success")
+                check(item == read_json(directory / "observed-success.json"), "saved prior success differs")
+                expected = np.concatenate([x[:64] + x[64:] + (piece @ w if varying else w @ w) for piece in [x[:64], x[64:]]])
+                actual = np.load(directory / "output.npy", allow_pickle=False)
+                np.testing.assert_allclose(actual, expected, rtol=2e-5, atol=2e-5)
+                check(float(np.max(np.abs(actual-expected))) == item["max_absolute_error"], "prior-case numerical summary differs")
+                mlir_targets(directory / "stablehlo.mlir")
+                parse_hlo(directory / "optimized-hlo.txt")
+            observed_prior_cases.append(item)
+    else:
+        for name, fragment in [("scheduled-varying-checked", "requires varying manual axes to match"),
+                               ("scheduled-varying-unchecked", "has no attribute done"),
+                               ("scheduled-invariant-default-layout", "incorrect layout dense<>"),
+                               ("explicit-layout-backend-error", "is live and cannot be removed")]:
+            saved = read_json(capture / name / "expected-error.json")
+            check(fragment in saved["message"], "expected error differs")
+            failures.append({"case": name, "phase": saved["phase"], "error_type": saved["type"], "error_fragment": fragment})
+        check_lowered_targets(mlir_targets(capture / "explicit-layout-backend-error/stablehlo.mlir"),
+                              {"all-reduce-start": 1, "all-reduce-done": 1, "control_dep": 2})
+    result.update(topology=summary["topology"], cases=cases, expected_failures=failures, prior_case_observations=observed_prior_cases, build_binding=build_binding, limits=summary["limits"],
                   validation_scope="Immutable hashes, current native identity, independent NumPy reference, MLIR verifier/targets, native HLO opcodes and one control edge. Expected errors are captured producer observations, not rerun by this validator.")
     return result
 
@@ -132,21 +160,23 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--write", action="store_true")
     parser.add_argument("--selftest", action="store_true")
+    parser.add_argument("--capture", type=Path, default=ROOT / "artifacts/jax-stack/overlap-cpu-005")
     args = parser.parse_args()
-    capture = ROOT / "artifacts/jax-stack/overlap-cpu-005"
+    capture = args.capture.resolve()
     if args.selftest:
+        historical = ROOT / "artifacts/jax-stack/overlap-cpu-005"
         for mode in ["hash", "missing", "qualifier"]:
-            fake = copy.deepcopy(read_json(capture / "manifest.json"))
+            fake = copy.deepcopy(read_json(historical / "manifest.json"))
             if mode == "hash": fake["artifacts"][0]["sha256"] = "0" * 64
             elif mode == "missing": fake["artifacts"].pop()
             else: fake["qualifiers"] = []
-            try: audit(capture, fake)
+            try: audit(historical, fake)
             except ValueError: pass
             else: raise AssertionError(f"invalid manifest accepted: {mode}")
         try: check_lowered_targets({"all-reduce-start": 1}, {"all-reduce-start": 1, "all-reduce-done": 1})
         except ValueError: pass
         else: raise AssertionError("unpaired lowering accepted")
-        paths = list((capture / "xla-dump").glob("*sync-control*.before_control-dep-rewriter.*"))
+        paths = list((historical / "xla-dump").glob("*sync-control*.before_control-dep-rewriter.*"))
         check(len(paths) == 1, "unexpected negative control fixture")
         try: control_edge(paths[0])
         except ValueError: pass
@@ -155,7 +185,7 @@ def main():
     result = verify(capture)
     if args.write:
         (HERE / "overlap-results.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
-    print(json.dumps({"capture": capture.name, "artifacts": result["artifact_count"], "cases": len(result["cases"]), "expected_failures": len(result["expected_failures"])}))
+    print(json.dumps({"capture": capture.name, "artifacts": result["artifact_count"], "cases": len(result["cases"]), "expected_failures": len(result["expected_failures"]), "observed_prior_cases": len(result["prior_case_observations"])}))
 
 
 if __name__ == "__main__":

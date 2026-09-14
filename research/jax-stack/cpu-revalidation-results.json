@@ -1,0 +1,193 @@
+{
+  "scope": "CPU revalidation adapters exercised with the inherited old wheel in the isolated environment; no source-built execution yet",
+  "evidence_level": "RUN-CPU",
+  "qualifiers": [
+    "VERSION-SKEW"
+  ],
+  "captures": {
+    "matmul": {
+      "capture_id": "cpu-matmul-runtime-001",
+      "manifest_path": "artifacts/jax-stack/cpu-matmul-runtime-001/manifest.json",
+      "manifest_sha256": "398531d04baa47fe6e038ae1bec4146da297a745665443d0484e163440dc0639",
+      "artifact_count": 1063,
+      "qualifiers": [
+        "VERSION-SKEW"
+      ],
+      "build_binding": null,
+      "numerical_cases": 4
+    },
+    "fusion_memory": {
+      "capture_id": "fusion-memory-runtime-001",
+      "manifest_path": "artifacts/jax-stack/fusion-memory-runtime-001/manifest.json",
+      "manifest_sha256": "e0d5e60e15eb234062adf310548eaa5868becd300eb970ddbdde7237da155821",
+      "artifact_count": 2029,
+      "qualifiers": [
+        "VERSION-SKEW"
+      ],
+      "build_binding": null,
+      "numerical_cases": 11,
+      "historical_peak_difference_present": true
+    },
+    "overlap": {
+      "capture_id": "overlap-runtime-001",
+      "manifest_path": "artifacts/jax-stack/overlap-runtime-001/manifest.json",
+      "manifest_sha256": "480ee0e59a657a5250c89c3cf4bebc4565e9db1c9e6305f0fcc3e8047825c791",
+      "artifact_count": 595,
+      "qualifiers": [
+        "VERSION-SKEW"
+      ],
+      "build_binding": null,
+      "numerical_cases": 3,
+      "prior_cases": [
+        {
+          "case": "scheduled-varying-checked",
+          "outcome": "error",
+          "phase": "lowering",
+          "type": "ValueError"
+        },
+        {
+          "case": "scheduled-varying-unchecked",
+          "outcome": "error",
+          "phase": "lowering",
+          "type": "AttributeError"
+        },
+        {
+          "case": "scheduled-invariant-default-layout",
+          "outcome": "error",
+          "phase": "lowering",
+          "type": "ValueError"
+        },
+        {
+          "case": "explicit-layout-backend-error",
+          "outcome": "error",
+          "phase": "CPU-native-compilation",
+          "type": "JaxRuntimeError"
+        }
+      ]
+    }
+  },
+  "cli_rejections": [
+    {
+      "script": "matmul_probe.py",
+      "exit_code": 1,
+      "runtime_started": false,
+      "build_status_at_read": "running",
+      "artifacts": {
+        "artifacts/jax-stack/source-revalidation-gates-001/matmul_probe/binding-helper.py": {
+          "sha256": "757295a6dd08482155f2119cad3e9d41e886e2312fc9b99728fa863c3391d397",
+          "size_bytes": 12169
+        },
+        "artifacts/jax-stack/source-revalidation-gates-001/matmul_probe/build-gate-observation.input.json": {
+          "sha256": "4850c288cdda6ec52bd253a6b8335c226b76cd79cffa0a0f0bd91b2e74ca4b16",
+          "size_bytes": 11696
+        },
+        "artifacts/jax-stack/source-revalidation-gates-001/matmul_probe/build-gate-observation.json": {
+          "sha256": "a28fefa3bca73486390f6cd76fcff5f95f2fbe61e6908ad6db5a004d6c54a074",
+          "size_bytes": 443
+        },
+        "artifacts/jax-stack/source-revalidation-gates-001/matmul_probe/command.json": {
+          "sha256": "7790bec6b74fcd192709e92ca0eca1bea8dec22fc55d02b0011f73964e2cebf9",
+          "size_bytes": 441
+        },
+        "artifacts/jax-stack/source-revalidation-gates-001/matmul_probe/entry-source.py": {
+          "sha256": "0a0892a74c2d2d786eef13b33ef82066461870f08b9b84ceb69fc0aee9ee8e46",
+          "size_bytes": 10704
+        },
+        "artifacts/jax-stack/source-revalidation-gates-001/matmul_probe/failure.log": {
+          "sha256": "7b4d876d61dabfb166e7b4125265f3aaee6feb454909b64123ce90b2eabaee26",
+          "size_bytes": 1002
+        },
+        "artifacts/jax-stack/source-revalidation-gates-001/matmul_probe/runtime-helper.py": {
+          "sha256": "41eafb5052b3ba0cfaf3c5393feccf02cef7d30ae4cbba7f998ee044d1a00082",
+          "size_bytes": 2282
+        }
+      }
+    },
+    {
+      "script": "fusion_memory_probe.py",
+      "exit_code": 1,
+      "runtime_started": false,
+      "build_status_at_read": "running",
+      "artifacts": {
+        "artifacts/jax-stack/source-revalidation-gates-001/fusion_memory_probe/binding-helper.py": {
+          "sha256": "757295a6dd08482155f2119cad3e9d41e886e2312fc9b99728fa863c3391d397",
+          "size_bytes": 12169
+        },
+        "artifacts/jax-stack/source-revalidation-gates-001/fusion_memory_probe/build-gate-observation.input.json": {
+          "sha256": "4850c288cdda6ec52bd253a6b8335c226b76cd79cffa0a0f0bd91b2e74ca4b16",
+          "size_bytes": 11696
+        },
+        "artifacts/jax-stack/source-revalidation-gates-001/fusion_memory_probe/build-gate-observation.json": {
+          "sha256": "7da31468ccfa1fa23004c32cbaf5be86661d35111c900685e14c4d961ec22e50",
+          "size_bytes": 450
+        },
+        "artifacts/jax-stack/source-revalidation-gates-001/fusion_memory_probe/command.json": {
+          "sha256": "e66f68d92afb1164a02e6f3978e458d1c2ba7424a8093f40458ecfd790128324",
+          "size_bytes": 455
+        },
+        "artifacts/jax-stack/source-revalidation-gates-001/fusion_memory_probe/entry-source.py": {
+          "sha256": "9d6a6b5c9742faa1a68b61b4f67ca0ee5f087dfc141c5bc3de7342070e5df4e0",
+          "size_bytes": 11176
+        },
+        "artifacts/jax-stack/source-revalidation-gates-001/fusion_memory_probe/failure.log": {
+          "sha256": "e87838ad80998e47e8c77d8ac38bd27c8dbbe8b4175631801b08139853612f9e",
+          "size_bytes": 1069
+        },
+        "artifacts/jax-stack/source-revalidation-gates-001/fusion_memory_probe/producer.py": {
+          "sha256": "9d6a6b5c9742faa1a68b61b4f67ca0ee5f087dfc141c5bc3de7342070e5df4e0",
+          "size_bytes": 11176
+        },
+        "artifacts/jax-stack/source-revalidation-gates-001/fusion_memory_probe/runtime-helper.py": {
+          "sha256": "41eafb5052b3ba0cfaf3c5393feccf02cef7d30ae4cbba7f998ee044d1a00082",
+          "size_bytes": 2282
+        }
+      }
+    },
+    {
+      "script": "overlap_probe.py",
+      "exit_code": 1,
+      "runtime_started": false,
+      "build_status_at_read": "running",
+      "artifacts": {
+        "artifacts/jax-stack/source-revalidation-gates-001/overlap_probe/binding-helper.py": {
+          "sha256": "757295a6dd08482155f2119cad3e9d41e886e2312fc9b99728fa863c3391d397",
+          "size_bytes": 12169
+        },
+        "artifacts/jax-stack/source-revalidation-gates-001/overlap_probe/build-gate-observation.input.json": {
+          "sha256": "4850c288cdda6ec52bd253a6b8335c226b76cd79cffa0a0f0bd91b2e74ca4b16",
+          "size_bytes": 11696
+        },
+        "artifacts/jax-stack/source-revalidation-gates-001/overlap_probe/build-gate-observation.json": {
+          "sha256": "e4961bc867ee4d9d603e15fbe2403e029c765b17a9442dca8e3c8bd9bbf66d7f",
+          "size_bytes": 444
+        },
+        "artifacts/jax-stack/source-revalidation-gates-001/overlap_probe/command.json": {
+          "sha256": "d284e6f32698263e8b9489dcb468267016df3bbd6b3bbb8c3c7be2c7aec92635",
+          "size_bytes": 443
+        },
+        "artifacts/jax-stack/source-revalidation-gates-001/overlap_probe/entry-source.py": {
+          "sha256": "04b5de6b52b235ab5f080cbf34afc4fd8368c65f4afdd3d7d4ecf5b269370eb9",
+          "size_bytes": 13399
+        },
+        "artifacts/jax-stack/source-revalidation-gates-001/overlap_probe/failure.log": {
+          "sha256": "457842a6894fd2727843bec91df2fb3d0c016e4cac74336557f4ed421e6d18b5",
+          "size_bytes": 1004
+        },
+        "artifacts/jax-stack/source-revalidation-gates-001/overlap_probe/producer.py": {
+          "sha256": "04b5de6b52b235ab5f080cbf34afc4fd8368c65f4afdd3d7d4ecf5b269370eb9",
+          "size_bytes": 13399
+        },
+        "artifacts/jax-stack/source-revalidation-gates-001/overlap_probe/runtime-helper.py": {
+          "sha256": "41eafb5052b3ba0cfaf3c5393feccf02cef7d30ae4cbba7f998ee044d1a00082",
+          "size_bytes": 2282
+        }
+      }
+    }
+  ],
+  "binding_selftest": [
+    "omitted build selection rejected",
+    "different build selection rejected"
+  ],
+  "source_built_runtime_verified": false,
+  "historical_success_branch_exercised": false
+}

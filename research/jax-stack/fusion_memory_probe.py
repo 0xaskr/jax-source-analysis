@@ -6,12 +6,12 @@ from __future__ import annotations
 import argparse
 import contextlib
 from datetime import datetime, timezone
-import importlib.util
 import json
 import os
 from pathlib import Path
 import re
 import shutil
+import sys
 import warnings
 
 from matmul_probe import ROOT, fingerprint, write_json
@@ -32,7 +32,7 @@ def graph_summary(text):
     }
 
 
-def collect(output):
+def collect(output, build_manifest=None):
     import jax
     import jax.numpy as jnp
     import numpy as np
@@ -148,9 +148,8 @@ def collect(output):
                   "Donation permission, compiler alias plan, runtime invalidation and physical pointer reuse are separate observations.",
                   "Disabling fusion and fusion-wrapper does not disable every library-specific fusion pass.",
                   "This is a CPU mechanism probe, not the required real inference fusion/split or TPU memory acceptance."]})
-    spec=importlib.util.spec_from_file_location("baseline_capture",ROOT/"tools/capture-baseline.py")
-    baseline=importlib.util.module_from_spec(spec);spec.loader.exec_module(baseline)
-    env=baseline.capture_baseline();assert all(not s["dirty"] for s in env["repository"]["sources"].values())
+    from capture_runtime import environment
+    env=environment(output,build_manifest)
     write_json(output/"environment.json",env)
     return summaries,env
 
@@ -158,15 +157,18 @@ def collect(output):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output",type=Path,required=True)
-    output=parser.parse_args().output.resolve()
+    parser.add_argument("--jaxlib-build-manifest",type=Path)
+    args=parser.parse_args();output=args.output.resolve()
     if not output.is_relative_to(ROOT/"artifacts/jax-stack") or os.environ.get("XLA_FLAGS"):
         parser.error("Use a new artifacts/jax-stack directory and unset ambient XLA_FLAGS")
     flags=[f"--xla_dump_to={output/'xla-dump'}","--xla_dump_hlo_as_text=true","--xla_dump_hlo_pass_re=.+","--xla_dump_emitter_re=llvm"]
     os.environ.update(JAX_PLATFORMS="cpu",PYTHONDONTWRITEBYTECODE="1",XLA_FLAGS=" ".join(flags))
     output.mkdir(parents=True,exist_ok=False);shutil.copy2(__file__,output/"producer.py")
+    from capture_runtime import preflight
+    build_manifest=preflight(output,args.jaxlib_build_manifest)
     started=datetime.now(timezone.utc).isoformat()
     with (output/"run.log").open("w") as log,contextlib.redirect_stdout(log),contextlib.redirect_stderr(log):
-        try:summaries,env=collect(output)
+        try:summaries,env=collect(output,build_manifest)
         except BaseException:
             import traceback
             traceback.print_exc()
@@ -174,7 +176,8 @@ def main():
     write_json(output/"manifest.json",{"capture_id":output.name,"outcome":"pass","evidence_level":"RUN-CPU",
         "qualifiers":env["status"]["qualifiers"],"started_at":started,"finished_at":datetime.now(timezone.utc).isoformat(),
         "xla_flags":flags,"cases":[s["case"] for s in summaries],
-        "producer":{"argv":[".venv/bin/python","-B","research/jax-stack/fusion_memory_probe.py","--output",str(output.relative_to(ROOT))],
+        "jaxlib_build_manifest":str(build_manifest.relative_to(ROOT)) if build_manifest else None,
+        "producer":{"argv":[sys.executable,*sys.orig_argv[1:]],
                     "source":str((output/"producer.py").relative_to(ROOT)),**fingerprint(output/"producer.py")},
         "artifacts":[{"path":str(p.relative_to(ROOT)),**fingerprint(p)} for p in sorted(output.rglob("*")) if p.is_file()]})
     print(json.dumps({"capture":output.name,"cases":len(summaries),"qualifiers":env["status"]["qualifiers"]}))

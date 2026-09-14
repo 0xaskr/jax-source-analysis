@@ -73,6 +73,9 @@ wheel/native payload 字节绑定，目前仍未执行。完成构建后先做�
 再应用补丁、重编译和回滚。下一命令仍是 inspect 当前构建容器。目标 TPU overlap 仍需 U03。
 [独立环境](runtime-environment.md) 已创建并完成真实 CPU 负对照，12,603 个依赖文件的
 字节与独立 inode 已核对；源码构建 wheel 的安装入口已准备，但仍待构建成功后实际执行。
+完整 matmul/fusion/overlap 也已接入显式 build/native 身份，独立旧 wheel 环境重新跑通
+18 组数值对照，复查 3,687 个产物；4 个 overlap 历史失败仍被观察到。源码复验会记录
+这些用例的新结果，而不要求新 wheel 重现旧错误；细节见 [独立运行环境](runtime-environment.md)。
 完整恢复队列、已确认 U04 和未回答 U01–U03 保存在 [status.json](status.json)。
 
 ## 执行次序

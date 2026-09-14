@@ -7,7 +7,6 @@ import argparse
 import contextlib
 from datetime import datetime, timezone
 import hashlib
-import importlib.util
 import json
 import os
 from pathlib import Path
@@ -28,7 +27,7 @@ def write_json(path, value):
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n")
 
 
-def run_capture(output):
+def run_capture(output, build_manifest=None):
     import jax
     import jax.numpy as jnp
     from jax.experimental import serialize_executable
@@ -154,14 +153,8 @@ def run_capture(output):
         "boundary": "Python tracing counts; compiler activity is recorded separately in run.log and xla-dump/.",
     })
 
-    spec = importlib.util.spec_from_file_location(
-        "baseline_capture", ROOT / "tools/capture-baseline.py")
-    baseline_module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(baseline_module)
-    baseline = baseline_module.capture_baseline()
-    for component in baseline["repository"]["sources"].values():
-        if component["dirty"]:
-            raise RuntimeError("A pinned source tree changed during capture.")
+    from capture_runtime import environment
+    baseline = environment(output, build_manifest)
     # Keep the reused schema reference valid at this capture's location.
     baseline["$schema"] = os.path.relpath(
         ROOT / "manifests/schema/baseline.schema.json", output)
@@ -172,6 +165,7 @@ def run_capture(output):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--jaxlib-build-manifest", type=Path)
     args = parser.parse_args()
     output = args.output.resolve()
     if not output.is_relative_to(ROOT / "artifacts/jax-stack"):
@@ -192,13 +186,15 @@ def main():
     os.environ["JAX_PLATFORMS"] = "cpu"
     os.environ["XLA_FLAGS"] = " ".join(flags)
     os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
+    from capture_runtime import preflight
+    build_manifest = preflight(output, args.jaxlib_build_manifest)
     started = datetime.now(timezone.utc).isoformat()
     producer = output / "producer.py"
     shutil.copy2(Path(__file__), producer)
     with (output / "run.log").open("w") as log:
         with contextlib.redirect_stdout(log), contextlib.redirect_stderr(log):
             try:
-                cases, baseline = run_capture(output)
+                cases, baseline = run_capture(output, build_manifest)
             except BaseException:
                 import traceback
                 traceback.print_exc()
@@ -212,17 +208,17 @@ def main():
         "capture_id": output.name, "evidence_level": "RUN-CPU",
         "qualifiers": baseline["status"]["qualifiers"],
         "started_at": started, "finished_at": datetime.now(timezone.utc).isoformat(),
-        "producer": {"argv": [".venv/bin/python", "-B",
-            "research/jax-stack/matmul_probe.py", "--output", relative_output],
+        "producer": {"argv": [sys.executable, *sys.orig_argv[1:]],
             "cwd": ".", "source": str(producer.relative_to(ROOT)), **fingerprint(producer)},
         "input_parameters": {"seed": SEED, "dtype": "float32", "precision": "HIGHEST",
                              "rtol": 2e-5, "atol": 2e-5},
         "environment_path": f"{relative_output}/environment.json",
+        "jaxlib_build_manifest": str(build_manifest.relative_to(ROOT)) if build_manifest else None,
         "xla_flags": [f"--xla_dump_to={relative_output}/xla-dump", *flags[1:]],
         "cases": [case["name"] for case in cases],
         "outcome": "pass", "artifacts": artifacts,
         "limitations": [
-            "Native behavior belongs to the captured wheel; VERSION-SKEW prevents attributing it to pinned XLA C++ sources.",
+            "Native behavior belongs to the captured wheel; source attribution additionally requires the recorded build/native binding.",
             "No TPU compiler, LLO, TPU execution, real inference model, fusion injection or peak-memory split is validated.",
             "A dump file shows a recorded pass boundary; missing dump files do not prove that a pass did not run.",
         ],

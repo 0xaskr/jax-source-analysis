@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "updated_at": "2026-09-14T18:00:08.812623+00:00",
+  "updated_at": "2026-09-14T18:17:29.131251+00:00",
   "goal_state": "active",
   "objective": "按 Outline kickoff revision 51 完成软件栈总览、源码/API 索引和实际推理场景 Hack 实验。",
   "kickoff_source": "research/jax-stack/kickoff-source.json",
@@ -128,6 +128,11 @@
       "id": "isolated-runtime-environment",
       "result": "独立 venv 复制 12,603 个依赖文件，784,588,999 bytes；独立 inode/内容、Python/import/native 路径及默认/过滤 CPU 负对照通过。成功源码 wheel 安装分支仍未运行。",
       "evidence": "research/jax-stack/runtime-environment-results.json"
+    },
+    {
+      "id": "source-runtime-capture-adapters",
+      "result": "matmul/fusion/overlap 接入可验证的 build/native 绑定和实际 Python argv；独立旧 wheel 环境 18 组数值与 3,687 个产物通过，4 个旧 overlap 失败重新记录。成功自建 wheel 分支仍待执行。",
+      "evidence": "research/jax-stack/cpu-revalidation-results.json"
     }
   ],
   "requirements": [
@@ -149,7 +154,8 @@
         "research/jax-stack/matmul-lowering.ipynb",
         "research/jax-stack/fusion-memory-results.json",
         "research/jax-stack/llvm-and-objects.md",
-        "research/jax-stack/codegen-results.json"
+        "research/jax-stack/codegen-results.json",
+        "research/jax-stack/cpu-revalidation-results.json"
       ],
       "remaining": "消除 native VERSION-SKEW，补齐转换中间阶段的语义与关键 pass 解释；TPU 部分按实际条件继续。"
     },
@@ -175,7 +181,8 @@
         "research/jax-stack/pass-event-acceptance.md",
         "research/jax-stack/pass-events-results.json",
         "research/jax-stack/runtime-environment.md",
-        "research/jax-stack/runtime-environment-results.json"
+        "research/jax-stack/runtime-environment-results.json",
+        "research/jax-stack/cpu-revalidation-results.json"
       ],
       "remaining": "当前 002 容器仍运行；规范事件补丁仅在独立副本完成应用/回滚。先验收无补丁 wheel/加载，再应用并重编译、验证事件/数值及回滚；完整依赖闭包仍需补齐。"
     },
@@ -195,7 +202,8 @@
       "evidence": [
         "research/jax-stack/cpu-results.json",
         "research/jax-stack/fusion-and-memory.md",
-        "research/jax-stack/fusion-memory-results.json"
+        "research/jax-stack/fusion-memory-results.json",
+        "research/jax-stack/cpu-revalidation-results.json"
       ],
       "remaining": "CPU liveness/allocation/alias/donation 与运行时指针对照已完成；需匹配源码 binary 复验及 U03 的真实 TPU 内存证据，不能以逻辑 peak 或静态 accounted bytes 代替。"
     },
@@ -212,7 +220,8 @@
         "research/jax-stack/overlap-and-scheduling.md",
         "research/jax-stack/overlap-results.json",
         "research/jax-stack/overlap-scheduling.ipynb",
-        "research/jax-stack/latency-model.md"
+        "research/jax-stack/latency-model.md",
+        "research/jax-stack/cpu-revalidation-results.json"
       ],
       "remaining": "CPU API/IR/数值及四个失败边界已取证；需匹配 wheel 复验 async-control，并依据 U03 的目标拓扑、设备 trace 与时间测量验证真正 overlap。"
     },
@@ -302,7 +311,7 @@
       "depends_on": [
         "source-built-wheel-validation"
       ],
-      "action": "使用匹配源码的 wheel 复验 overlap-cpu-005 四个失败，重点核对 Future layout 和 FinishRewrite 的 start uses；保留旧 VERSION-SKEW 证据。"
+      "action": "用匹配源码环境运行 overlap_probe.py --jaxlib-build-manifest manifests/build-fingerprints/kickoff-cpu-source-002.json --observe-prior-failures；记录四个历史用例的本次失败阶段或成功数值，不要求保留旧错误。随后 verify_overlap.py --capture 复查，保留旧 VERSION-SKEW 证据。"
     },
     {
       "id": "final-build-dependency-closure",
@@ -318,7 +327,7 @@
       "depends_on": [
         "source-built-wheel-validation"
       ],
-      "action": "在匹配 binary 上复验 reduction live-range peak 诊断差异；区分事件排序、逻辑值总量与 physical allocation。"
+      "action": "用匹配源码环境及显式 build manifest 重跑 fusion_memory_probe.py，再 verify_fusion_memory.py --capture 检查 reduction live-range peak 差异是否仍存在；保留 allocation、事件排序、logical/physical 边界。"
     },
     {
       "id": "compiler-custom-event",
@@ -353,12 +362,12 @@
     "numerics": "4 cases; NumPy float64 forward/analytic gradients",
     "serialized_executable": "4 in-process reloads, bit-for-bit comparison passed",
     "notebook": "8 real Jupyter code cells executed; includes fresh codegen audit and read-only patch verification",
-    "environment": "passed: sync-environment.py check after 305 ignored bytecode files were quarantined and byte-verified; 17 environment selftests passed",
+    "environment": "passed: sync-environment.py check; no new source bytecode cache was reported",
     "qualifiers": [
       "VERSION-SKEW"
     ],
     "negative_inputs": "passed: forged artifact hash, missing case, missing VERSION-SKEW were rejected without modifying capture files",
-    "documentation": "Python syntax, JSON, 5 executed Notebook schemas, 198 local Markdown links, fences, 61 file fingerprints and recovery invariants passed",
+    "documentation": "Python syntax, JSON, 5 executed Notebook schemas, 201 local Markdown links, fences, 63 file fingerprints and recovery invariants passed",
     "extensions": "62 artifacts across 4 captures; hashes, inventory, references, trace containment/counts/statistics, parsed Mosaic marker pairing verified",
     "extension_selftest": "3 corrupted manifest variants rejected",
     "notebook_extensions": "7 code cells executed using nbclient and real Jupyter kernel; includes fresh subprocess default/filtered negative controls",
@@ -385,13 +394,16 @@
     "pass_events_selftest": "3 invalid manifests, missing build identity, generic-as-custom claim and 8 invalid synthetic variants rejected; worker-thread containment and nested interval union passed",
     "runtime_environment": "12,603 dependency files / 784,588,999 bytes, distinct inodes and identical copied Python checked; import/native paths, original host files and two CPU negative controls verified",
     "runtime_environment_selftest": "3 invalid metadata inventories and 2 invalid build-entry integrations rejected; incomplete inputs created no venv",
-    "bytecode_quarantine": "artifacts/jax-stack/bytecode-quarantine-001/record.json; generated cache only, no source edits; notebooks must inherit PYTHONDONTWRITEBYTECODE=1 in kernel process"
+    "bytecode_quarantine": "artifacts/jax-stack/bytecode-quarantine-001/record.json; generated cache only, no source edits; notebooks must inherit PYTHONDONTWRITEBYTECODE=1 in kernel process",
+    "cpu_revalidation": "1063 matmul + 2029 fusion/memory + 595 overlap artifacts verified; 18 numerical cases, serialization reloads and 4 observed prior errors checked in the inherited isolated runtime",
+    "cpu_revalidation_selftest": "3 CLI running-build rejections before runtime capture; omitted/inconsistent build selections rejected; fusion and overlap semantic selftests and historical capture compatibility passed",
+    "source_runtime_binding": "Successful unpatched build manifest and wheel/native payload binding supported in 3 probes and rechecked by their verifiers; not yet exercised with a completed source build"
   },
   "completion_claim": "本状态未宣称 kickoff 的任一完整交付组已经验收。",
   "artifact_fingerprints": {
     "PLAN.md": {
-      "sha256": "10051626b7a099351337ac34c4ad34924b83046f03ae1edff5d1c3516e206769",
-      "size_bytes": 9280
+      "sha256": "36efc98959037b02b7881c889e0e8b1854ca0ed8b15cc17b7defa31c6f4d6b22",
+      "size_bytes": 9622
     },
     "README.md": {
       "sha256": "5b9a72abbc7feb2942a1c3ff8f84ac042221dbf0e6ea599b804363cb84406eca",
@@ -429,6 +441,10 @@
       "sha256": "cfbe2c58cd6363e2e77fe47631de4c4718c0b362d5ef2fc414943e2080cce818",
       "size_bytes": 52685
     },
+    "capture_runtime.py": {
+      "sha256": "41eafb5052b3ba0cfaf3c5393feccf02cef7d30ae4cbba7f998ee044d1a00082",
+      "size_bytes": 2282
+    },
     "codegen-results.json": {
       "sha256": "78ec98b44139dc0d01be4ab688f08a8627a15b30febeed7be5be2023a9189cb9",
       "size_bytes": 5702
@@ -440,6 +456,10 @@
     "cpu-results.json": {
       "sha256": "9803cc103caa1dcfd3ab5719a173531ce78a15673cc079b3d2fb8653443a3726",
       "size_bytes": 91476
+    },
+    "cpu-revalidation-results.json": {
+      "sha256": "22ac0a8ffb52f734238325b34d0a97848fc76660b47a160994c6972215dbaad9",
+      "size_bytes": 8105
     },
     "extension-results.json": {
       "sha256": "3e9e3f1909236e94fe278be96918df1055dcb6e19647d5a701778f6ddc1c8e61",
@@ -458,8 +478,8 @@
       "size_bytes": 10230
     },
     "fusion_memory_probe.py": {
-      "sha256": "6e45d91ec9d6d0b86d41f167f3ce4201555ef095dd0fcbc8b27f2e5ca238502c",
-      "size_bytes": 11159
+      "sha256": "9d6a6b5c9742faa1a68b61b4f67ca0ee5f087dfc141c5bc3de7342070e5df4e0",
+      "size_bytes": 11176
     },
     "kickoff-source.json": {
       "sha256": "e2cfb5ecf84838c67ae2c42a40c35420b8743025de53cf4846a8cee3386c4703",
@@ -490,8 +510,8 @@
       "size_bytes": 25119
     },
     "matmul_probe.py": {
-      "sha256": "b514352ff9b2d156a864a182b63ddaaf4b2da399b25510f2e94c0771e5d56c6a",
-      "size_bytes": 10825
+      "sha256": "0a0892a74c2d2d786eef13b33ef82066461870f08b9b84ceb69fc0aee9ee8e46",
+      "size_bytes": 10704
     },
     "mosaic_events_probe.py": {
       "sha256": "afc48a7c40900cdc8eff4bd6d2f8a2444dae6b985f56b0e434e7615c7bc4f11c",
@@ -510,8 +530,8 @@
       "size_bytes": 7904
     },
     "overlap_probe.py": {
-      "sha256": "d3906db4c72eee9c64f8fffda8658fad3025d12d399c4dc0bdad5750a4194a4b",
-      "size_bytes": 10679
+      "sha256": "04b5de6b52b235ab5f080cbf34afc4fd8368c65f4afdd3d7d4ecf5b269370eb9",
+      "size_bytes": 13399
     },
     "overview.md": {
       "sha256": "24928155b22d2cb2c646aabc066277e2f72593b771a8a283fcb2830f05ab7f93",
@@ -578,8 +598,8 @@
       "size_bytes": 5955
     },
     "runtime-environment.md": {
-      "sha256": "3eb8d82473b51bc09f1a914e0765511c7d99b10d9fcf5e350339bddff4c27272",
-      "size_bytes": 5137
+      "sha256": "4b306063131a84c7caa7485a9a72fe04f7528961bcab158188821bd1cf31a2d0",
+      "size_bytes": 7976
     },
     "source-build.md": {
       "sha256": "05e8407f8762b374ffd431782f23669adfd53083d0a0b98967900d76c1a1b705",
@@ -606,24 +626,24 @@
       "size_bytes": 10759
     },
     "verify_fusion_memory.py": {
-      "sha256": "52aad093f1ea79126b56cea97215dd961c157b78e9e26cda59781a8e694ed647",
-      "size_bytes": 11779
+      "sha256": "eb9c5996f95734758df0a7e5b6ecc44c3f2a315e928dabf39c2f87d97cea3bf9",
+      "size_bytes": 12242
     },
     "verify_latency_metadata.py": {
       "sha256": "0cab9faed2c6d37206e3d918aac8dfcb011328ea8a1d85a3f93d2492e35f96e8",
       "size_bytes": 8842
     },
     "verify_overlap.py": {
-      "sha256": "4bdd3363e7f04cd26519fc6df655137178416fe3a94e603fe065deaf21f1a34a",
-      "size_bytes": 9605
+      "sha256": "f8f0f310862e59ca23ed80e37a2aaa8301208682972fbb755035928c643c18c0",
+      "size_bytes": 12103
     },
     "verify_pass_events.py": {
       "sha256": "bec1c5833dbc7b88c6f84e2ea3d49b3a48133baac6a7d5a50a2cdc57e50ec76f",
       "size_bytes": 11186
     },
     "verify_research.py": {
-      "sha256": "00686b56facc06456ccc278ee5e7073b21512cb2f3a9c55b04c80f97d4185b93",
-      "size_bytes": 9410
+      "sha256": "50afb8244927e97ba9b3e3a0f613b5997ee67c8488546e29f88a7060e8e8d4fe",
+      "size_bytes": 9564
     },
     "verify_runtime_environment.py": {
       "sha256": "f2553087a260fe7c7135d19a6f5838c1a4b37cb0b4cce848b5c4835a11b54444",
@@ -658,12 +678,12 @@
     "cache_reused_from": "kickoff-cpu-source-001",
     "source_clones": "artifacts/jax-stack/source-build-001/clones",
     "pid_namespace_warning": "Inspect this Docker container; wrapper PIDs are container-local.",
-    "inspected_at": "2026-09-14T18:00:42.435798+00:00",
+    "inspected_at": "2026-09-14T18:19:51.181064+00:00",
     "last_observed_phase": "C++ compilation",
     "state_record": "artifacts/jax-stack/source-build-002/container-state.json"
   },
   "publication": {
-    "local_commit": "ccf00bce42c3795e00977667d1496a033b57716e",
+    "local_commit": "2ac689cf7cca4c644dbf7ef5bc3f9c35dcca9ab0",
     "original_staged_diff_preserved": true,
     "push_attempt": {
       "command": "git push origin main",
@@ -674,9 +694,9 @@
     },
     "remaining": "Root worktree retains its local research history and staged cleanup; remote merge integration is performed only in the isolated publication worktree.",
     "state": "pushed",
-    "integration_commit": "8c5a20d1bc37244d304ec56026ef142af8656408",
-    "push_result": "e6f49bf..8c5a20d HEAD -> main; normal fast-forward push",
-    "latest_milestone": "compiler-pass-event-controls-and-build-binding"
+    "integration_commit": "90b8551d6a934097fcabd47710df6471b08ae890",
+    "push_result": "8c5a20d..90b8551 HEAD -> main; normal fast-forward push",
+    "latest_milestone": "isolated-runtime-environment-and-installation-entry"
   },
   "additional_sources": [
     {
@@ -710,7 +730,7 @@
   "kickoff_last_checked": {
     "revision": 51,
     "updated_at": "2026-09-14T11:26:38.696Z",
-    "checked_at": "2026-09-14T16:34:54.736107+00:00",
+    "checked_at": "2026-09-14T18:19:51.181064+00:00",
     "source": "Outline fetch; revision and update timestamp unchanged"
   },
   "prepared_compiler_patch": {
