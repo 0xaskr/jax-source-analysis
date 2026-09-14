@@ -1,0 +1,129 @@
+{
+  "capture_id": "codegen-artifacts-001",
+  "manifest_path": "artifacts/jax-stack/codegen-artifacts-001/manifest.json",
+  "manifest_sha256": "0a09ff7c02b4eebc33c7f88d800f34a7989b2162c806ad974c58953f302e02a2",
+  "artifact_count": 19,
+  "evidence_level": "REPLAY-OFFLINE",
+  "qualifiers": [
+    "VERSION-SKEW"
+  ],
+  "source_capture": "artifacts/jax-stack/cpu-matmul-003",
+  "cases": [
+    {
+      "case": "matmul",
+      "native_module_prefix": "module_0004.jit_matmul",
+      "object_count": 0
+    },
+    {
+      "case": "vmap_matmul",
+      "native_module_prefix": "module_0014.jit_matmul",
+      "object_count": 0
+    },
+    {
+      "case": "grad_matmul",
+      "native_module_prefix": "module_0024.jit_loss",
+      "object_count": 1
+    },
+    {
+      "case": "jit_grad_vmap_matmul",
+      "native_module_prefix": "module_0034.jit_batched_loss",
+      "object_count": 2
+    }
+  ],
+  "objects": [
+    {
+      "case": "grad_matmul",
+      "native_module_prefix": "module_0024.jit_loss",
+      "llvm_module_id": "__compute_module_broadcast_multiply_fusion_kernel_module",
+      "inputs": {
+        "hlo": "artifacts/jax-stack/cpu-matmul-003/grad_matmul/optimized-hlo.txt",
+        "ir_before": "artifacts/jax-stack/cpu-matmul-003/xla-dump/module_0024.jit_loss.broadcast_multiply_fusion_kernel_module.ir-no-opt.ll",
+        "ir_after": "artifacts/jax-stack/cpu-matmul-003/xla-dump/module_0024.jit_loss.broadcast_multiply_fusion_kernel_module.ir-with-opt.ll",
+        "object": "artifacts/jax-stack/cpu-matmul-003/xla-dump/module_0024.jit_loss.obj-file.broadcast_multiply_fusion_kernel_module.o",
+        "serialized_executable": "artifacts/jax-stack/cpu-matmul-003/grad_matmul/executable.bin"
+      },
+      "elf": {
+        "class": "ELF64",
+        "endianness": "little",
+        "e_type": 1,
+        "e_machine": 62
+      },
+      "defined_functions": [
+        {
+          "name": "broadcast_multiply_fusion",
+          "size_bytes": 62,
+          "section_index": "3"
+        }
+      ],
+      "hlo_opcode": "kFusion",
+      "object_occurrences_in_serialized_package": 1,
+      "serialized_package_byte_offset": 5142,
+      "inspection_directory": "artifacts/jax-stack/codegen-artifacts-001/module_0024.jit_loss.broadcast_multiply_fusion_kernel_module"
+    },
+    {
+      "case": "jit_grad_vmap_matmul",
+      "native_module_prefix": "module_0034.jit_batched_loss",
+      "llvm_module_id": "__compute_module_broadcast_multiply_fusion_kernel_module",
+      "inputs": {
+        "hlo": "artifacts/jax-stack/cpu-matmul-003/jit_grad_vmap_matmul/optimized-hlo.txt",
+        "ir_before": "artifacts/jax-stack/cpu-matmul-003/xla-dump/module_0034.jit_batched_loss.broadcast_multiply_fusion_kernel_module.ir-no-opt.ll",
+        "ir_after": "artifacts/jax-stack/cpu-matmul-003/xla-dump/module_0034.jit_batched_loss.broadcast_multiply_fusion_kernel_module.ir-with-opt.ll",
+        "object": "artifacts/jax-stack/cpu-matmul-003/xla-dump/module_0034.jit_batched_loss.obj-file.broadcast_multiply_fusion_kernel_module.o",
+        "serialized_executable": "artifacts/jax-stack/cpu-matmul-003/jit_grad_vmap_matmul/executable.bin"
+      },
+      "elf": {
+        "class": "ELF64",
+        "endianness": "little",
+        "e_type": 1,
+        "e_machine": 62
+      },
+      "defined_functions": [
+        {
+          "name": "broadcast_multiply_fusion",
+          "size_bytes": 143,
+          "section_index": "3"
+        }
+      ],
+      "hlo_opcode": "kFusion",
+      "object_occurrences_in_serialized_package": 1,
+      "serialized_package_byte_offset": 7921,
+      "inspection_directory": "artifacts/jax-stack/codegen-artifacts-001/module_0034.jit_batched_loss.broadcast_multiply_fusion_kernel_module"
+    },
+    {
+      "case": "jit_grad_vmap_matmul",
+      "native_module_prefix": "module_0034.jit_batched_loss",
+      "llvm_module_id": "__compute_module_copy_bitcast_fusion_kernel_module",
+      "inputs": {
+        "hlo": "artifacts/jax-stack/cpu-matmul-003/jit_grad_vmap_matmul/optimized-hlo.txt",
+        "ir_before": "artifacts/jax-stack/cpu-matmul-003/xla-dump/module_0034.jit_batched_loss.copy_bitcast_fusion_kernel_module.ir-no-opt.ll",
+        "ir_after": "artifacts/jax-stack/cpu-matmul-003/xla-dump/module_0034.jit_batched_loss.copy_bitcast_fusion_kernel_module.ir-with-opt.ll",
+        "object": "artifacts/jax-stack/cpu-matmul-003/xla-dump/module_0034.jit_batched_loss.obj-file.copy_bitcast_fusion_kernel_module.o",
+        "serialized_executable": "artifacts/jax-stack/cpu-matmul-003/jit_grad_vmap_matmul/executable.bin"
+      },
+      "elf": {
+        "class": "ELF64",
+        "endianness": "little",
+        "e_type": 1,
+        "e_machine": 62
+      },
+      "defined_functions": [
+        {
+          "name": "copy_bitcast_fusion",
+          "size_bytes": 250,
+          "section_index": "3"
+        }
+      ],
+      "hlo_opcode": "kFusion",
+      "object_occurrences_in_serialized_package": 1,
+      "serialized_package_byte_offset": 6698,
+      "inspection_directory": "artifacts/jax-stack/codegen-artifacts-001/module_0034.jit_batched_loss.copy_bitcast_fusion_kernel_module"
+    }
+  ],
+  "limits": [
+    "This audit reads existing compiler products; it does not compile or execute code.",
+    "Exact object bytes occur in the captured serialized package; no pickle or executable was loaded by this audit.",
+    "The original producer verified in-process executable reload. This does not measure individual kernel invocation or performance.",
+    "Native products belong to the captured VERSION-SKEW wheel; indexed source APIs are separate source-only evidence.",
+    "No object for a case does not mean no machine code ran: prebuilt library/runtime paths need separate attribution."
+  ]
+}

@@ -28,7 +28,7 @@
 ## 本轮进度与恢复入口
 
 CPU matmul、两种 Pallas 解释路径、host/编译事件和开放源码 Mosaic 标记已有可复查材料；
-完整 kickoff 尚未完成。源码索引扩展至 101 个入口、28 条关系，包括固定 XProf 源码；Pallas/profiling
+完整 kickoff 尚未完成。源码索引扩展至 120 个入口、38 条关系，包括固定 XProf 源码；Pallas/profiling
 Notebook 的 5 个代码单元已真实执行。
 原始 capture 继续留在忽略目录；验证器校验清单、哈希与关键语义。
 
@@ -60,10 +60,14 @@ LHS `latency_metadata` 的解析、模型选择与调度调用链已核对，见
 源码中的 GPU 模型消费不计为 GPU/TPU 执行。属性 Notebook 现有 6 个代码单元，已全部
 真实执行，包含新进程重新捕获。
 
-构建期间下一项独立源码工作是 CPU IR→LLVM 优化/对象代码→ORC JIT 的接口与产物对应；
-也可在独立副本准备编译事件补丁，禁止修改正在构建的 clone/config。完成构建后再做
-wheel/加载验收、异步控制复验及可逆自定义编译事件补丁的重编译和回滚。目标 TPU
-overlap 仍需 U03。
+CPU LLVM/对象代码/ORC 的选定接口已对应到运行产物，见 [LLVM 与对象](llvm-and-objects.md)。
+三个 ELF 对象与 HLO/LLVM 函数及序列化包中的原始字节唯一对应；这是离线审计，不新增
+runtime load 证据。matmul Notebook 扩展为 8 个单元，已真实执行。
+
+[编译事件补丁](pass-event-patch.md) 已在独立副本应用、反向应用并恢复原始字节；按构建
+wrapper 要求生成规范 Git diff。未修改当前运行中的 clone/config，也未编译加载该补丁。
+构建期间继续准备 cold/warm/filter 的自定义事件验收脚本；完成构建后先做无补丁 wheel
+加载基线，再应用补丁、重编译和回滚。目标 TPU overlap 仍需 U03。
 完整恢复队列、已确认 U04 和未回答 U01–U03 保存在 [status.json](status.json)。
 
 ## 执行次序
