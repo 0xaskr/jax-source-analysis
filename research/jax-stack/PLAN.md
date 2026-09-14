@@ -60,8 +60,14 @@ LHS `latency_metadata` 的解析、模型选择与调度调用链已核对，见
 两类实验共 14 组 metadata、2 组 HLO 改写执行、117 个产物；生产与复查进程均绑定
 源码 native payload，旧结论在本例保持一致，见 [源码 metadata 基线](source-metadata-baseline.md)。
 实际检查了 2 次 running build 拒绝、2 次旧 wheel 生产拒绝、2 次旧 native reader 拒绝。
-源码中的 GPU 模型消费仍不计为 GPU/TPU 执行。属性 Notebook 的 7 个代码单元已全部
-真实执行，包含新进程旧 wheel 对照和新增源码结果的归档复查。
+源码中的 GPU 模型消费仍不计为 GPU/TPU 执行。属性 Notebook 的 8 个代码单元已全部
+真实执行，包含新进程旧 wheel 对照、源码结果和原生 parser 结果的归档复查。
+
+固定源码的 latency parser 原测试先以未修改源码运行通过；随后只在隔离 clone 的
+测试文件加入 14 个边界样本，共 15 个 C++ 测试全部通过。零/负整数返回数值；
+int64 越界、小数、空串、非法文本与科学计数法返回 nullopt；配置的单位缩放通过。
+测试源码已恢复原字节，二进制、XML、完整日志和独立补丁复放已核对，见
+[原生 parser 结果](latency-parser-native.md)。这不增加 GPU consumer 或 TPU 执行证据。
 
 CPU LLVM/对象代码/ORC 的选定接口已对应到运行产物，见 [LLVM 与对象](llvm-and-objects.md)。
 三个 ELF 对象与 HLO/LLVM 函数及序列化包中的原始字节唯一对应；这是离线审计，不新增
@@ -87,8 +93,8 @@ overlap、编译和设备事件仍需 U03。
 另已保存 199 个缓存 repository 的 451 份描述文件，核对配置的 Python 3.12.13
 归档及解释器/共享库/头文件，467 个产物通过语义与反例验证，见 [构建输入记录](build-inputs.md)。
 该记录不把缓存条目当作实际目标依赖，不把构建后本机探测当作构建期进程采样。
-下一步执行固定源码的原生 latency parser 单元测试，并围绕已捕获的源码 matmul
-逐个解释关键 pass 的实际变化；TPU 与业务实验继续等待 U01–U03。
+下一步围绕已捕获的源码 matmul 逐个解释关键 pass 的实际变化，并补齐匹配源码的
+LLVM/object 对应；TPU 与业务实验继续等待 U01–U03。
 
 [独立环境](runtime-environment.md) 的旧 wheel 复验与新增源码 wheel 复验分别保留，
 不改写旧证据。源码基线仍观察到 logical peak 诊断差异，不能据此推导物理内存峰值。

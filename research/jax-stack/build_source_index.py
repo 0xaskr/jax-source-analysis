@@ -291,7 +291,7 @@ SITES = [
      "存在源码类不代表 CPU 或 TPU pipeline 调用了它；目标部署必须另行取证。"),
     ("xla.lhs-metadata-parser", "xla", "Latency metadata", "xla/service/latency_hiding_scheduler.cc", "LatencyEstimator::GetLatencyFromMetadata(", 376,
      "HLO frontend_attributes[latency_metadata]", "optional TimeCost：int64 ns × CyclesPerMicrosecond / 1000",
-     "缺失或 SimpleAtoi 失败返回 nullopt；函数没有额外正值检查。本轮未执行此 C++ parser。"),
+     "缺失或 SimpleAtoi 失败返回 nullopt；原生 CPU 单元测试已确认零/负数接受、int64 越界拒绝和配置的单位缩放，目标 GPU/TPU 消费另行取证。"),
     ("xla.gpu-node-cost", "xla", "Approximate GPU model", "xla/service/gpu/gpu_latency_hiding_scheduler.cc", "ApproximateLatencyEstimator::TimeCost GpuLatencyEstimator::NodeCost(", 870,
      "HloInstruction", "估算节点成本",
      "先处理 nop；只有 custom-call 分支读取 latency_metadata，其他 opcode 不经此读取。"),
@@ -324,7 +324,7 @@ SITES = [
      "显式 flag 优先；还看 opt effort、SOL 支持与有效 PGLE profile。标记本身不绕过 gate。"),
     ("xla.lhs-metadata-test", "xla", "Upstream test specification", "xla/service/latency_hiding_scheduler_test.cc", "TEST(LatencyEstimatorTest, GetLatencyFromMetadata)", 158,
      "上游构造的 custom call：1000、invalid、missing", "测试规范中的 optional time 断言",
-     "这是阅读过的固定测试源码，尚未构建执行；不能记为本轮 native 测试通过。"),
+     "该固定测试已在 CPU 原生目标运行通过；独立测试补丁另补 14 个边界样本。测试配置的 cycles/us 不等于硬件频率。"),
     ("xla.llvm-dump-hooks", "xla", "LLVM observation", "xla/service/cpu/cpu_compiler.cc", "std::pair<LLVMCompiler::ModuleHook, LLVMCompiler::ModuleHook> GetIRModuleHooks(", 1245,
      "HLO module 与 user hooks", "LLVM 优化前后 hooks",
      "ir-no-opt 是本段 LLVM pipeline 前的观察点，不是原始 Jaxpr 或未经任何 lowering 的程序。"),
@@ -506,6 +506,9 @@ def main():
         if entry["id"] in {"xla.pass-events", "xla.xplane-trace-events", "xla.internal-trace-stat", "xla.trace-json"}:
             entry["related_experiments"] = ["research/jax-stack/pass-event-patch.md",
                                             "research/jax-stack/pass-hack-results.json"]
+        if entry["id"] in {"xla.lhs-metadata-parser", "xla.lhs-metadata-test"}:
+            entry["related_experiments"] = ["research/jax-stack/latency-parser-native.md",
+                                            "research/jax-stack/latency-parser-results.json"]
     index = {
         "schema_version": "1.0", "kickoff_revision": 51,
         "source_roots": {name: {"path": s["path"], "revision": s["git_commit"]} for name, s in sources.items()},

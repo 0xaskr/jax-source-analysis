@@ -22,8 +22,9 @@
 - [通信与调度](overlap-and-scheduling.md)：CPU async→sync、控制依赖和四个实验性 API 失败。
 - [调度 Notebook](overlap-scheduling.ipynb) 与 [结果](overlap-results.json)：双 CPU 数值、IR、593 个产物的独立复查。
 - [属性、HLO 编辑与成本](attributes-and-cost.md)：六种 metadata 情形、属性丢失边界、HLO 改写执行与成本读取。
-- [属性/cost Notebook](attributes-cost.ipynb) 与 [验证结果](attributes-results.json)：7 个代码单元已执行，包含旧 CPU 路径和新增源码 metadata 证据复查。
+- [属性/cost Notebook](attributes-cost.ipynb) 与 [验证结果](attributes-results.json)：8 个代码单元已执行，包含旧 CPU 路径、源码 metadata 和原生 parser 证据复查。
 - [latency_metadata 与模型](latency-model.md)：解析、消费者、PGLE 优先级、调度 gate；[8 组 CPU 对照](latency-metadata-results.json) 分开验证传递与成本。
+- [原生 latency parser](latency-parser-native.md)：15 个 C++ 测试通过，包含 14 个边界样本及单位换算；测试补丁已回滚。
 - [Roofline 模块与边界](roofline.md)：XProf 处理链、硬件/时间输入、Unknown 与零值，以及修正位置。
 - [Fusion 与内存复用](fusion-and-memory.md)：11 组 CPU 对照，区分 fusion、donation、实际指针、allocation 与逻辑 peak。
 - [Fusion/memory Notebook](fusion-memory.ipynb) 与 [结果](fusion-memory-results.json)：2028 个产物的独立复查。

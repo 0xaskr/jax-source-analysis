@@ -1,0 +1,135 @@
+{
+  "evidence_level": "RUN-CPU",
+  "execution_kind": "native-cpp-unit-test",
+  "qualifiers": [
+    "TEST-DEPENDENCY-PATCHED",
+    "TEST-SOURCE-PATCHED"
+  ],
+  "baseline_qualifiers": [
+    "TEST-DEPENDENCY-PATCHED"
+  ],
+  "source_revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+  "production_source_changed": false,
+  "baseline_tests_passed": 1,
+  "boundary_run_tests_passed": 15,
+  "new_boundary_cases": 14,
+  "observations": {
+    "ClockScale": {
+      "input": "30000",
+      "cycles_per_microsecond": 2,
+      "has_value": true,
+      "observed_cycles": 60.0
+    },
+    "Empty": {
+      "input": "",
+      "cycles_per_microsecond": 1,
+      "has_value": false,
+      "observed_cycles": null
+    },
+    "Fractional": {
+      "input": "30000.5",
+      "cycles_per_microsecond": 1,
+      "has_value": false,
+      "observed_cycles": null
+    },
+    "IntegerMaximum": {
+      "input": "9223372036854775807",
+      "cycles_per_microsecond": 1,
+      "has_value": true,
+      "observed_cycles": 9223372036854776.0
+    },
+    "IntegerMinimum": {
+      "input": "-9223372036854775808",
+      "cycles_per_microsecond": 1,
+      "has_value": true,
+      "observed_cycles": -9223372036854776.0
+    },
+    "Invalid": {
+      "input": "slow",
+      "cycles_per_microsecond": 1,
+      "has_value": false,
+      "observed_cycles": null
+    },
+    "Missing": {
+      "input": null,
+      "cycles_per_microsecond": 1,
+      "has_value": false,
+      "observed_cycles": null
+    },
+    "Negative": {
+      "input": "-1000",
+      "cycles_per_microsecond": 1,
+      "has_value": true,
+      "observed_cycles": -1.0
+    },
+    "NegativeOverflow": {
+      "input": "-9223372036854775809",
+      "cycles_per_microsecond": 1,
+      "has_value": false,
+      "observed_cycles": null
+    },
+    "Positive": {
+      "input": "30000",
+      "cycles_per_microsecond": 1,
+      "has_value": true,
+      "observed_cycles": 30.0
+    },
+    "PositiveOverflow": {
+      "input": "9223372036854775808",
+      "cycles_per_microsecond": 1,
+      "has_value": false,
+      "observed_cycles": null
+    },
+    "Scientific": {
+      "input": "3e4",
+      "cycles_per_microsecond": 1,
+      "has_value": false,
+      "observed_cycles": null
+    },
+    "SubMicrosecond": {
+      "input": "1",
+      "cycles_per_microsecond": 1,
+      "has_value": true,
+      "observed_cycles": 0.001
+    },
+    "Zero": {
+      "input": "0",
+      "cycles_per_microsecond": 1,
+      "has_value": true,
+      "observed_cycles": 0.0
+    }
+  },
+  "patch": {
+    "path": "research/jax-stack/xla-latency-parser-boundaries.patch",
+    "sha256": "ee20645b4f52bc35f45a7e8b7abaa5b8315590d50fa0ef6b55a73c47261212dd",
+    "size_bytes": 3483
+  },
+  "source_restored": true,
+  "patch_replay_verified": true,
+  "captures": [
+    {
+      "path": "artifacts/jax-stack/latency-parser-native-001",
+      "manifest": {
+        "sha256": "29d4d327e618474babdf61266ccd0b3d10036fe372b3e449e56363dc68f9a4c9",
+        "size_bytes": 3262
+      }
+    },
+    {
+      "path": "artifacts/jax-stack/latency-parser-native-002",
+      "manifest": {
+        "sha256": "0e914c11ca58490e49210e97b0b1400553122156e20de38549389d87c695b536",
+        "size_bytes": 3859
+      }
+    }
+  ],
+  "source_contract_snapshot": {
+    "path": "research/jax-stack/latency-model-contract.json",
+    "sha256": "337dddd8a7cfbd9f96f7b7ab33fe01318ba19dc20d802627b054a3d5f723e9c0",
+    "size_bytes": 2510
+  },
+  "limits": [
+    "Configured test clocks are 1 or 2 cycles/us; no device frequency or latency is measured.",
+    "The generic parser is executed; GPU NodeCost consumers, real scheduler behavior and TPU implementation are not.",
+    "The original SOURCE-ONLY contract is a retained earlier snapshot; these native runs are recorded separately."
+  ]
+}

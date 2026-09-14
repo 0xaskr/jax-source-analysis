@@ -11,6 +11,9 @@
 runtime 均未执行。该历史 capture 保留 `RUN-CPU + VERSION-SKEW`。
 源码 wheel 003 的新增 8 组对照、51 个产物与当前 native reader 绑定均通过，
 标签、拥有者及 CPU 成本观察一致，无 `VERSION-SKEW`，见 [源码复验](source-metadata-baseline.md)。
+随后已运行固定源码的 [原生 latency parser 测试](latency-parser-native.md)：原测试和
+14 个边界样本全部通过，确认零/负数接受、int64 越界拒绝及单位缩放。
+原 SOURCE-ONLY contract 保留当时的快照；新的 C++ 运行结果独立记录，不计为 GPU/TPU 执行。
 
 ## 解析器与模型消费者是两层
 
@@ -109,7 +112,8 @@ latency 数字代替。扩展应区分：属性的定义/验证、变换后的�
 
 公开 [LHS cost model 文档](https://openxla.org/xla/lhs_cost_model) 描述了性能表和分析模型的
 组合，可作背景；本节分支与优先级以锁定的 XLA 源码为准，不能以该在线说明替代 libtpu 取证。
-CPU 验证命令如下；GPU parser/模型测试和真实业务分块验收仍未完成。
+CPU 标签验证命令如下；通用 parser 的原生测试另见新记录，GPU 模型消费者、目标调度
+和真实业务分块验收仍未完成。
 
 ```bash
 .venv/bin/python -B research/jax-stack/latency_metadata_probe.py \
