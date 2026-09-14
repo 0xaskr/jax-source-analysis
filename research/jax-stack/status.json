@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "updated_at": "2026-09-14T23:39:41.195330+00:00",
+  "updated_at": "2026-09-14T23:44:34.130795+00:00",
   "goal_state": "active",
   "objective": "按 Outline kickoff revision 51 完成软件栈总览、源码/API 索引和实际推理场景 Hack 实验。",
   "kickoff_source": "research/jax-stack/kickoff-source.json",
@@ -193,6 +193,11 @@
       "id": "cpu-xspace-context-correlation",
       "result": "五份 XSpace 的 49 组一对一关联、13 组跨线程通过；新增四个 source-bound CPU 任务覆盖大 uint64 ID、逆序完成与异常终点。98 个 JSON 对应项、18 个零时长显示、重复 _src 历史均核对；17 个运行、45 个审计产物、20 个反例、六个正向边界与五个真实 Notebook 单元通过。",
       "evidence": "research/jax-stack/xspace-contexts.md"
+    },
+    {
+      "id": "kickoff-coverage-audit",
+      "result": "按 revision 51 对照三组交付与 R01–R12，区分 CPU/诊断已完成子项、公开运行接口缺口及 U01–U03 依赖；修正总览中过期的构建/标记未完成说明。未增加设备运行或宣称整个 kickoff 完成。",
+      "evidence": "research/jax-stack/coverage-review.md"
     }
   ],
   "requirements": [
@@ -208,7 +213,7 @@
         "research/jax-stack/cpu-thunk-results.json",
         "research/jax-stack/cpu-thunk-execution.ipynb"
       ],
-      "remaining": "已补齐选定 LLVM/MC/ORC 与 CPU kernel 接口；完整组件/内部 pass graph、普通 TPU 调用细节和 libtpu 私有边界仍需后续取证。"
+      "remaining": "主要组件、编译分支和 CPU LLVM/MC/ORC/runtime 已有材料；普通 TPU 的公开提交/完成/等待接口仍需串联。匹配 libtpu/LLO/设备验收需 U03；不要求穷举所有内部调用。"
     },
     {
       "id": "R02",
@@ -383,13 +388,13 @@
   ],
   "next_actions": [
     {
-      "id": "kickoff-coverage-audit",
+      "id": "regular-tpu-runtime-source-chain",
       "ready": true,
       "depends_on": [
-        "cpu-xspace-context-correlation"
+        "kickoff-coverage-audit"
       ],
-      "action": "对照 kickoff revision 51 的 R01–R12 和三组交付物，区分已满足子项、尚可独立研究的公开源码缺口及必须等待 U01–U03 的验收；不以增加 CPU 计数替代业务/TPU 目标。",
-      "next_command": "sed -n '1,220p' research/jax-stack/PLAN.md"
+      "action": "沿固定源码的 PyLoadedExecutable::ExecuteSharded → IFRT Execute → PJRT C API Execute/Event/等待接口补普通 TPU 公开运行链，记录输入输出、所有权、提交与完成边界；保留 SOURCE-ONLY，不推导 libtpu 私有实现或实际设备行为。",
+      "next_command": "sed -n '426,520p' upstream/jax/jaxlib/py_executable.cc"
     },
     {
       "id": "tpu-device-profile",
@@ -489,7 +494,8 @@
     "cpu_thunk_native_loading": "First runtime attempt failed broad equality; accepted second run preserves all pre-existing payloads/source/environment and validates both inventories against the same wheel, permitting only newly mapped _mlirHlo.so.",
     "xspace_contexts": "17 host + 45 replay artifacts, 49 pairs (13 cross-thread), 98 raw/JSON counterparts and 18 zero-duration clamps; producer build 003 bound to actual native payload.",
     "xspace_selftest": "20 negative cases and six positive boundaries passed, including legacy and FlowV2 presence guards.",
-    "xspace_notebook": "Five real Jupyter code cells executed; pure protobuf archive parsing, exact IDs, independent NumPy and boundary checks. No new XProf converter or viewer execution."
+    "xspace_notebook": "Five real Jupyter code cells executed; pure protobuf archive parsing, exact IDs, independent NumPy and boundary checks. No new XProf converter or viewer execution.",
+    "coverage_review": "Three deliverable groups and R01-R12 checked against revision 51 and current result documents; stale overview claims repaired; no new device evidence."
   },
   "completion_claim": "本状态未宣称 kickoff 的任一完整交付组已经验收。",
   "artifact_fingerprints": {
@@ -498,12 +504,12 @@
       "size_bytes": 114
     },
     "PLAN.md": {
-      "sha256": "7bd9eaf7fbee9a823dc6b691d24605a343406459e5b45ad727778b16d8df1cca",
-      "size_bytes": 13109
+      "sha256": "0a89598d621e1a6a953c2a9f899976a8ff67cfc66b7cb792d212a20b9aadd4ea",
+      "size_bytes": 13366
     },
     "README.md": {
-      "sha256": "8d63956e420aa1b0827f3f3723c2b6b5b2fe6c140d545672e7b6a9fba1cc8621",
-      "size_bytes": 10280
+      "sha256": "255dcea9e14fe93dfa235962b69e36d8ff5dfa52a6e14e6480361353416d09b2",
+      "size_bytes": 10405
     },
     "attributes-and-cost.md": {
       "sha256": "026265fc41df52be91ccdee9d462dcaf36f132b3af4f0bdc69a6a361522052ee",
@@ -573,6 +579,10 @@
       "sha256": "98659bc1df7d2c0afb830e6ac01dc9b3bf845003b53e37e3b02f080b69d7eadc",
       "size_bytes": 7467
     },
+    "coverage-review.md": {
+      "sha256": "91345fdbee298dedc6287929432b876048ca96e79e72b8939863e123c68b70c2",
+      "size_bytes": 6801
+    },
     "cpu-executable-and-trace.md": {
       "sha256": "279e91be7bfbedbb772c56adcb3e580a30d6cc422be447b463cb8b5ff03653cf",
       "size_bytes": 9200
@@ -610,8 +620,8 @@
       "size_bytes": 9979
     },
     "fusion-and-memory.md": {
-      "sha256": "810807a3356f43a404d4e4077735631d7f32d072a78fdb756b21bee1ef7529af",
-      "size_bytes": 9429
+      "sha256": "26465d10c417fbdfdf64ccba45ac33f7607b29f5fd6f1cea5c93017a41beabb5",
+      "size_bytes": 9566
     },
     "fusion-memory-results.json": {
       "sha256": "76151a0517289e2b20f605d0b8a3ca934c91f2953f48895b5a63a7b58a639ca9",
@@ -698,8 +708,8 @@
       "size_bytes": 13399
     },
     "overview.md": {
-      "sha256": "20de58fde1a72c3134ff7847b63e7eb2c611e922ed706fa54651cff4787ded77",
-      "size_bytes": 8400
+      "sha256": "ef68bb1c0512de0346fe84ad3c1c097f6fd3d2ff9d34eb42175808784cf203d4",
+      "size_bytes": 9064
     },
     "pallas-comparison.md": {
       "sha256": "6c7577ccc2315b8d1bf4c7663e3ea75d0d1d54cc0a7dabe69ba63654a24e7a0a",
@@ -814,8 +824,8 @@
       "size_bytes": 31128
     },
     "source-runtime-baseline.md": {
-      "sha256": "1c39e40c6fc98082c412851472ee9cca4a3434f8ca3389ec2cef137454b93cdd",
-      "size_bytes": 5284
+      "sha256": "aa9f774ba5b6a20a46f579e1f75d1a79b53b50e36b9c60d4d8674bd05549bbbd",
+      "size_bytes": 5330
     },
     "source-runtime-results.json": {
       "sha256": "2178c022136506fd6d8505e15005eba3cda24eb104697d77d7b9482ef8886e24",
@@ -946,7 +956,7 @@
     "log": "artifacts/builds/kickoff-cpu-pass-events-002/attempts/0001/build.log"
   },
   "publication": {
-    "local_commit": "c0d2a20e20a383d4870501790527843733966ff2",
+    "local_commit": "6d5504d2ff212813387cb0715d1479d76e425be3",
     "original_staged_diff_preserved": true,
     "push_attempt": {
       "command": "git push origin main",
@@ -957,9 +967,9 @@
     },
     "remaining": "Root worktree retains its local research history and staged cleanup; remote merge integration is performed only in the isolated publication worktree.",
     "state": "pushed",
-    "integration_commit": "093b0febc22c2e9da666e8bf3b050cf73e01a61c",
+    "integration_commit": "5457564a63ac3c27aac5bf8a6629d45588d69eb0",
     "push_result": "normal push origin HEAD:main",
-    "latest_milestone": "source-cpu-thunk-dispatch-evidence"
+    "latest_milestone": "cpu-xspace-context-correlation"
   },
   "additional_sources": [
     {
@@ -1334,5 +1344,32 @@
         "size_bytes": 257
       }
     ]
+  },
+  "coverage_review": {
+    "source_revision": 51,
+    "document": "research/jax-stack/coverage-review.md",
+    "requirements_reviewed": [
+      "R01",
+      "R02",
+      "R03",
+      "R04",
+      "R05",
+      "R06",
+      "R07",
+      "R08",
+      "R09",
+      "R10",
+      "R11",
+      "R12"
+    ],
+    "deliverable_groups_reviewed": 3,
+    "overall_complete": false,
+    "ready_public_source_gap": "regular-tpu-runtime-source-chain",
+    "pending_user_inputs": [
+      "U01",
+      "U02",
+      "U03"
+    ],
+    "scope": "Artifact and requirement review only; no new CPU/TPU capture."
   }
 }

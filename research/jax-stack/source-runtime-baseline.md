@@ -62,7 +62,7 @@ artifacts/jax-stack/source-runtime-002/baseline-env/venv/bin/python -B \
 1. 默认与禁用 algsimp 两组的 generic algsimp 事件均为 3；constant_folding 为 2，
    layout-assignment 为 1。三次 warm 执行没有新编译事件，自定义 leaf marker 均为 0。
    与固定源码中“generic TraceMe 位于 filter 之前”的位置一致，不能据这 3 个事件断言
-   被禁用的 pass 执行了 3 次。自定义补丁将用于验证 RunHelper 的实际区间。
+   被禁用的 pass 执行了 3 次。后续自定义补丁已验证 RunHelper 的实际区间，见 [Hack 验收](pass-event-acceptance.md)。
 2. reduction 的诊断差异在匹配源码环境仍存在：打印区间按 inclusive 解释得到的 logical
    max 是 time 3 / 8,324 bytes；报告选中的 peak 位置为 time 4，所列值共 4,232 bytes。
    两者都不能直接当作物理峰值；[内存说明](fusion-and-memory.md) 的度量边界继续适用。

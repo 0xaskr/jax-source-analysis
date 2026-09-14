@@ -1,9 +1,9 @@
-# 软件栈与入口总览：第一轮源码核对
+# 软件栈与入口总览
 
 依据 [kickoff revision 51](https://outline.infiscale-tech.com/doc/research-plan-jax-kickoff-ib5QULKSS4)。
 当前索引有 166 个经过文件指纹和行号核对的入口、53 条带调用位置的关系，见
-[source-index.json](source-index.json)。这是入口索引；完整调用图、私有 libtpu/LLO、
-实际推理业务和 TPU 执行验收仍未完成。
+[source-index.json](source-index.json)。这是关键入口索引；普通 TPU 的公开执行/完成链尚待补齐。私有 libtpu/LLO、
+实际推理业务和 TPU 执行验收仍未完成，逐项覆盖见 [coverage-review.md](coverage-review.md)。
 
 ## 组件的职责和边界
 
@@ -16,7 +16,7 @@
 | Shardy | 分片表示以及 import、propagation、export 的 pass 组织 | [`addPropagationPipeline`](../../upstream/shardy/shardy/dialect/sdy/transforms/propagation/propagation_pipeline.cc#L62) |
 | XLA | MLIR/HLO 转换，以及后端 HLO 优化、调度、buffer assignment 和代码生成 | [`MlirToXlaComputation`](../../upstream/xla/xla/pjrt/mlir_to_hlo.cc#L99)、[`CpuCompiler`](../../upstream/xla/xla/service/cpu/cpu_compiler.cc#L1188) |
 | IFRT/PJRT | 编译、设备和 executable 接口；在具体 provider 上完成 compile/load 等操作 | [`PjRtCompiler`](../../upstream/xla/xla/python/pjrt_ifrt/pjrt_compiler.cc#L91)、[`PjRtLoadedExecutable::Create`](../../upstream/xla/xla/python/pjrt_ifrt/pjrt_executable.cc#L744) |
-| LLVM/MLIR | CPU 编译器使用 MLIRContext、LLVMContext、LLVM Module 和目标代码生成设施 | [`CompileCpuExecutable`](../../upstream/xla/xla/service/cpu/cpu_compiler.cc#L1727)；内部 LLVM API 索引待继续展开 |
+| LLVM/MLIR | CPU 编译器使用 MLIRContext、LLVMContext、LLVM Module 和目标代码生成设施 | [`CompileCpuExecutable`](../../upstream/xla/xla/service/cpu/cpu_compiler.cc#L1727)；[LLVM/MC/ORC 导读](llvm-and-objects.md) 已关联四个内部入口和三个实际对象 |
 | Pallas/Mosaic | kernel Jaxpr、grid/Ref/块访问表达，以及 Mosaic TPU module 与外层 custom call 的衔接 | [`pallas_call`](../../upstream/jax/jax/_src/pallas/pallas_call.py#L1135)、[`pallas_call_tpu_lowering_rule`](../../upstream/jax/jax/_src/pallas/mosaic/pallas_call_registration.py#L393) |
 | libtpu | 公开可读部分是 PJRT plugin 的加载与 C API 边界；内部编译器/runtime 尚未取得对应实现证据 | [`make_tpu_client`](../../upstream/jax/jax/_src/xla_bridge.py#L198)、[`PjRtCApiClient::CompileAndLoad`](../../upstream/xla/xla/pjrt/c_api_client/pjrt_c_api_client.cc#L763) |
 
@@ -30,7 +30,8 @@
 ## 程序表示与后端分支
 
 下图表示公开源码中的衔接关系。TPU 私有部分只标边界；CPU 原始产物位于
-`artifacts/jax-stack/cpu-matmul-003/`，不能用来证明 TPU 分支。
+历史 `artifacts/jax-stack/cpu-matmul-003/` 及匹配源码的
+`artifacts/jax-stack/source-runtime-002/suite/matmul/`，均不能用来证明 TPU 分支。
 
 ```mermaid
 flowchart TD
@@ -108,9 +109,14 @@ Mosaic module，再通过 helper 进入 custom call 接口。
   add→subtract 改写后的真实执行，以及已定位的 XProf roofline 处理链，见 [attributes-and-cost.md](attributes-and-cost.md)。
 - Fusion/memory：11 组 CPU 对照，包含实际 pass 前后结构、独占/外部 view donation、reshape
   counterfactual、allocation/offset/liveness 与 peak 诊断重算，见 [fusion-and-memory.md](fusion-and-memory.md)。
-- 仍未证明：完整源码调用图、匹配源码构建/加载、libtpu 编译与 TPU runtime/LLO、真实业务
-  fusion/Pallas 注入、split 降低运行峰值、通信 overlap、设备 trace 与自建编译器标记。
+- 源码构建与 Hack：[003 基线](source-runtime-baseline.md) 的 18 组 CPU 对照已通过；
+  [自建编译器标记](pass-event-acceptance.md) 已完成 25 个 C++ 测试、构建/加载、事件/数值对照与回滚。
+- Host 关联：[原始 XSpace](xspace-contexts.md) 的 49 组关联、13 组跨线程通过，包含异常终点；
+  这些 host 时间不等于设备 kernel latency。
+- 仍未证明：libtpu 编译与 TPU runtime/LLO、真实业务 fusion/Pallas 注入、split 降低运行峰值、
+  通信 overlap、TPU 设备 trace；普通 TPU 的公开执行链继续补索引。
 
-当前 CPU binary 带 `VERSION-SKEW`。上表的 native 源码入口是源码定位，不能以名称相同
-为由宣称当前 wheel 执行了该固定 XLA revision。完整范围与待确认输入仍以
+宿主机旧 wheel 和历史 captures 保留 `VERSION-SKEW`。新增源码 003 基线、metadata、
+CPU thunk 与 host context captures 单独绑定成功构建和实际 native 字节；不能只凭事件名称
+宣称运行了固定 revision。完整范围与待确认输入仍以
 [PLAN.md](PLAN.md) 为准。

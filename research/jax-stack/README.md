@@ -3,6 +3,7 @@
 本轮依据 [Outline kickoff revision 51](https://outline.infiscale-tech.com/doc/research-plan-jax-kickoff-ib5QULKSS4)
 新建研究。完整要求和未完成项保留在 [PLAN.md](PLAN.md)，没有沿用已删除的旧进度。
 
+- [Kickoff 覆盖复查](coverage-review.md)：三组交付及 R01–R12 的已完成子项、剩余证据和输入依赖。
 - [软件栈与 API 总览](overview.md)：组件、控制链、普通 CPU/TPU 与 Pallas 两层表示。
 - [源码索引](source-index.json)：166 个入口、53 条带调用位置及分支条件的关系，含锁定的 XProf tooling 源码。
 - [Pallas 对照](pallas-comparison.md)：相同输入的普通 JAX、generic 与 TPU interpret。
