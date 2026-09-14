@@ -6,8 +6,9 @@ allocation/live-range 报告、数值与运行时指针观察。
 [verify_fusion_memory.py](verify_fusion_memory.py) 独立复查产物、图、分配、存活区间与参考输出；
 结果见 [fusion-memory-results.json](fusion-memory-results.json)。
 
-本节为 `RUN-CPU + VERSION-SKEW`。固定 C++ 源码用于解释入口与约束，不能宣称当前 wheel
-执行了该 revision。下面的教学程序没有替代 kickoff 要求的真实推理 fusion/split 或 TPU 验收。
+本节表格保留历史 `RUN-CPU + VERSION-SKEW` 来源。新增 [源码 003 基线](source-runtime-baseline.md)
+已对 11 组样本完成独立复验，2,043 个新产物绑定匹配 native 字节，结论及 logical peak 差异仍在。
+旧 capture 没有被改写。下面的教学程序没有替代 kickoff 要求的真实推理 fusion/split 或 TPU 验收。
 
 ## Fusion 与存储复用是不同优化
 

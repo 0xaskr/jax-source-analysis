@@ -108,8 +108,10 @@ CPU executable 与运行时分支已进一步取证，见 [cpu-executable-and-tr
 13 组跨线程；新增四个 source-bound CPU 任务，覆盖超大 uint64 ID、逆序完成与异常终点。
 98 个原始事件与 JSON 唯一对应，18 个零 duration 导出为 1 ps；重复 _src 的覆盖顺序已核对。
 17 个新增运行、45 个审计产物、20 个拒绝样本和六个正向边界通过；5 个真实 Notebook 单元通过归档复查。
-派生 flow 不是 XProf 原生预处理或 UI 验收。下一步逐项审计 kickoff 三组交付及 R01–R12；
-TPU 与业务实验继续等待 U01–U03。
+派生 flow 不是 XProf 原生预处理或 UI 验收。
+[覆盖复查](coverage-review.md) 已逐项对应三组交付及 R01–R12，修正总览过期的构建/标记状态；
+CPU 参考和编译诊断子项保留完成结果，不将穷举内部调用或完整缓存闭包新增为验收要求。
+下一步补普通 TPU 的公开提交、完成和等待接口；TPU 运行与业务实验继续等待 U01–U03。
 
 [独立环境](runtime-environment.md) 的旧 wheel 复验与新增源码 wheel 复验分别保留，
 不改写旧证据。源码基线仍观察到 logical peak 诊断差异，不能据此推导物理内存峰值。
