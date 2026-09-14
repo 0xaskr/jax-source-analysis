@@ -6,8 +6,8 @@
   "qualifiers": [
     "VERSION-SKEW"
   ],
-  "source_entries_checked": 89,
-  "source_edges_checked": 24,
+  "source_entries_checked": 101,
+  "source_edges_checked": 28,
   "artifact_count": 1062,
   "artifact_bytes": 3097520,
   "artifact_suffix_counts": {

@@ -8,6 +8,10 @@
 结论是：**现有接口支持“携带自定义属性，同时运行默认 cost analysis”；自定义属性不会自动
 定义新的 cost 语义。** 还要区分 JAX metadata、任意 MLIR 属性和 native HLO 属性。
 
+已有模型识别的键是更具体的情况：[latency_metadata 研究](latency-model.md) 找到了部分
+GPU estimator 的耗时覆盖入口，并对照了 CPU 上 8 种标签输入。它不改变本例 CPU
+FLOPs/字节，且不同 estimator、PGLE 与调度 gate 的处理不同。
+
 ## 六组 metadata 对照
 
 固定输入 `A[4,8] @ W[8,6]`，FP32。标签为 `research_tag="matmul"`、
