@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "updated_at": "2026-09-14T16:17:39.724750+00:00",
+  "updated_at": "2026-09-14T16:34:54.736107+00:00",
   "goal_state": "active",
   "objective": "按 Outline kickoff revision 51 完成软件栈总览、源码/API 索引和实际推理场景 Hack 实验。",
   "kickoff_source": "research/jax-stack/kickoff-source.json",
@@ -17,7 +17,7 @@
     },
     {
       "id": "source-entry-index",
-      "result": "已核对 89 个源码入口、24 条调用/接口关系；五个核心源树与固定 XProf 干净。完整调用图仍在补充。",
+      "result": "已核对 101 个源码入口、28 条调用/接口关系；新增 latency metadata 的消费者与调度调用链。完整调用图仍在补充。",
       "evidence": "research/jax-stack/source-index.json"
     },
     {
@@ -57,7 +57,7 @@
     },
     {
       "id": "attributes-notebook",
-      "result": "真实 Jupyter kernel 已执行属性/cost Notebook 的 4 个代码单元。",
+      "result": "属性/cost Notebook 扩展为 6 个代码单元，已在真实 Jupyter 内核执行，含新的 8 组 latency metadata CPU capture。",
       "evidence": "research/jax-stack/attributes-cost.ipynb"
     },
     {
@@ -98,6 +98,16 @@
       "id": "overlap-notebook",
       "result": "真实 Jupyter 内核执行 4 个代码单元，含新进程双 CPU capture 和独立 verifier。",
       "evidence": "research/jax-stack/overlap-scheduling.ipynb"
+    },
+    {
+      "id": "latency-model-source-contract",
+      "result": "定位 latency_metadata int64 ns parser、两处 GPU NodeCost 直接消费者、PGLE/analytical 差异、模型选择/gate 与调度图成本使用；未执行 GPU estimator。",
+      "evidence": "research/jax-stack/latency-model-contract.json"
+    },
+    {
+      "id": "latency-metadata-cpu-reference",
+      "result": "8 组 CPU 字符串传递与成本对照，45 个产物独立复查；包括负数、非整数、非法文本与溢出字符串，FLOPs/bytes 均不受标签替换。",
+      "evidence": "research/jax-stack/latency-metadata-results.json"
     }
   ],
   "requirements": [
@@ -172,7 +182,8 @@
       "evidence": [
         "research/jax-stack/overlap-and-scheduling.md",
         "research/jax-stack/overlap-results.json",
-        "research/jax-stack/overlap-scheduling.ipynb"
+        "research/jax-stack/overlap-scheduling.ipynb",
+        "research/jax-stack/latency-model.md"
       ],
       "remaining": "CPU API/IR/数值及四个失败边界已取证；需匹配 wheel 复验 async-control，并依据 U03 的目标拓扑、设备 trace 与时间测量验证真正 overlap。"
     },
@@ -202,9 +213,12 @@
       "state": "partial",
       "evidence": [
         "research/jax-stack/attributes-and-cost.md",
-        "research/jax-stack/attributes-results.json"
+        "research/jax-stack/attributes-results.json",
+        "research/jax-stack/latency-model.md",
+        "research/jax-stack/latency-model-contract.json",
+        "research/jax-stack/latency-metadata-results.json"
       ],
-      "remaining": "已验证自定义标签与默认成本可共存，任意标签不自动覆盖成本，并定位扩展组件；待匹配源码 wheel 复验。实际分块属性语义随 U01/U02 的业务改写定义。"
+      "remaining": "已验证标签传递与 CPU 成本边界，定位已有 latency_metadata 在特定 GPU 模型中的消费链；仍需匹配源码 wheel 复验，目标 TPU 模型取证，以及 U01/U02 定义的真实可并行维度和分块 cost 语义。"
     },
     {
       "id": "R12",
@@ -241,9 +255,14 @@
       "action": "检查当前容器 82c9bf9dfe02ba334964a856a5b41c652e83ade2af2ffdb4ce6b950fb4acc077 的真实状态，并读取 kickoff-cpu-source-002/attempts/0001/build.log；001 已有意中断以增加并发，不应恢复旧容器。"
     },
     {
-      "id": "lhs-latency-metadata-source",
+      "id": "llvm-codegen-and-orc-reference",
       "ready": true,
-      "action": "检查固定 xla/service/latency_hiding_scheduler.cc:376 的 latency_metadata 解析与实际调用方，区分属性传递、模型估计、调度使用和 CPU/TPU 验收；不修改运行中构建。"
+      "action": "沿固定 xla/backends/cpu/codegen/ir_compiler.cc、jit_compiler.cc 与 cpu_compiler.cc 追踪 LLVM pass/object/ORC 接口，将其与已有 .ll/.o 捕获绑定；保留 VERSION-SKEW 和 patched LLVM 源码身份边界。"
+    },
+    {
+      "id": "prepare-compiler-event-patch",
+      "ready": true,
+      "action": "在独立文件副本准备可逆自定义 pass TraceMe 补丁与验证命令，记录上下文和原始指纹；不修改当前运行构建的 JAX/XLA clone/config。构建加载验收后才应用并重编译。"
     },
     {
       "id": "async-control-matching-wheel",
@@ -297,7 +316,7 @@
     }
   ],
   "validation": {
-    "source_index": "89 entries / 24 edges verified",
+    "source_index": "101 entries / 28 edges verified",
     "capture": "1062 artifact sizes and SHA-256 verified",
     "numerics": "4 cases; NumPy float64 forward/analytic gradients",
     "serialized_executable": "4 in-process reloads, bit-for-bit comparison passed",
@@ -307,7 +326,7 @@
       "VERSION-SKEW"
     ],
     "negative_inputs": "passed: forged artifact hash, missing case, missing VERSION-SKEW were rejected without modifying capture files",
-    "documentation": "Python syntax, JSON, both executed Notebook schemas, Markdown local links and fences passed",
+    "documentation": "Python syntax, JSON, five executed Notebook schemas, 153 local Markdown links, fences, state invariants and all 44 artifact fingerprints passed",
     "extensions": "62 artifacts across 4 captures; hashes, inventory, references, trace containment/counts/statistics, parsed Mosaic marker pairing verified",
     "extension_selftest": "3 corrupted manifest variants rejected",
     "notebook_extensions": "5 code cells executed using nbclient and real Jupyter kernel",
@@ -315,7 +334,7 @@
     "project_status_selftest": "PASS: positive summary and 20 negative contracts",
     "attributes": "60 artifact inventories/hashes, six NumPy cases, native HLO metadata/opcode parsing, cost reads, semantic edit outputs verified",
     "attributes_selftest": "3 corrupted manifests plus metadata-as-FLOPs claim rejected",
-    "notebook_attributes": "4 code cells executed using a real Jupyter kernel",
+    "notebook_attributes": "6 real Jupyter code cells; original metadata/HLO edits and fresh 8-case latency capture passed",
     "fusion_memory": "2028 artifact sizes/hashes and inventories; 11 numerical cases, native HLO structures, schedules, allocation bounds, reuse intervals, alias/temp sizes and raw pointer observations verified",
     "fusion_memory_selftest": "3 corrupted manifests and out-of-bounds allocation rejected",
     "notebook_fusion_memory": "4 code cells executed using real Jupyter kernel, including fresh runtime donation/view comparison",
@@ -323,25 +342,28 @@
     "build_dependencies_selftest": "6 invalid evidence/identity records rejected",
     "overlap": "593 artifacts; 3 numerical cases, valid MLIR targets, native async-to-sync and control edge checked; 4 expected errors retained",
     "overlap_selftest": "3 invalid manifests, missing done marker and unconverted hint-as-edge rejected",
-    "notebook_overlap": "4 code cells executed in a real Jupyter kernel; includes new two-CPU capture and independent audit"
+    "notebook_overlap": "4 code cells executed in a real Jupyter kernel; includes new two-CPU capture and independent audit",
+    "latency_metadata": "45 artifacts and 8 independent numerical comparisons; parsed MLIR/HLO labels, owners and recomputed CPU costs verified",
+    "latency_metadata_source": "12 source entry references and 2 non-test direct reader files checked against pinned source hashes",
+    "latency_metadata_selftest": "3 invalid manifests, latency-as-FLOPs and source-only-test-as-executed rejected"
   },
   "completion_claim": "本状态未宣称 kickoff 的任一完整交付组已经验收。",
   "artifact_fingerprints": {
     "PLAN.md": {
-      "sha256": "035cc06e4476ffa78b7e3050ef1b6e26853a00fa25f07663f4f55160d79eac02",
-      "size_bytes": 7859
+      "sha256": "e19f3c604e0a79b4dfcc5d20697810f39494adafe2d3e01656c8511765d736a9",
+      "size_bytes": 8310
     },
     "README.md": {
-      "sha256": "29defaa6ca6a223ba90a5b7d8dc732cc8690b578d8637886529fe0eb9ddf2922",
-      "size_bytes": 7984
+      "sha256": "351598ce07c066b0a6f46599cb7f23442f530577ef3bbb574ec6425e403ecea9",
+      "size_bytes": 8203
     },
     "attributes-and-cost.md": {
-      "sha256": "2e8e638ee4cfbf9add3d47ac7b50702b5ed7f9a66a6d86f8dba4fc26be825463",
-      "size_bytes": 7811
+      "sha256": "974465ff934b069b0302dd9e9b8202ec8ed7f33906682923745e7a662bc95025",
+      "size_bytes": 8098
     },
     "attributes-cost.ipynb": {
-      "sha256": "7588e222273485f817acfbb1fa4d5ae4e8bc0bdef924adbd52f52178149767dd",
-      "size_bytes": 8485
+      "sha256": "5ac30522f637f2512f40abaa8e9d1855704482400e78b3b61d3a106d601e4e79",
+      "size_bytes": 13065
     },
     "attributes-results.json": {
       "sha256": "4f4034ddb72d1f32f74bc13255cdfba6edd92791c4c99e8b5a5039bcecfd1fd1",
@@ -360,16 +382,16 @@
       "size_bytes": 3769
     },
     "build_source_index.py": {
-      "sha256": "e46c98a4171cc6549424414333d4f17998f7e06957078ecc86aab0f7e92c7396",
-      "size_bytes": 38870
+      "sha256": "583d6e8255509d3f855d8b5adeb6fd22d82a7a32bdf4561cf40cc515ca692313",
+      "size_bytes": 44255
     },
     "compiler_events_probe.py": {
       "sha256": "98659bc1df7d2c0afb830e6ac01dc9b3bf845003b53e37e3b02f080b69d7eadc",
       "size_bytes": 7467
     },
     "cpu-results.json": {
-      "sha256": "95b5e64a8571b2bf1a3a11488cddc0950ecc0bf54d46879ce45822a40617f729",
-      "size_bytes": 91475
+      "sha256": "057a84ee51a88bc8e89abf5e8480ba78b76738cc4aca794f6ddf441fc3d44470",
+      "size_bytes": 91476
     },
     "extension-results.json": {
       "sha256": "3e9e3f1909236e94fe278be96918df1055dcb6e19647d5a701778f6ddc1c8e61",
@@ -394,6 +416,22 @@
     "kickoff-source.json": {
       "sha256": "e2cfb5ecf84838c67ae2c42a40c35420b8743025de53cf4846a8cee3386c4703",
       "size_bytes": 552
+    },
+    "latency-metadata-results.json": {
+      "sha256": "db92f7c3bb8adbb9e6edcdc855cbbd181309499f07531bc2d1bed69a4a4ddcf2",
+      "size_bytes": 10673
+    },
+    "latency-model-contract.json": {
+      "sha256": "337dddd8a7cfbd9f96f7b7ab33fe01318ba19dc20d802627b054a3d5f723e9c0",
+      "size_bytes": 2510
+    },
+    "latency-model.md": {
+      "sha256": "c33683ea3f9c4c0c29ae22d00c80d2ef1cd0943be572bcb9e21323b15e236c00",
+      "size_bytes": 7878
+    },
+    "latency_metadata_probe.py": {
+      "sha256": "5d864e787f93dd0832c027ddb13f22aadfafe0889ee55bbcba13111ed6e95f0e",
+      "size_bytes": 6133
     },
     "matmul-lowering.ipynb": {
       "sha256": "736997d2ba49283eb7768b3ed8f8164256aa1a0a3c191759a77d03cbd21374a8",
@@ -424,8 +462,8 @@
       "size_bytes": 10679
     },
     "overview.md": {
-      "sha256": "e3d7b726dab2e5228cd6cd636cc9e99864bc15852b8381868484b88c7efbc6cc",
-      "size_bytes": 8398
+      "sha256": "f8f0987ae21b4432e9f10bd5d84aedeb1d94d99a15ce752fa277bc4b25a69e48",
+      "size_bytes": 8400
     },
     "pallas-comparison.md": {
       "sha256": "6c7577ccc2315b8d1bf4c7663e3ea75d0d1d54cc0a7dabe69ba63654a24e7a0a",
@@ -456,8 +494,8 @@
       "size_bytes": 6153
     },
     "source-index.json": {
-      "sha256": "e8781ce1c9326d226e479f8520e3bd42f2d569605d810382aa7577434ce2c6a0",
-      "size_bytes": 103706
+      "sha256": "fd921241d75406d74092b5d8508bcb6af97d566eda453633a1176bfda1bb4980",
+      "size_bytes": 118865
     },
     "verify_attributes.py": {
       "sha256": "cb58cee7f4e3b5b553dc00c77a907e20b4ae2c57af4c52d7e0005ffac00a6e60",
@@ -474,6 +512,10 @@
     "verify_fusion_memory.py": {
       "sha256": "52aad093f1ea79126b56cea97215dd961c157b78e9e26cda59781a8e694ed647",
       "size_bytes": 11779
+    },
+    "verify_latency_metadata.py": {
+      "sha256": "0cab9faed2c6d37206e3d918aac8dfcb011328ea8a1d85a3f93d2492e35f96e8",
+      "size_bytes": 8842
     },
     "verify_overlap.py": {
       "sha256": "4bdd3363e7f04cd26519fc6df655137178416fe3a94e603fe065deaf21f1a34a",
@@ -508,12 +550,12 @@
     "cache_reused_from": "kickoff-cpu-source-001",
     "source_clones": "artifacts/jax-stack/source-build-001/clones",
     "pid_namespace_warning": "Inspect this Docker container; wrapper PIDs are container-local.",
-    "inspected_at": "2026-09-14T16:17:39.724750+00:00",
+    "inspected_at": "2026-09-14T16:34:54.736107+00:00",
     "last_observed_phase": "C++ compilation",
     "state_record": "artifacts/jax-stack/source-build-002/container-state.json"
   },
   "publication": {
-    "local_commit": "ceb562956d302951b8b25e39f4cf301af3626b3a",
+    "local_commit": "dc1a4133751d55f0d0cac3a9eb146b4a70077a3d",
     "original_staged_diff_preserved": true,
     "push_attempt": {
       "command": "git push origin main",
@@ -522,11 +564,11 @@
       "result": "rejected (non-fast-forward)",
       "observed_divergence": "local: 5ef5920, c3c17cc; origin/main: 519c3e5, cc9972f; common ancestor 9af7706"
     },
-    "remaining": "Current worktree HEAD kept unchanged to preserve its staged cleanup; remote integration was performed in an isolated worktree.",
+    "remaining": "Root worktree retains its local research history and staged cleanup; remote merge integration is performed only in the isolated publication worktree.",
     "state": "pushed",
-    "integration_commit": "c29403a7b56a46beb6203eb9165ae103a7602663",
-    "push_result": "50bd4ce..c29403a HEAD -> main; normal fast-forward push",
-    "latest_milestone": "fusion-donation-and-buffer-allocation"
+    "integration_commit": "a48157412f9f8ed53e035c1412e4e56c256e0efd",
+    "push_result": "c29403a..a481574 HEAD -> main; normal fast-forward push",
+    "latest_milestone": "build-dependencies-and-cpu-collective-scheduling"
   },
   "additional_sources": [
     {
@@ -556,5 +598,11 @@
       "terminal_status": "interrupted",
       "reason": "Intentional increase from 2 to 4 jobs based on measured spare CPU/RAM; logs and persistent action cache retained."
     }
-  ]
+  ],
+  "kickoff_last_checked": {
+    "revision": 51,
+    "updated_at": "2026-09-14T11:26:38.696Z",
+    "checked_at": "2026-09-14T16:34:54.736107+00:00",
+    "source": "Outline fetch; revision and update timestamp unchanged"
+  }
 }

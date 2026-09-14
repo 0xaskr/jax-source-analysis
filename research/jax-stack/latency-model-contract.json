@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0",
+  "evidence_level": "SOURCE-ONLY",
+  "component": "xla",
+  "source_revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+  "attribute": "latency_metadata",
+  "parser": {
+    "source_entry": "xla.lhs-metadata-parser",
+    "storage": "frontend_attributes string",
+    "input_unit": "nanoseconds",
+    "integer_type": "int64_t",
+    "parse_function": "absl::SimpleAtoi",
+    "missing_or_parse_failure": "std::nullopt",
+    "conversion": "latency_ns * CyclesPerMicrosecond() / 1000.0",
+    "extra_positive_value_check": false
+  },
+  "direct_readers": [
+    {
+      "source_entry": "xla.gpu-node-cost",
+      "opcode_scope": "custom-call after nop check",
+      "lookup_priority": "nop first; then metadata for custom-call; otherwise approximate fallback"
+    },
+    {
+      "source_entry": "xla.sol-node-cost",
+      "opcode_scope": "all opcodes",
+      "lookup_priority": "metadata before opcode/table/fusion branches"
+    }
+  ],
+  "other_models": [
+    {
+      "source_entry": "xla.analytical-node-cost",
+      "metadata_parser_called_in_NodeCost": false,
+      "behavior": "async collective low cost; otherwise performance model"
+    },
+    {
+      "source_entry": "xla.pgle-node-cost",
+      "metadata_parser_called_in_NodeCost": false,
+      "behavior": "async collective low cost; then matching profile cost; then wrapped estimator fallback"
+    }
+  ],
+  "selection_entry": "xla.gpu-estimator-select",
+  "gate_entry": "xla.lhs-enable",
+  "scheduler_flow": [
+    "xla.gpu-lhs-pipeline",
+    "xla.lhs-graph",
+    "xla.lhs-schedule-node"
+  ],
+  "attribute_transfer_entry": "xla.host-offload-attributes",
+  "upstream_parser_test": {
+    "source_entry": "xla.lhs-metadata-test",
+    "executed": false
+  },
+  "scope": "Two direct non-test parser call sites found in fixed xla/xla C++ sources; private libtpu is outside this search.",
+  "runtime_evidence": {
+    "cpu_capture": "artifacts/jax-stack/latency-metadata-001",
+    "cpu_proves": [
+      "string propagation",
+      "CPU matmul numerics",
+      "unchanged CPU FLOPs and bytes"
+    ],
+    "gpu_estimator_executed": false,
+    "tpu_estimator_executed": false,
+    "scheduler_execution_from_this_capture": false
+  },
+  "limits": [
+    "This contract describes inspected branches, not a substitute implementation of the C++ models.",
+    "Presence of the label does not select a latency estimator or bypass scheduling gates.",
+    "Node cost, edge latency, work estimates and measured device time are separate quantities."
+  ]
+}

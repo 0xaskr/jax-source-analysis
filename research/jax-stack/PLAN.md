@@ -28,7 +28,7 @@
 ## 本轮进度与恢复入口
 
 CPU matmul、两种 Pallas 解释路径、host/编译事件和开放源码 Mosaic 标记已有可复查材料；
-完整 kickoff 尚未完成。源码索引扩展至 89 个入口、24 条关系，包括固定 XProf 源码；Pallas/profiling
+完整 kickoff 尚未完成。源码索引扩展至 101 个入口、28 条关系，包括固定 XProf 源码；Pallas/profiling
 Notebook 的 5 个代码单元已真实执行。
 原始 capture 继续留在忽略目录；验证器校验清单、哈希与关键语义。
 
@@ -55,8 +55,14 @@ Bazel 源码相等，1,085 个缓存 payload 的哈希通过；这不等于完�
 同步 `control_dep` 变成 dot→all-reduce 控制边；异步控制路径的失败需匹配 wheel 复验。
 [调度 Notebook](overlap-scheduling.ipynb) 的 4 个单元已真实执行，包含新的双 CPU capture。
 
-构建期间下一项独立源码工作是核查 LHS `latency_metadata` 到模型估计的真实调用链；
-完成构建后再做 wheel/加载验收、异步控制复验及可逆自定义编译事件补丁。目标 TPU
+LHS `latency_metadata` 的解析、模型选择与调度调用链已核对，见
+[latency-model.md](latency-model.md)。新增 8 个 CPU 标签/成本对照与 45 个产物；
+源码中的 GPU 模型消费不计为 GPU/TPU 执行。属性 Notebook 现有 6 个代码单元，已全部
+真实执行，包含新进程重新捕获。
+
+构建期间下一项独立源码工作是 CPU IR→LLVM 优化/对象代码→ORC JIT 的接口与产物对应；
+也可在独立副本准备编译事件补丁，禁止修改正在构建的 clone/config。完成构建后再做
+wheel/加载验收、异步控制复验及可逆自定义编译事件补丁的重编译和回滚。目标 TPU
 overlap 仍需 U03。
 完整恢复队列、已确认 U04 和未回答 U01–U03 保存在 [status.json](status.json)。
 
