@@ -28,13 +28,14 @@
 ## 本轮进度与恢复入口
 
 CPU matmul、两种 Pallas 解释路径、host/编译事件和开放源码 Mosaic 标记已有可复查材料；
-完整 kickoff 尚未完成。源码索引扩展至 74 个入口，包括固定 XProf 源码；Pallas/profiling
+完整 kickoff 尚未完成。源码索引扩展至 89 个入口、24 条关系，包括固定 XProf 源码；Pallas/profiling
 Notebook 的 5 个代码单元已真实执行。
 原始 capture 继续留在忽略目录；验证器校验清单、哈希与关键语义。
 
-固定源码构建已在唯一容器 `jax-kickoff-cpu-source-001` 中运行，原始上游树保持干净。
-恢复时先执行 `docker inspect --format '{{json .State}}' jax-kickoff-cpu-source-001`，再读
-`artifacts/builds/kickoff-cpu-source-001/attempts/0001/build.log`；不要依据宿主机同号 PID
+固定源码构建已在唯一容器 `jax-kickoff-cpu-source-002` 中运行，原始上游树保持干净。
+首个尝试为提高 jobs 从 2 到 4 而正常中断，缓存复用；不要重启旧容器。
+恢复时先执行 `docker inspect --format '{{json .State}}' jax-kickoff-cpu-source-002`，再读
+`artifacts/builds/kickoff-cpu-source-002/attempts/0001/build.log`；不要依据宿主机同号 PID
 重新启动构建。当前尚未完成 wheel 及加载验收，细节见 [source-build.md](source-build.md)。
 
 属性/cost 对照已完成 CPU capture：六种 metadata 情形、直接 MLIR 属性丢失边界、native
@@ -47,8 +48,16 @@ HLO 属性 setter、HLO add→subtract 的编译执行、opaque custom-call 未�
 donation 的静态/运行时差异、临时量与存储复用，以及逻辑 peak 诊断差异，见
 [fusion-and-memory.md](fusion-and-memory.md)。这些结果不计为真实业务 split 或 TPU 内存验收。
 
-构建运行期间，下一项独立工作是编译依赖闭包核查，以及通信/计算调度和 overlap 的公共源码
-入口与受控 CPU 参考；目标 TPU overlap 仍需 U03。
+核心依赖审计已完成：三份基础归档与 pin 一致，43 个补丁目标文件的独立复放与实际
+Bazel 源码相等，1,085 个缓存 payload 的哈希通过；这不等于完整离线闭包或 wheel 验收。
+通信/调度 CPU 参考已记录 3 个数值通过样本、4 个可复现失败，见
+[overlap-and-scheduling.md](overlap-and-scheduling.md)。实际 async pair 被 CPU 转回同步，
+同步 `control_dep` 变成 dot→all-reduce 控制边；异步控制路径的失败需匹配 wheel 复验。
+[调度 Notebook](overlap-scheduling.ipynb) 的 4 个单元已真实执行，包含新的双 CPU capture。
+
+构建期间下一项独立源码工作是核查 LHS `latency_metadata` 到模型估计的真实调用链；
+完成构建后再做 wheel/加载验收、异步控制复验及可逆自定义编译事件补丁。目标 TPU
+overlap 仍需 U03。
 完整恢复队列、已确认 U04 和未回答 U01–U03 保存在 [status.json](status.json)。
 
 ## 执行次序
