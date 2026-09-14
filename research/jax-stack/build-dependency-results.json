@@ -1,0 +1,92 @@
+{
+  "capture_id": "build-dependencies-002",
+  "manifest_path": "artifacts/jax-stack/build-dependencies-002/manifest.json",
+  "manifest_sha256": "df850f11e0961074c1b0c34d529422088db8c2fc9c990f2194b6fbd8ffb07076",
+  "artifact_count": 50,
+  "evidence_level": "SOURCE-ONLY",
+  "build_id": "kickoff-cpu-source-002",
+  "components": [
+    {
+      "component": "llvm",
+      "base_revision": "ab547095ead5464dc024d66264d9b8a987f429f3",
+      "archive_sha256": "c47662ae375e9523870b87006f27c7f35f686f1489c0cbdf571a583a66c973c9",
+      "patch_count": 6,
+      "replayed_targets": 24,
+      "patches": [
+        {
+          "name": "generated.patch",
+          "sha256": "bc6eb7761f75fa3ddf5954e7c774cc663f61e48a7c668ccbd77e60aa23ad25e0"
+        },
+        {
+          "name": "build.patch",
+          "sha256": "9d524565d22a493f3622decd460679e17101d94057f4e81ef2422155d9ff8f04"
+        },
+        {
+          "name": "platforms_config.patch",
+          "sha256": "ff09f51989328b4f8bcf4e04fa8b7eef8055b359ca9bc925566ce0980bb13308"
+        },
+        {
+          "name": "toolchains.patch",
+          "sha256": "dba1337e7eabdcf4ef25a077e408a86ba02f17878f9f23635acdebea8a766aaf"
+        },
+        {
+          "name": "lit_test.patch",
+          "sha256": "d9d4832a1a47d345b5300a8d73fc4922a432245e1a92976c3e12b2d5d845a356"
+        },
+        {
+          "name": "run_lit.patch",
+          "sha256": "95317b48c95176def8dd1a175073464cd6623967a4ee5389a103f7fe7986a42e"
+        }
+      ]
+    },
+    {
+      "component": "stablehlo",
+      "base_revision": "7b1b15781ccbd770f50c7eef4b0c3e03834649fd",
+      "archive_sha256": "d498ed1ba288eaf508369f76912e14d52d7f1f1a31ddaddd8ad4be40c8b7b4dc",
+      "patch_count": 1,
+      "replayed_targets": 16,
+      "patches": [
+        {
+          "name": "temporary.patch",
+          "sha256": "4f8ffc5b5b9edfd64d700a9bfc1d91b9302c8f93faf2782745ea9547f9ba1963"
+        }
+      ]
+    },
+    {
+      "component": "shardy",
+      "base_revision": "eb23a98329aa70d991aa2d8a51a209af1f8df8fc",
+      "archive_sha256": "7cfbfda2f36c917d471a59cfed7ec9776adb96b6c2de3a0d7fd37f21dade36cf",
+      "patch_count": 1,
+      "replayed_targets": 3,
+      "patches": [
+        {
+          "name": "temporary.patch",
+          "sha256": "153d8aaf4ce033232f9b4bed02cfd34fcc354be6cfaf15c5b06a94e0c5ef8b46"
+        }
+      ]
+    }
+  ],
+  "patched_targets": 43,
+  "repository_cache": {
+    "verified_objects": 1085,
+    "verified_bytes": 731484721,
+    "incomplete_entries": []
+  },
+  "compiler_observation": {
+    "observed_at": "2026-09-14T15:48:17.391426+00:00",
+    "process_count": 3,
+    "clang_sha256": "8ef402d453d1ba4902e4ee0f0f847f6cfa01400c95aa43c24e97818b9c0e3f45",
+    "clang_version": "18.1.3",
+    "receipt_path": "artifacts/jax-stack/source-build-002/compiler-processes.json",
+    "receipt_sha256": "738d0c95f64b583435c06fa46cbf377cf81bb16cd162b1867b4b192eacda58fa",
+    "preflight_path": "artifacts/jax-stack/build-preflight-001/container.json",
+    "preflight_sha256": "a9c33531f46616e16915b254893076454673af305d9dc603c8ed4f962a657f31"
+  },
+  "validation_scope": "Rechecked immutable capture inventory, pinned declarations/patches, archive/cache bytes and replay-to-live patch targets. The producer performed the patch replay; this validator does not rerun git apply.",
+  "limits": [
+    "Only declared patch targets are reconstructed and compared, not every file in the extracted repositories.",
+    "The live compiler source is the pinned archive plus XLA's patch set; pristine Git revision alone is an incomplete identity.",
+    "Cache hashes and repository names do not prove complete offline reproducibility or identify the exact subset consumed by every action.",
+    "The jaxlib wheel is not validated or installed by this source audit."
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "updated_at": "2026-09-14T15:31:52.307727+00:00",
+  "updated_at": "2026-09-14T16:17:39.724750+00:00",
   "goal_state": "active",
   "objective": "按 Outline kickoff revision 51 完成软件栈总览、源码/API 索引和实际推理场景 Hack 实验。",
   "kickoff_source": "research/jax-stack/kickoff-source.json",
@@ -17,7 +17,7 @@
     },
     {
       "id": "source-entry-index",
-      "result": "已核对 74 个源码入口、21 条调用/接口关系；五个核心源树与固定 XProf 干净。完整调用图仍在补充。",
+      "result": "已核对 89 个源码入口、24 条调用/接口关系；五个核心源树与固定 XProf 干净。完整调用图仍在补充。",
       "evidence": "research/jax-stack/source-index.json"
     },
     {
@@ -83,6 +83,21 @@
       "id": "fusion-memory-notebook",
       "result": "真实 Jupyter kernel 执行 4 个代码单元，含重新运行 owned/external-view donation 对照。",
       "evidence": "research/jax-stack/fusion-memory.ipynb"
+    },
+    {
+      "id": "core-build-dependency-audit",
+      "result": "三份固定核心归档与基础 pin 一致；43 个补丁目标复放字节匹配实际 Bazel 源码，1085 个缓存 payload 完整哈希核验；不声称完整 action 闭包。",
+      "evidence": "research/jax-stack/build-dependency-results.json"
+    },
+    {
+      "id": "cpu-collective-and-control-reference",
+      "result": "双 CPU、3 个数值通过样本、4 个可复现错误；593 个产物的独立检查覆盖 async-to-sync 与 dot→all-reduce 控制边。",
+      "evidence": "research/jax-stack/overlap-results.json"
+    },
+    {
+      "id": "overlap-notebook",
+      "result": "真实 Jupyter 内核执行 4 个代码单元，含新进程双 CPU capture 和独立 verifier。",
+      "evidence": "research/jax-stack/overlap-scheduling.ipynb"
     }
   ],
   "requirements": [
@@ -120,9 +135,10 @@
       "id": "R04",
       "state": "build-running",
       "evidence": [
-        "research/jax-stack/source-build.md"
+        "research/jax-stack/source-build.md",
+        "research/jax-stack/build-dependency-results.json"
       ],
-      "remaining": "监控当前唯一容器；完成 wheel/闭包/加载验收，再做诊断补丁、重编译、验证和回滚。"
+      "remaining": "当前 002 容器运行中；核心归档与补丁审计已完成。仍需完整构建/wheel/加载验收、闭包补齐、诊断补丁、重编译与回滚。"
     },
     {
       "id": "R05",
@@ -152,9 +168,13 @@
     },
     {
       "id": "R08",
-      "state": "pending",
-      "evidence": [],
-      "remaining": "通信/计算调度与 overlap 的 pass、控制点、设备拓扑和实测对照。"
+      "state": "partial",
+      "evidence": [
+        "research/jax-stack/overlap-and-scheduling.md",
+        "research/jax-stack/overlap-results.json",
+        "research/jax-stack/overlap-scheduling.ipynb"
+      ],
+      "remaining": "CPU API/IR/数值及四个失败边界已取证；需匹配 wheel 复验 async-control，并依据 U03 的目标拓扑、设备 trace 与时间测量验证真正 overlap。"
     },
     {
       "id": "R09",
@@ -218,17 +238,28 @@
     {
       "id": "inspect-active-source-build",
       "ready": true,
-      "action": "通过 docker inspect 核对容器 5cd1c2485f1b6960a9ddcb522b145d343fb4b61047466de2320b96843b2680c3；读取现有 attempt 0001 日志。运行中不要启动重复构建；结束后验证 wheel 与外部依赖闭包。"
+      "action": "检查当前容器 82c9bf9dfe02ba334964a856a5b41c652e83ade2af2ffdb4ce6b950fb4acc077 的真实状态，并读取 kickoff-cpu-source-002/attempts/0001/build.log；001 已有意中断以增加并发，不应恢复旧容器。"
     },
     {
-      "id": "build-dependency-closure",
+      "id": "lhs-latency-metadata-source",
       "ready": true,
-      "action": "构建运行期间检查本次 Bazel 已解析的外部依赖与 archive/repository cache，记录与固定 JAX/XLA/LLVM 等版本的关系；不修改运行中的 source/config。"
+      "action": "检查固定 xla/service/latency_hiding_scheduler.cc:376 的 latency_metadata 解析与实际调用方，区分属性传递、模型估计、调度使用和 CPU/TPU 验收；不修改运行中构建。"
     },
     {
-      "id": "overlap-scheduling-reference",
-      "ready": true,
-      "action": "阅读固定 collective async/scheduler 路径与配置；以受控多 CPU 设备作 API/IR 参考，保持其与真实 TPU overlap 验收分离。"
+      "id": "async-control-matching-wheel",
+      "ready": false,
+      "depends_on": [
+        "source-built-wheel-validation"
+      ],
+      "action": "使用匹配源码的 wheel 复验 overlap-cpu-005 四个失败，重点核对 Future layout 和 FinishRewrite 的 start uses；保留旧 VERSION-SKEW 证据。"
+    },
+    {
+      "id": "final-build-dependency-closure",
+      "ready": false,
+      "depends_on": [
+        "source-built-wheel-validation"
+      ],
+      "action": "在构建终态补记实际 external repositories、hermetic Python 与完整输入边界；不要把当前 cache 快照误称完整离线闭包。"
     },
     {
       "id": "liveness-diagnostic-followup",
@@ -266,7 +297,7 @@
     }
   ],
   "validation": {
-    "source_index": "74 entries / 21 edges verified",
+    "source_index": "89 entries / 24 edges verified",
     "capture": "1062 artifact sizes and SHA-256 verified",
     "numerics": "4 cases; NumPy float64 forward/analytic gradients",
     "serialized_executable": "4 in-process reloads, bit-for-bit comparison passed",
@@ -287,17 +318,22 @@
     "notebook_attributes": "4 code cells executed using a real Jupyter kernel",
     "fusion_memory": "2028 artifact sizes/hashes and inventories; 11 numerical cases, native HLO structures, schedules, allocation bounds, reuse intervals, alias/temp sizes and raw pointer observations verified",
     "fusion_memory_selftest": "3 corrupted manifests and out-of-bounds allocation rejected",
-    "notebook_fusion_memory": "4 code cells executed using real Jupyter kernel, including fresh runtime donation/view comparison"
+    "notebook_fusion_memory": "4 code cells executed using real Jupyter kernel, including fresh runtime donation/view comparison",
+    "build_dependencies": "50 capture files; 3 base archives, 43 patched targets, 1085 cached payloads and recorded Clang identity checked",
+    "build_dependencies_selftest": "6 invalid evidence/identity records rejected",
+    "overlap": "593 artifacts; 3 numerical cases, valid MLIR targets, native async-to-sync and control edge checked; 4 expected errors retained",
+    "overlap_selftest": "3 invalid manifests, missing done marker and unconverted hint-as-edge rejected",
+    "notebook_overlap": "4 code cells executed in a real Jupyter kernel; includes new two-CPU capture and independent audit"
   },
   "completion_claim": "本状态未宣称 kickoff 的任一完整交付组已经验收。",
   "artifact_fingerprints": {
     "PLAN.md": {
-      "sha256": "d6c83bc1f285b322b93eea5f86c859b3892e7c1fdd0c9a6fdd5729e6c16fb5cb",
-      "size_bytes": 7060
+      "sha256": "035cc06e4476ffa78b7e3050ef1b6e26853a00fa25f07663f4f55160d79eac02",
+      "size_bytes": 7859
     },
     "README.md": {
-      "sha256": "8f097b5b475c0af3abb1d2cb567890afb7f45bb04ba4bb02055845ee6dbd6221",
-      "size_bytes": 7605
+      "sha256": "29defaa6ca6a223ba90a5b7d8dc732cc8690b578d8637886529fe0eb9ddf2922",
+      "size_bytes": 7984
     },
     "attributes-and-cost.md": {
       "sha256": "2e8e638ee4cfbf9add3d47ac7b50702b5ed7f9a66a6d86f8dba4fc26be825463",
@@ -315,16 +351,24 @@
       "sha256": "01a10fb88ef4ba90389d6d32c84c2e1f3666365a1fa63fd4352b5be1e55935da",
       "size_bytes": 13707
     },
+    "audit_build_dependencies.py": {
+      "sha256": "e04a1abeb0905432fe8ad212703efa70b455d0b3c25e5ecb938aee8255571e84",
+      "size_bytes": 10096
+    },
+    "build-dependency-results.json": {
+      "sha256": "7b6691f2e14a0cb2e405bf08c42d9167282be9e233a95ae2b3199f7ff1a784e6",
+      "size_bytes": 3769
+    },
     "build_source_index.py": {
-      "sha256": "98765bf47ce8c256c393b5beb1e7a10830e284e682163ff03ed88535aff6c8b7",
-      "size_bytes": 33380
+      "sha256": "e46c98a4171cc6549424414333d4f17998f7e06957078ecc86aab0f7e92c7396",
+      "size_bytes": 38870
     },
     "compiler_events_probe.py": {
       "sha256": "98659bc1df7d2c0afb830e6ac01dc9b3bf845003b53e37e3b02f080b69d7eadc",
       "size_bytes": 7467
     },
     "cpu-results.json": {
-      "sha256": "be684b6da7fc597e8b7a813f238b116bc591c8c16f75bed5e0efe4caea0fdc59",
+      "sha256": "95b5e64a8571b2bf1a3a11488cddc0950ecc0bf54d46879ce45822a40617f729",
       "size_bytes": 91475
     },
     "extension-results.json": {
@@ -363,8 +407,24 @@
       "sha256": "afc48a7c40900cdc8eff4bd6d2f8a2444dae6b985f56b0e434e7615c7bc4f11c",
       "size_bytes": 7289
     },
+    "overlap-and-scheduling.md": {
+      "sha256": "f1fc408b1a26459a913e8e14d9901ffe1aa5296e9543df8f259ab3fc686d6388",
+      "size_bytes": 7705
+    },
+    "overlap-results.json": {
+      "sha256": "3fbb1d9335bdea28f769fcb8cd2fa5a3fe12b2cd7443cf7569e04a9cfaecb036",
+      "size_bytes": 12514
+    },
+    "overlap-scheduling.ipynb": {
+      "sha256": "99a00d598674828291f8b2a8475f106936ca8aa7d4bff550da6e36e667659d81",
+      "size_bytes": 7904
+    },
+    "overlap_probe.py": {
+      "sha256": "d3906db4c72eee9c64f8fffda8658fad3025d12d399c4dc0bdad5750a4194a4b",
+      "size_bytes": 10679
+    },
     "overview.md": {
-      "sha256": "1aa9f27e21aa8c5e8abfe5fdbd524497b00edc92896053c6d14b29e5703636e4",
+      "sha256": "e3d7b726dab2e5228cd6cd636cc9e99864bc15852b8381868484b88c7efbc6cc",
       "size_bytes": 8398
     },
     "pallas-comparison.md": {
@@ -392,16 +452,20 @@
       "size_bytes": 6576
     },
     "source-build.md": {
-      "sha256": "935edb550d2e5f19a03a2e6bc7f37a33acb15c398320f3a73ac8636ce62127cc",
-      "size_bytes": 3353
+      "sha256": "687c649e56d04f3e00e606f7444bf7a099427d2a41ee266eb5c31efef2d26156",
+      "size_bytes": 6153
     },
     "source-index.json": {
-      "sha256": "6f26f4470e3b81b1f3962dac164472c12803e7616051c872b88ff635c8e7c959",
-      "size_bytes": 86807
+      "sha256": "e8781ce1c9326d226e479f8520e3bd42f2d569605d810382aa7577434ce2c6a0",
+      "size_bytes": 103706
     },
     "verify_attributes.py": {
       "sha256": "cb58cee7f4e3b5b553dc00c77a907e20b4ae2c57af4c52d7e0005ffac00a6e60",
       "size_bytes": 7224
+    },
+    "verify_build_dependencies.py": {
+      "sha256": "a59261dc92f4c1a035486c72df595fd5adc3348fb432d107552d2609a35d9ca5",
+      "size_bytes": 9022
     },
     "verify_extensions.py": {
       "sha256": "d4343988e980e21f5669dc73e186a8414b64524adff8e87d1f0f33806afa4267",
@@ -410,6 +474,10 @@
     "verify_fusion_memory.py": {
       "sha256": "52aad093f1ea79126b56cea97215dd961c157b78e9e26cda59781a8e694ed647",
       "size_bytes": 11779
+    },
+    "verify_overlap.py": {
+      "sha256": "4bdd3363e7f04cd26519fc6df655137178416fe3a94e603fe065deaf21f1a34a",
+      "size_bytes": 9605
     },
     "verify_research.py": {
       "sha256": "00686b56facc06456ccc278ee5e7073b21512cb2f3a9c55b04c80f97d4185b93",
@@ -429,19 +497,23 @@
     }
   ],
   "active_build": {
-    "build_id": "kickoff-cpu-source-001",
+    "build_id": "kickoff-cpu-source-002",
     "attempt": 1,
-    "container_id": "5cd1c2485f1b6960a9ddcb522b145d343fb4b61047466de2320b96843b2680c3",
+    "container_id": "82c9bf9dfe02ba334964a856a5b41c652e83ade2af2ffdb4ce6b950fb4acc077",
     "state_at_last_inspection": "running",
-    "last_observed_phase": "C++ compilation",
     "state_must_be_refreshed": true,
-    "launch_record": "artifacts/jax-stack/source-build-001/launch.json",
-    "log": "artifacts/builds/kickoff-cpu-source-001/attempts/0001/build.log",
-    "pid_namespace_warning": "Inspect the Docker container; wrapper PIDs are container-local.",
-    "inspected_at": "2026-09-14T15:31:52.307727+00:00"
+    "launch_record": "artifacts/jax-stack/source-build-002/launch.json",
+    "log": "artifacts/builds/kickoff-cpu-source-002/attempts/0001/build.log",
+    "jobs": 4,
+    "cache_reused_from": "kickoff-cpu-source-001",
+    "source_clones": "artifacts/jax-stack/source-build-001/clones",
+    "pid_namespace_warning": "Inspect this Docker container; wrapper PIDs are container-local.",
+    "inspected_at": "2026-09-14T16:17:39.724750+00:00",
+    "last_observed_phase": "C++ compilation",
+    "state_record": "artifacts/jax-stack/source-build-002/container-state.json"
   },
   "publication": {
-    "local_commit": "2729faef5997775c9d81b2ad1107f01716c13439",
+    "local_commit": "ceb562956d302951b8b25e39f4cf301af3626b3a",
     "original_staged_diff_preserved": true,
     "push_attempt": {
       "command": "git push origin main",
@@ -452,9 +524,9 @@
     },
     "remaining": "Current worktree HEAD kept unchanged to preserve its staged cleanup; remote integration was performed in an isolated worktree.",
     "state": "pushed",
-    "integration_commit": "50bd4ced6aa4e653f22b51e93daef1d58867ffa3",
-    "push_result": "771068b..50bd4ce HEAD -> main; normal fast-forward push",
-    "latest_milestone": "attributes-cost-and-roofline-source"
+    "integration_commit": "c29403a7b56a46beb6203eb9165ae103a7602663",
+    "push_result": "50bd4ce..c29403a HEAD -> main; normal fast-forward push",
+    "latest_milestone": "fusion-donation-and-buffer-allocation"
   },
   "additional_sources": [
     {
@@ -468,5 +540,21 @@
       "manifest": "artifacts/jax-stack/xprof-source-001/manifest.json"
     }
   ],
-  "pending_user_inputs_last_requested": "2026-09-14T15:01:12.955105+00:00"
+  "pending_user_inputs_last_requested": "2026-09-14T15:01:12.955105+00:00",
+  "previous_builds": [
+    {
+      "build_id": "kickoff-cpu-source-001",
+      "attempt": 1,
+      "container_id": "5cd1c2485f1b6960a9ddcb522b145d343fb4b61047466de2320b96843b2680c3",
+      "state_at_last_inspection": "exited",
+      "last_observed_phase": "C++ compilation",
+      "state_must_be_refreshed": false,
+      "launch_record": "artifacts/jax-stack/source-build-001/launch.json",
+      "log": "artifacts/builds/kickoff-cpu-source-001/attempts/0001/build.log",
+      "pid_namespace_warning": "Inspect the Docker container; wrapper PIDs are container-local.",
+      "inspected_at": "2026-09-14T15:31:52.307727+00:00",
+      "terminal_status": "interrupted",
+      "reason": "Intentional increase from 2 to 4 jobs based on measured spare CPU/RAM; logs and persistent action cache retained."
+    }
+  ]
 }
