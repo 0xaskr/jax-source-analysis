@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "updated_at": "2026-09-14T22:01:58.933047+00:00",
+  "updated_at": "2026-09-14T22:43:02.185896+00:00",
   "goal_state": "active",
   "objective": "按 Outline kickoff revision 51 完成软件栈总览、源码/API 索引和实际推理场景 Hack 实验。",
   "kickoff_source": "research/jax-stack/kickoff-source.json",
@@ -183,6 +183,11 @@
       "id": "source-matmul-pass-walkthrough",
       "result": "源码 003 CPU matmul 的 640 个 pipeline 边界/584 组配对已复查；22 组叶子变化与 3 组嵌套汇总分开，59 个派生产物及 6 个反例通过。三个对象的 20 个产物匹配源码 reader；两次旧 reader 拒绝、10 个真实 Jupyter 单元通过。",
       "evidence": "research/jax-stack/matmul-pass-walkthrough.md"
+    },
+    {
+      "id": "source-cpu-thunk-dispatch-evidence",
+      "result": "两个来源各 11 个 CPU thunk 与 HLO/proto/object 对应；新进程 12 次带 trace 调用数值通过，记录 33 个 producer 和 33 个完成事件。两处剩余 dot 均为 DotThunk/Eigen。94 个 schema、39 个运行、62 个审计产物、19 个反例和 5 个真实 Jupyter 单元通过；新增映射库 _mlirHlo.so 单独绑定到源码 wheel。",
+      "evidence": "research/jax-stack/cpu-executable-and-trace.md"
     }
   ],
   "requirements": [
@@ -193,7 +198,10 @@
         "research/jax-stack/overview.md",
         "research/jax-stack/source-index.json",
         "research/jax-stack/llvm-and-objects.md",
-        "research/jax-stack/matmul-pass-walkthrough.md"
+        "research/jax-stack/matmul-pass-walkthrough.md",
+        "research/jax-stack/cpu-executable-and-trace.md",
+        "research/jax-stack/cpu-thunk-results.json",
+        "research/jax-stack/cpu-thunk-execution.ipynb"
       ],
       "remaining": "已补齐选定 LLVM/MC/ORC 与 CPU kernel 接口；完整组件/内部 pass graph、普通 TPU 调用细节和 libtpu 私有边界仍需后续取证。"
     },
@@ -210,9 +218,12 @@
         "research/jax-stack/source-runtime-results.json",
         "research/jax-stack/matmul-pass-walkthrough.md",
         "research/jax-stack/pass-transition-results.json",
-        "research/jax-stack/source-codegen-results.json"
+        "research/jax-stack/source-codegen-results.json",
+        "research/jax-stack/cpu-executable-and-trace.md",
+        "research/jax-stack/cpu-thunk-results.json",
+        "research/jax-stack/cpu-thunk-execution.ipynb"
       ],
-      "remaining": "匹配源码 CPU 关键中间 pass、布局/fusion 与 LLVM/object 对应已补齐；CPU thunk/库分支的静态可观察性与 runtime sampling 继续分层取证。TPU lowering/后端产物仍需目标环境。"
+      "remaining": "匹配源码 CPU 关键 passes、布局/fusion、LLVM/object、序列化 thunk 和实际 warm dispatch 已对照。TPU lowering/后端产物、libtpu/LLO 与硬件部分仍需目标环境；未声明内部 Eigen/YNN microkernel或性能。"
     },
     {
       "id": "R03",
@@ -337,9 +348,12 @@
         "research/jax-stack/runtime-environment.md",
         "research/jax-stack/runtime-environment-results.json",
         "research/jax-stack/source-runtime-results.json",
-        "research/jax-stack/pass-hack-results.json"
+        "research/jax-stack/pass-hack-results.json",
+        "research/jax-stack/cpu-executable-and-trace.md",
+        "research/jax-stack/cpu-thunk-results.json",
+        "research/jax-stack/cpu-thunk-execution.ipynb"
       ],
-      "remaining": "host 与 CPU 编译 pass 的起止、过滤、warm、错误返回及源码 build/load/rollback 已取证；仍需目标 TPU 编译、设备事件/LLO、开销与跨线程 host 关联。"
+      "remaining": "host、CPU 编译 pass 与 CPU thunk 起止已有运行证据；继续核对原始 XSpace 的跨线程 context 关联。目标 TPU 编译、设备事件/LLO、开销仍需 U03。"
     }
   ],
   "pending_user_inputs": [
@@ -361,12 +375,12 @@
   ],
   "next_actions": [
     {
-      "id": "source-cpu-thunk-dispatch-evidence",
+      "id": "cpu-xspace-context-correlation",
       "ready": true,
       "depends_on": [
-        "source-matmul-pass-walkthrough"
+        "source-cpu-thunk-dispatch-evidence"
       ],
-      "action": "核对源码 CPU executable 中 thunk/库分支的可观察内容，先阅读固定序列化/反序列化格式，使用安全只读 parser 或新生成的小探针定位剩余 dot 的实际选择；静态记录与 runtime dispatch sampling 分开，不加载不可信 pickle。"
+      "action": "从 cpu-thunk-runtime-002 四份原始 xplane.pb 核对 producer/consumer context 字段及跨线程关系，确认 JSON 导出遗漏；不再依赖同名事件或默认把 producer duration 当作异步完成时间。"
     },
     {
       "id": "tpu-device-profile",
@@ -388,7 +402,7 @@
     }
   ],
   "validation": {
-    "source_index": "122 fixed-source entries and 39 edges; added XPlane conversion/InternalStat relation and links to native Hack evidence.",
+    "source_index": "148 source entries / 47 call edges checked against current pinned clean source trees.",
     "capture": "1062 artifact sizes and SHA-256 verified",
     "numerics": "4 cases; NumPy float64 forward/analytic gradients",
     "serialized_executable": "4 in-process reloads, bit-for-bit comparison passed",
@@ -442,7 +456,7 @@
     "pass_hack_selftest": "Three invalid C++ outcomes and real 127-event metadata-loss capture rejected.",
     "pass_hack_rollback": "Three source files restored byte-for-byte, clone clean, retained unpatched 003 wheel reinstalled in fresh copied environment and new processes.",
     "terminal_dependencies": "50 artifacts, 3 archives, 43 patch targets and 1093 cached payloads / 734532494 bytes verified; 6 negative cases passed; no complete offline closure claim.",
-    "project_state": "Project-status positive summary and 20 negative contracts passed; root status commands report intentionally deleted manifests/status.json.",
+    "project_state": "Project-status positive summary and 20 negative contracts passed; intentionally deleted root state remains absent.",
     "compiler_hack_notebook": "5 code cells executed in a real Jupyter kernel; saved artifact hashes, six raw traces, independent NumPy, C++ XML and real metadata-loss regression passed. This Notebook run is archive revalidation, not a new native compile.",
     "patch_whitespace": "Canonical patch context is preserved via directory-scoped Git attributes; all added C++ lines checked separately for trailing whitespace.",
     "source_metadata": "14 metadata cases + 2 HLO edit executions, 117 artifacts; source 003 producer and current native reader bound; matching-source CLI/selftests passed.",
@@ -457,7 +471,13 @@
     "source_pass_transitions": "59 artifacts; 640 parsed pipeline snapshots / 584 scoped pairs; 22 changed leaf boundaries and 3 nested aggregates; final graphs, shape/layout/operand semantics and 6 negative cases passed.",
     "source_codegen": "20 artifacts and 3 objects bound to source build 003 producer/current native reader; HLO/LLVM/ELF/package correspondence and historical CLI/selftests passed.",
     "source_lowering_old_reader": "Both codegen and pass verifier rejected actual old-wheel processes with BaselineError: jaxlib runtime revision disagrees with build manifest JAX commit.",
-    "matmul_notebook": "10 code cells executed in a real Jupyter kernel; legacy CPU runtime plus archived source pass/object bytes and independent NumPy audit."
+    "matmul_notebook": "10 code cells executed in a real Jupyter kernel; legacy CPU runtime plus archived source pass/object bytes and independent NumPy audit.",
+    "cpu_thunks": "94 schema + 39 fresh RUN-CPU + 62 derived audit artifacts verified; 8 packages, 11 thunks per capture, 12 traced numerical invocations, 33 producers and 33 completions.",
+    "cpu_thunk_selftest": "19 malformed inventory/pickle/protobuf/shape/symbol/event/environment inputs rejected.",
+    "cpu_thunk_old_wheel": "Actual old-wheel producer rejected before inputs and native verifier rejected before result; exact revision-disagreement error captured.",
+    "cpu_thunk_explicit_inputs": "Explicit origin/runtime CLI produced a new audit; verifier recovered source paths from it. Historical default also passed. Failed runtime-001, despite saved outputs and traces, rejected for missing successful manifest.",
+    "cpu_thunk_notebook": "5 code cells executed in real Jupyter; data-only packaging/thunk/trace audit, NumPy and 19 negatives passed.",
+    "cpu_thunk_native_loading": "First runtime attempt failed broad equality; accepted second run preserves all pre-existing payloads/source/environment and validates both inventories against the same wheel, permitting only newly mapped _mlirHlo.so."
   },
   "completion_claim": "本状态未宣称 kickoff 的任一完整交付组已经验收。",
   "artifact_fingerprints": {
@@ -466,12 +486,12 @@
       "size_bytes": 114
     },
     "PLAN.md": {
-      "sha256": "6795f8a81a8f3dd4e8bf4dbbb1cdc04a007d0e53800be3c843ab9273729568a6",
-      "size_bytes": 11982
+      "sha256": "fbe769fadf4b779708dee7eea72360c2764a23b8a59d08cfa0371cbaa50b1e04",
+      "size_bytes": 12634
     },
     "README.md": {
-      "sha256": "470a665fb98d7a17e9e9f18d0fe950f9166eaec9b02faad8bb2f3479f9c56999",
-      "size_bytes": 9733
+      "sha256": "0f8bfed067e42084adb81add96479e4cebd34170630219ea27c3c62e1176cd33",
+      "size_bytes": 10018
     },
     "attributes-and-cost.md": {
       "sha256": "026265fc41df52be91ccdee9d462dcaf36f132b3af4f0bdc69a6a361522052ee",
@@ -497,6 +517,10 @@
       "sha256": "fa98d0d30b4e9795db29f758cb5c787abf6f5b2e9248a632dc7db40b498e93df",
       "size_bytes": 7610
     },
+    "audit_cpu_thunks.py": {
+      "sha256": "8091f7973d75a572d4ae69491de5fd87428a2c37a6c19460183d6228f1956819",
+      "size_bytes": 12907
+    },
     "audit_external_descriptors.py": {
       "sha256": "f9d3253fbda6443ba103f47f79d44c3f03e2e7181a1d52bce5ab2b4b1e9d5dc7",
       "size_bytes": 7716
@@ -514,8 +538,8 @@
       "size_bytes": 3471
     },
     "build_source_index.py": {
-      "sha256": "e15d1d2926ea40e7333a097c7877b10d40134d6ee61c498c28c1538de116c133",
-      "size_bytes": 59129
+      "sha256": "b2c862b6e6c7c19a463d38137ef87b19c833836e2bcd73d6c11059ee34c5f166",
+      "size_bytes": 65779
     },
     "capture_runtime.py": {
       "sha256": "7f040f7a36aea060ed57c217d109dc498cfe96082a81a0fe297ede87d540b025",
@@ -533,6 +557,10 @@
       "sha256": "98659bc1df7d2c0afb830e6ac01dc9b3bf845003b53e37e3b02f080b69d7eadc",
       "size_bytes": 7467
     },
+    "cpu-executable-and-trace.md": {
+      "sha256": "4b38da21d02ea2b329073c2d6f7787479b7b72ec9a19f4b184fdf8c54808bd83",
+      "size_bytes": 9109
+    },
     "cpu-results.json": {
       "sha256": "9803cc103caa1dcfd3ab5719a173531ce78a15673cc079b3d2fb8653443a3726",
       "size_bytes": 91476
@@ -540,6 +568,22 @@
     "cpu-revalidation-results.json": {
       "sha256": "22ac0a8ffb52f734238325b34d0a97848fc76660b47a160994c6972215dbaad9",
       "size_bytes": 8105
+    },
+    "cpu-thunk-execution.ipynb": {
+      "sha256": "6d8c69a7b1ab20a63567ae41c28c861bf305d2700ce95d50af1de5fee5b1c009",
+      "size_bytes": 13554
+    },
+    "cpu-thunk-results.json": {
+      "sha256": "c2ac3942f1055cbc993c1a64a26951305e158c83f22001a049f2b686da6b6b2f",
+      "size_bytes": 58681
+    },
+    "cpu_executable_parser.py": {
+      "sha256": "0b1f870be7fad99e15406e9aa46ce1870a2064d42490115ac88febe89baeb67c",
+      "size_bytes": 11196
+    },
+    "cpu_thunk_probe.py": {
+      "sha256": "fdc28f77b0d390729dc7231a7a551bb0eb1cfc5e4fbbf0f133faf20b14f82ae1",
+      "size_bytes": 6956
     },
     "extension-results.json": {
       "sha256": "3e9e3f1909236e94fe278be96918df1055dcb6e19647d5a701778f6ddc1c8e61",
@@ -598,16 +642,16 @@
       "size_bytes": 2851
     },
     "llvm-and-objects.md": {
-      "sha256": "51b67e362b0167291ba7c541cac2c19e89386006566d5a4dc4e0d1bba9442d82",
-      "size_bytes": 7929
+      "sha256": "0f9e8909b74414b5aeb09a0f03507da40fc7516ea7099aeb91da9ac49e96b869",
+      "size_bytes": 8096
     },
     "matmul-lowering.ipynb": {
       "sha256": "2a6426211d9af925a8c450e2aadcd5acdb1e01f59def2852aac5cec4a1b703ce",
       "size_bytes": 32379
     },
     "matmul-pass-walkthrough.md": {
-      "sha256": "d8c94ef70038fe259eebac34a7002faa7c63cf64f893a4c5c84ecde0957a6ec1",
-      "size_bytes": 9874
+      "sha256": "89d0c6b004e8ca03a20c055e2981ae5d1de3cb57177aee32fcf59a5052863e87",
+      "size_bytes": 10088
     },
     "matmul_probe.py": {
       "sha256": "0a0892a74c2d2d786eef13b33ef82066461870f08b9b84ceb69fc0aee9ee8e46",
@@ -634,7 +678,7 @@
       "size_bytes": 13399
     },
     "overview.md": {
-      "sha256": "d562e597533952ab102a138d24445e4984afab3242b0e303023b12e1051603c9",
+      "sha256": "4059014be6548a5a232f0cc4ed784884070b26f514debf4939e1a2ead0592795",
       "size_bytes": 8400
     },
     "pallas-comparison.md": {
@@ -693,6 +737,10 @@
       "sha256": "e2c4900e6d9cb070461b61929e10471c14020e9bd34dce63deea3db312201a22",
       "size_bytes": 3433
     },
+    "prepare_cpu_thunk_schema.py": {
+      "sha256": "7e7187dd7517a216fbc6204854f7470c4d51b632e6b830ba63927cd0f42e7221",
+      "size_bytes": 4687
+    },
     "prepare_pass_event_patch.py": {
       "sha256": "b945b200037bcf7f612303994e33525ddde718a000a5304b9bc93596486aad1b",
       "size_bytes": 6864
@@ -734,8 +782,8 @@
       "size_bytes": 17589
     },
     "source-index.json": {
-      "sha256": "ef0772d1e84c8b890990874947217bc7dbfbae3165667ca069b47598dfadc4de",
-      "size_bytes": 162981
+      "sha256": "be35610652b0834c19ed41f0b8e40f4981c912bb758580064061a933dc40fa31",
+      "size_bytes": 183504
     },
     "source-metadata-baseline.md": {
       "sha256": "325c1e550d94f56d36a4cb6954dda2ce9b4a44fe3dad80103895a5b646634ed6",
@@ -768,6 +816,10 @@
     "verify_codegen_and_patch.py": {
       "sha256": "5d65ef9b500e52a18b865b3e89f93c8aafe837093a86009d2d64fa966060f6bb",
       "size_bytes": 13320
+    },
+    "verify_cpu_thunks.py": {
+      "sha256": "5fc79262489eecea47e23bd19f27bba5626811760b0bd10f149d74570f043696",
+      "size_bytes": 7395
     },
     "verify_extensions.py": {
       "sha256": "d4343988e980e21f5669dc73e186a8414b64524adff8e87d1f0f33806afa4267",
@@ -854,7 +906,7 @@
     "log": "artifacts/builds/kickoff-cpu-pass-events-002/attempts/0001/build.log"
   },
   "publication": {
-    "local_commit": "8940923b4e66b5cdec62f2420bec384c73eca04a",
+    "local_commit": "b44457889977c98d5fbc3ee3c42669bbf185d1ee",
     "original_staged_diff_preserved": true,
     "push_attempt": {
       "command": "git push origin main",
@@ -865,9 +917,9 @@
     },
     "remaining": "Root worktree retains its local research history and staged cleanup; remote merge integration is performed only in the isolated publication worktree.",
     "state": "local-milestone-ready-for-commit",
-    "integration_commit": "ecf0c0ece980f947d7970a61310c80861eaa1fad",
+    "integration_commit": "1913a7a3a3878c8473eebeb9499a59b7cde6f948",
     "push_result": "normal push origin HEAD:main",
-    "latest_milestone": "source-matmul-pass-walkthrough"
+    "latest_milestone": "source-cpu-thunk-dispatch-evidence"
   },
   "additional_sources": [
     {
@@ -881,7 +933,17 @@
       "manifest": "artifacts/jax-stack/xprof-source-001/manifest.json"
     }
   ],
-  "pending_user_inputs_last_requested": "2026-09-14T20:26:54.168277+00:00",
+  "pending_user_inputs_last_requested": {
+    "method": "functions.request_user_input_async",
+    "milestone": "source-cpu-thunk-dispatch-evidence",
+    "pending_ids": [
+      "U01",
+      "U02",
+      "U03"
+    ],
+    "recorded_at": "2026-09-14T22:43:02.185896+00:00",
+    "note": "Questions were re-presented earlier in this turn; no reply received as of this state update."
+  },
   "previous_builds": [
     {
       "build_id": "kickoff-cpu-source-001",
@@ -944,7 +1006,7 @@
   "kickoff_last_checked": {
     "revision": 51,
     "updated_at": "2026-09-14T11:26:38.696Z",
-    "checked_at": "2026-09-14T20:29:32.198533+00:00",
+    "checked_at": "2026-09-14T22:38:13+00:00",
     "source": "Outline fetch; revision and timestamp unchanged"
   },
   "prepared_compiler_patch": {
@@ -1123,6 +1185,44 @@
         "path": "artifacts/jax-stack/source-lowering-notebook-001/execution.json",
         "sha256": "2e0d7b2f4de3af3200847d38fc638a2ad9fa5b41fdec45f0accb8c9ed4a4ce16",
         "size_bytes": 218
+      }
+    ]
+  },
+  "cpu_thunk_audit": {
+    "runtime": "artifacts/jax-stack/cpu-thunk-runtime-002/capture",
+    "schema": "artifacts/jax-stack/cpu-thunk-schema-002",
+    "audit": "artifacts/jax-stack/cpu-thunk-audit-002/capture",
+    "source_build": "kickoff-cpu-source-003",
+    "evidence_records": [
+      {
+        "path": "artifacts/jax-stack/cpu-thunk-audit-002/verification.json",
+        "sha256": "bce5f0136c75fc2ce430e9acbaf4de3c5cfb5c500c2ed2b46ff9789cdcec7901",
+        "size_bytes": 1991
+      },
+      {
+        "path": "artifacts/jax-stack/cpu-thunk-audit-002/old-wheel-rejections.json",
+        "sha256": "7a59aef3634955e866f139514dcae601700d9c2effa4242ca5c0f0b09990a6b3",
+        "size_bytes": 4245
+      },
+      {
+        "path": "artifacts/jax-stack/cpu-thunk-audit-002/old-wheel-verification.json",
+        "sha256": "9533170a860cf90c8c4d12f1bcfde1fb6bafbc732b8f34832bc16c058a0e6579",
+        "size_bytes": 1419
+      },
+      {
+        "path": "artifacts/jax-stack/cpu-thunk-audit-002/explicit-input-validation.json",
+        "sha256": "8d0fc8098ce2af3d63f9c799426823ae4ee859065d3049810112d2d08bd86a42",
+        "size_bytes": 4349
+      },
+      {
+        "path": "artifacts/jax-stack/cpu-thunk-notebook-001/execution.json",
+        "sha256": "2248c8318b69c1f8c3c4ba4f32c9c95f7e396bcabd43b317bb9585e562e010dc",
+        "size_bytes": 244
+      },
+      {
+        "path": "artifacts/jax-stack/cpu-thunk-runtime-001/terminal.json",
+        "sha256": "723f6f7ac0047041fb5d0a7077a4b6744d23c3521562d0cd8ab765c394818dea",
+        "size_bytes": 269
       }
     ]
   }
