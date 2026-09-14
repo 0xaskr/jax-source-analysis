@@ -28,7 +28,7 @@
 ## 本轮进度与恢复入口
 
 CPU matmul、两种 Pallas 解释路径、host/编译事件和开放源码 Mosaic 标记已有可复查材料；
-完整 kickoff 尚未完成。源码索引扩展至 134 个入口、40 条关系，包括固定 XProf 源码；Pallas/profiling
+完整 kickoff 尚未完成。源码索引扩展至 148 个入口、47 条关系，包括固定 XProf 源码；Pallas/profiling
 Notebook 的 7 个代码单元已真实执行。
 原始 capture 继续留在忽略目录；验证器校验清单、哈希与关键语义。
 
@@ -98,8 +98,14 @@ overlap、编译和设备事件仍需 U03。
 640 个 pipeline 边界形成 584 组配对；22 组叶子文本变化与 3 组嵌套汇总分开记录。
 59 个派生产物、形状/operand/layout/fusion 语义和六个反例复查通过；匹配源码的
 LLVM/object 审计另有 20 个产物。两个新验证器都实际拒绝了旧 wheel reader。
-下一步继续核对 CPU executable 中 thunk/库分支的可观察证据，分开记录静态序列化内容
-与 runtime dispatch 采样；TPU 与业务实验继续等待 U01–U03。
+CPU executable 与运行时分支已进一步取证，见 [cpu-executable-and-trace.md](cpu-executable-and-trace.md)。
+两个来源各有 11 个 thunk；两处剩余 dot 均保存为 DotThunk，对应固定源码的 Eigen contraction。
+新进程的 12 次带 trace 数值调用通过，观察到 33 个 producer 和 33 个完成事件。
+原型环境相等检查因新增映射 _mlirHlo.so 失败；正式采集只允许新增且绑定到源码 wheel 的库，
+原有库/源码/其余环境保持一致。39 个运行、94 个 schema、62 个审计产物已复查，
+19 个反例及 5 个真实 Notebook 单元通过；旧 wheel 的 producer 和 verifier 均实际被拒绝。
+下一步核对原始 XSpace 的 producer/consumer context 字段，验证跨线程关联及 JSON 导出边界；
+TPU 与业务实验继续等待 U01–U03。
 
 [独立环境](runtime-environment.md) 的旧 wheel 复验与新增源码 wheel 复验分别保留，
 不改写旧证据。源码基线仍观察到 logical peak 诊断差异，不能据此推导物理内存峰值。

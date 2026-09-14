@@ -403,7 +403,34 @@ SITES.extend([
     ('xla.cpu-ynn-invoke', 'xla', 'CPU pass and dispatch', 'xla/backends/cpu/runtime/ynnpack/ynn_fusion_thunk.cc', 'YnnFusionThunk::YnnExecutable::Invoke(', 90, '线程池、参数和结果地址', 'ynn_invoke_runtime 状态', '设置 external values 与线程池后调用 YNN runtime；不推导库内部机器码。'),
 ])
 
+
+# CPU executable packaging and observed warm thunk dispatch.
+SITES.extend([
+    ('jax.pickle-exec', 'jax', 'CPU executable and runtime', 'jax/experimental/serialize_executable.py', '  def persistent_id(self, obj):', 93, 'Python 包装中的 executable 对象', 'exec persistent id 与序列化 bytes', '这里只读取该字节模式；没有调用 Unpickler 或 native loader。'),
+    ('ifrt.executable-serialize', 'xla', 'CPU executable and runtime', 'xla/python/pjrt_ifrt/pjrt_executable.cc', 'absl::StatusOr<std::string> PjRtExecutable::CommonMetadata::Serialize(', 455, 'PJRT executable 与 IFRT common metadata', '长度前缀 metadata 加 PJRT opaque payload', 'IFRT metadata 与后端 executable 是相邻的两段，不能把整体当一个 CPU proto。'),
+    ('xla.cpu-executable-serialize', 'xla', 'CPU executable and runtime', 'xla/pjrt/cpu/cpu_client.cc', 'absl::StatusOr<std::string> PjRtCpuExecutable::SerializeExecutable() const {', 524, 'PjRtCpuExecutable', 'ExecutableAndOptionsProto', 'CPU compiler Export 的结果再与 compile options 打包。'),
+    ('xla.cpu-aot-create', 'xla', 'CPU executable and runtime', 'xla/service/cpu/cpu_aot_compilation_result.cc', 'CpuAotCompilationResult::Create(', 76, 'HLO、buffers、objects、symbols、thunks', 'CpuAotCompilationResult', '保存实际 thunk sequence 及对象；不是仅记录 HLO 图。'),
+    ('xla.cpu-compilation-proto', 'xla', 'CPU executable and runtime', 'xla/service/cpu/executable.proto', 'message CompilationResultProto {', 45, 'CPU 编译产物', 'CompilationResultProto 字段合同', '本例 obj_files_kind=KERNELS，含 HLO/config、buffer assignment、thunks、symbols 与 objects。'),
+    ('xla.cpu-thunk-proto', 'xla', 'CPU executable and runtime', 'xla/backends/cpu/runtime/thunk.proto', 'message ThunkProto {', 297, 'thunk kind/info/impl', 'oneof 实现与公共身份', 'kind 字符串与 oneof 必须一致；DotThunk 与 KernelThunk 分开。'),
+    ('xla.cpu-dot-serdes', 'xla', 'CPU executable and runtime', 'xla/backends/cpu/runtime/thunk_serdes/dot_thunk_serdes.cc', 'absl::Status DotThunkToProto(const Thunk& thunk, ThunkProto& proto) {', 42, '实际 DotThunk', 'DotThunkProto', '序列化 dot dimensions、lhs/rhs/output shape 和 allocation slices。'),
+    ('xla.cpu-ynn-serdes', 'xla', 'CPU executable and runtime', 'xla/backends/cpu/runtime/thunk_serdes/ynn_fusion_thunk_serdes.cc', 'absl::Status YnnFusionThunkToProto(const Thunk& thunk, ThunkProto& proto) {', 57, '实际 YnnFusionThunk', 'YnnFusionThunkProto', '记录 HLO instruction id 和参数/结果 slices；依赖对应 fusion computation。'),
+    ('xla.cpu-thunk-sequence-proto', 'xla', 'CPU executable and runtime', 'xla/backends/cpu/runtime/thunk_proto_serdes.cc', 'absl::StatusOr<ThunkSequenceProto> ThunkSequenceSerDesProtobuf::ToProto(', 928, 'ThunkSequence 与资源关系', 'ThunkSequenceProto', '逐 thunk 序列化并收集资源使用者；列表顺序本身不能证明并发执行时间线。'),
+    ('xla.cpu-thunk-traced-execute', 'xla', 'CPU executable and runtime', 'xla/backends/cpu/runtime/thunk_executor.cc', 'tsl::AsyncValueRef<Thunk::ExecuteEvent> ThunkExecutor::TracedExecute(', 222, 'thunk 与 ExecuteParams', 'ExecuteEvent 及 producer/consumer trace', 'TraceMeProducer 围绕 Execute 返回，完成回调生成 end 事件；producer duration 不能一般化为异步完整时长。'),
+    ('xla.cpu-thunk-trace-fields', 'xla', 'CPU executable and runtime', 'xla/backends/cpu/runtime/thunk.cc', 'std::string Thunk::TraceMeEncode(int64_t run_id, int64_t device_ordinal) const {', 181, 'op/module identity、run_id、device ordinal', 'TraceMe metadata', '导出 JSON 未保留 program_id；end 事件另只带名称，不能任意并发拼接。'),
+    ('xla.cpu-dot-execute', 'xla', 'CPU executable and runtime', 'xla/backends/cpu/runtime/dot_thunk.cc', 'tsl::AsyncValueRef<DotThunk::ExecuteEvent> DotThunk::Execute(', 74, 'dot shape/slices 与线程池', '矩阵乘完成事件', '从 allocation 取得地址，处理行列布局与 transpose，再调用 TypedMatMul。'),
+    ('xla.cpu-eigen-typed', 'xla', 'CPU executable and runtime', 'xla/backends/cpu/runtime/dot_lib.h', 'void TypedMatMul(const Eigen::ThreadPoolDevice* device, void* out, void* lhs,', 91, '类型化 lhs/rhs/output 指针与 m/n/k', '对应 alignment 的 MatMul', '按 16-byte 指针对齐选择模板分支；本轮未测实际指针对齐或内部 microkernel。'),
+    ('xla.cpu-eigen-contract', 'xla', 'CPU executable and runtime', 'xla/backends/cpu/runtime/dot_lib.h', '          Eigen::AlignmentType alignment>', 53, '矩阵维度、transpose 与回调', 'Eigen contraction 赋值', '线程池路径与同步无 device 路径不同；不能推导目标 TPU 实现。'),
+])
+
 EDGES = [
+    ('ifrt.executable-serialize', 'xla.cpu-executable-serialize', '                   pjrt_executable->SerializeExecutable());', 'interface', '底层 executable 为 PjRtCpuExecutable 时。'),
+    ('xla.cpu-aot-create', 'xla.cpu-thunk-sequence-proto', '                   thunk_sequence_serdes.ToProto(thunks));', 'direct', ''),
+    ('xla.cpu-thunk-traced-execute', 'xla.cpu-thunk-trace-fields', '      [&] { return thunk.TraceMeEncode(params.run_id, params.device_ordinal); },', 'direct', 'profiler active 分支。'),
+    ('xla.cpu-thunk-traced-execute', 'xla.cpu-dot-execute', '  auto execute_event = thunk.Execute(params);', 'interface', 'thunk 的动态类型为 DotThunk；当前两组梯度的 serialized kind 与 trace 对应。'),
+    ('xla.cpu-dot-execute', 'xla.cpu-eigen-typed', '      internal::TypedMatMul<LhsType, RhsType, OutType>(', 'direct', '类型分派后的 batch loop。'),
+    ('xla.cpu-eigen-typed', 'xla.cpu-eigen-contract', '    MatMul<LhsType, RhsType, OutType, Eigen::Aligned16>(', 'direct', 'is_aligned=true 分支。'),
+    ('xla.cpu-eigen-typed', 'xla.cpu-eigen-contract', '    MatMul<LhsType, RhsType, OutType, Eigen::Unaligned>(', 'direct', 'is_aligned=false 分支。'),
+
     ("xla.cpu-dot-thunk", "xla.cpu-dot-strategy", "  DotImplementationStrategy strategy = GetDotImplementationStrategy(", "direct", "EmitDotThunk passes allow_runtime_calls=true."),
     ("xla.xplane-trace-events", "xla.internal-trace-stat", "            if (IsInternalStat(stat.Type())) return;", "direct", "转换每个有值的 metadata/occurrence stat 时。"),
     ("xla.ir-compile", "xla.llvm-pass-manager", "          RunIrPasses(module, target_machine->get())) {", "direct", "目标机器创建成功后。"),
@@ -531,6 +558,9 @@ def main():
             entry["related_experiments"] = ["research/jax-stack/matmul-pass-walkthrough.md",
                                             "research/jax-stack/pass-transition-results.json"]
             entry["runtime_boundary"] = "Source-built CPU dumps are separately bound to build 003; this entry does not claim runtime dispatch sampling or TPU execution."
+        if entry["id"] in {'xla.cpu-compilation-proto', 'xla.cpu-eigen-typed', 'jax.pickle-exec', 'xla.cpu-executable-serialize', 'xla.cpu-thunk-sequence-proto', 'xla.cpu-thunk-traced-execute', 'xla.cpu-dot-serdes', 'xla.cpu-thunk-trace-fields', 'xla.cpu-dot-execute', 'xla.cpu-ynn-serdes', 'xla.cpu-aot-create', 'ifrt.executable-serialize', 'xla.cpu-eigen-contract', 'xla.cpu-thunk-proto'}:
+            entry["related_experiments"] = ["research/jax-stack/cpu-executable-and-trace.md", "research/jax-stack/cpu-thunk-results.json"]
+            entry["runtime_boundary"] = "Source-bound CPU serialized thunks and fresh CPU traces are verified separately; no TPU or internal microkernel claim."
     index = {
         "schema_version": "1.0", "kickoff_revision": 51,
         "source_roots": {name: {"path": s["path"], "revision": s["git_commit"]} for name, s in sources.items()},

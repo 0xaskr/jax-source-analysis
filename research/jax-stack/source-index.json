@@ -2932,9 +2932,438 @@
         "research/jax-stack/matmul-pass-walkthrough.md",
         "research/jax-stack/pass-transition-results.json"
       ]
+    },
+    {
+      "id": "jax.pickle-exec",
+      "component": "jax",
+      "layer": "CPU executable and runtime",
+      "symbol": "persistent_id",
+      "revision": "5832e866449a41c3eea6333416528039119a0fde",
+      "path": "upstream/jax/jax/experimental/serialize_executable.py",
+      "line": 93,
+      "end_line": 101,
+      "anchor": "  def persistent_id(self, obj):",
+      "source_url": "https://github.com/jax-ml/jax/blob/5832e866449a41c3eea6333416528039119a0fde/jax/experimental/serialize_executable.py#L93",
+      "source_sha256": "9e281e49c01f52519ba6c003143a23a85266f4c58b91a188ce9437c90bc62878",
+      "inputs": "Python 包装中的 executable 对象",
+      "outputs": "exec persistent id 与序列化 bytes",
+      "constraint": "这里只读取该字节模式；没有调用 Unpickler 或 native loader。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound CPU serialized thunks and fresh CPU traces are verified separately; no TPU or internal microkernel claim.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/cpu-executable-and-trace.md",
+        "research/jax-stack/cpu-thunk-results.json"
+      ]
+    },
+    {
+      "id": "ifrt.executable-serialize",
+      "component": "xla",
+      "layer": "CPU executable and runtime",
+      "symbol": "PjRtExecutable::CommonMetadata::Serialize",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/python/pjrt_ifrt/pjrt_executable.cc",
+      "line": 455,
+      "end_line": null,
+      "anchor": "absl::StatusOr<std::string> PjRtExecutable::CommonMetadata::Serialize(",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/python/pjrt_ifrt/pjrt_executable.cc#L455",
+      "source_sha256": "33209a11b5c567039e9f2f7dc9ae68103933f3712860b13fa4d7caa3e1163446",
+      "inputs": "PJRT executable 与 IFRT common metadata",
+      "outputs": "长度前缀 metadata 加 PJRT opaque payload",
+      "constraint": "IFRT metadata 与后端 executable 是相邻的两段，不能把整体当一个 CPU proto。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound CPU serialized thunks and fresh CPU traces are verified separately; no TPU or internal microkernel claim.",
+      "callers": [],
+      "callees": [
+        "xla.cpu-executable-serialize"
+      ],
+      "related_experiments": [
+        "research/jax-stack/cpu-executable-and-trace.md",
+        "research/jax-stack/cpu-thunk-results.json"
+      ]
+    },
+    {
+      "id": "xla.cpu-executable-serialize",
+      "component": "xla",
+      "layer": "CPU executable and runtime",
+      "symbol": "PjRtCpuExecutable::SerializeExecutable",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/pjrt/cpu/cpu_client.cc",
+      "line": 524,
+      "end_line": null,
+      "anchor": "absl::StatusOr<std::string> PjRtCpuExecutable::SerializeExecutable() const {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/pjrt/cpu/cpu_client.cc#L524",
+      "source_sha256": "d419daaabf4039b93d7693f430a25f2b51d111318fe49a2c8d8d92a0744e177b",
+      "inputs": "PjRtCpuExecutable",
+      "outputs": "ExecutableAndOptionsProto",
+      "constraint": "CPU compiler Export 的结果再与 compile options 打包。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound CPU serialized thunks and fresh CPU traces are verified separately; no TPU or internal microkernel claim.",
+      "callers": [
+        "ifrt.executable-serialize"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/cpu-executable-and-trace.md",
+        "research/jax-stack/cpu-thunk-results.json"
+      ]
+    },
+    {
+      "id": "xla.cpu-aot-create",
+      "component": "xla",
+      "layer": "CPU executable and runtime",
+      "symbol": "CpuAotCompilationResult::Create",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/service/cpu/cpu_aot_compilation_result.cc",
+      "line": 76,
+      "end_line": null,
+      "anchor": "CpuAotCompilationResult::Create(",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/service/cpu/cpu_aot_compilation_result.cc#L76",
+      "source_sha256": "acd6c27b82f30a14a1c7a31c95432a24b3e3f046f3ad6528fbdb504fe76e9a67",
+      "inputs": "HLO、buffers、objects、symbols、thunks",
+      "outputs": "CpuAotCompilationResult",
+      "constraint": "保存实际 thunk sequence 及对象；不是仅记录 HLO 图。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound CPU serialized thunks and fresh CPU traces are verified separately; no TPU or internal microkernel claim.",
+      "callers": [],
+      "callees": [
+        "xla.cpu-thunk-sequence-proto"
+      ],
+      "related_experiments": [
+        "research/jax-stack/cpu-executable-and-trace.md",
+        "research/jax-stack/cpu-thunk-results.json"
+      ]
+    },
+    {
+      "id": "xla.cpu-compilation-proto",
+      "component": "xla",
+      "layer": "CPU executable and runtime",
+      "symbol": "{",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/service/cpu/executable.proto",
+      "line": 45,
+      "end_line": null,
+      "anchor": "message CompilationResultProto {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/service/cpu/executable.proto#L45",
+      "source_sha256": "d8a713b3fa5e5e0711babc3739d4550eaf52314232cb5640c4f32eaaa6ce56d8",
+      "inputs": "CPU 编译产物",
+      "outputs": "CompilationResultProto 字段合同",
+      "constraint": "本例 obj_files_kind=KERNELS，含 HLO/config、buffer assignment、thunks、symbols 与 objects。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound CPU serialized thunks and fresh CPU traces are verified separately; no TPU or internal microkernel claim.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/cpu-executable-and-trace.md",
+        "research/jax-stack/cpu-thunk-results.json"
+      ]
+    },
+    {
+      "id": "xla.cpu-thunk-proto",
+      "component": "xla",
+      "layer": "CPU executable and runtime",
+      "symbol": "{",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/backends/cpu/runtime/thunk.proto",
+      "line": 297,
+      "end_line": null,
+      "anchor": "message ThunkProto {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/backends/cpu/runtime/thunk.proto#L297",
+      "source_sha256": "25336d2ffdfde485b93ed332a172f0e8f3b0072d149e10b89897975e1569d960",
+      "inputs": "thunk kind/info/impl",
+      "outputs": "oneof 实现与公共身份",
+      "constraint": "kind 字符串与 oneof 必须一致；DotThunk 与 KernelThunk 分开。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound CPU serialized thunks and fresh CPU traces are verified separately; no TPU or internal microkernel claim.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/cpu-executable-and-trace.md",
+        "research/jax-stack/cpu-thunk-results.json"
+      ]
+    },
+    {
+      "id": "xla.cpu-dot-serdes",
+      "component": "xla",
+      "layer": "CPU executable and runtime",
+      "symbol": "DotThunkToProto",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/backends/cpu/runtime/thunk_serdes/dot_thunk_serdes.cc",
+      "line": 42,
+      "end_line": null,
+      "anchor": "absl::Status DotThunkToProto(const Thunk& thunk, ThunkProto& proto) {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/backends/cpu/runtime/thunk_serdes/dot_thunk_serdes.cc#L42",
+      "source_sha256": "93d74a5d061b5363d0e9085ae1d7dc1d4a9ba26c46323d9c5783ea7f75c48e24",
+      "inputs": "实际 DotThunk",
+      "outputs": "DotThunkProto",
+      "constraint": "序列化 dot dimensions、lhs/rhs/output shape 和 allocation slices。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound CPU serialized thunks and fresh CPU traces are verified separately; no TPU or internal microkernel claim.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/cpu-executable-and-trace.md",
+        "research/jax-stack/cpu-thunk-results.json"
+      ]
+    },
+    {
+      "id": "xla.cpu-ynn-serdes",
+      "component": "xla",
+      "layer": "CPU executable and runtime",
+      "symbol": "YnnFusionThunkToProto",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/backends/cpu/runtime/thunk_serdes/ynn_fusion_thunk_serdes.cc",
+      "line": 57,
+      "end_line": null,
+      "anchor": "absl::Status YnnFusionThunkToProto(const Thunk& thunk, ThunkProto& proto) {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/backends/cpu/runtime/thunk_serdes/ynn_fusion_thunk_serdes.cc#L57",
+      "source_sha256": "a9ba903df9d37489daccaba609653386e547c753ebe08cea8107a78940922794",
+      "inputs": "实际 YnnFusionThunk",
+      "outputs": "YnnFusionThunkProto",
+      "constraint": "记录 HLO instruction id 和参数/结果 slices；依赖对应 fusion computation。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound CPU serialized thunks and fresh CPU traces are verified separately; no TPU or internal microkernel claim.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/cpu-executable-and-trace.md",
+        "research/jax-stack/cpu-thunk-results.json"
+      ]
+    },
+    {
+      "id": "xla.cpu-thunk-sequence-proto",
+      "component": "xla",
+      "layer": "CPU executable and runtime",
+      "symbol": "ThunkSequenceSerDesProtobuf::ToProto",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/backends/cpu/runtime/thunk_proto_serdes.cc",
+      "line": 928,
+      "end_line": null,
+      "anchor": "absl::StatusOr<ThunkSequenceProto> ThunkSequenceSerDesProtobuf::ToProto(",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/backends/cpu/runtime/thunk_proto_serdes.cc#L928",
+      "source_sha256": "9f52920642fcbd1a624c68a5f2ac9380390a059ab3f80036989a51486d382c6f",
+      "inputs": "ThunkSequence 与资源关系",
+      "outputs": "ThunkSequenceProto",
+      "constraint": "逐 thunk 序列化并收集资源使用者；列表顺序本身不能证明并发执行时间线。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound CPU serialized thunks and fresh CPU traces are verified separately; no TPU or internal microkernel claim.",
+      "callers": [
+        "xla.cpu-aot-create"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/cpu-executable-and-trace.md",
+        "research/jax-stack/cpu-thunk-results.json"
+      ]
+    },
+    {
+      "id": "xla.cpu-thunk-traced-execute",
+      "component": "xla",
+      "layer": "CPU executable and runtime",
+      "symbol": "ThunkExecutor::TracedExecute",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/backends/cpu/runtime/thunk_executor.cc",
+      "line": 222,
+      "end_line": null,
+      "anchor": "tsl::AsyncValueRef<Thunk::ExecuteEvent> ThunkExecutor::TracedExecute(",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/backends/cpu/runtime/thunk_executor.cc#L222",
+      "source_sha256": "10b50662219dc3035534db47a09a992513504b72e87478ac3f446e2da2bf74b7",
+      "inputs": "thunk 与 ExecuteParams",
+      "outputs": "ExecuteEvent 及 producer/consumer trace",
+      "constraint": "TraceMeProducer 围绕 Execute 返回，完成回调生成 end 事件；producer duration 不能一般化为异步完整时长。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound CPU serialized thunks and fresh CPU traces are verified separately; no TPU or internal microkernel claim.",
+      "callers": [],
+      "callees": [
+        "xla.cpu-dot-execute",
+        "xla.cpu-thunk-trace-fields"
+      ],
+      "related_experiments": [
+        "research/jax-stack/cpu-executable-and-trace.md",
+        "research/jax-stack/cpu-thunk-results.json"
+      ]
+    },
+    {
+      "id": "xla.cpu-thunk-trace-fields",
+      "component": "xla",
+      "layer": "CPU executable and runtime",
+      "symbol": "Thunk::TraceMeEncode",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/backends/cpu/runtime/thunk.cc",
+      "line": 181,
+      "end_line": null,
+      "anchor": "std::string Thunk::TraceMeEncode(int64_t run_id, int64_t device_ordinal) const {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/backends/cpu/runtime/thunk.cc#L181",
+      "source_sha256": "f27d8203635c9c7a22fea4281261a8dedb062b10d68acbabead429966b2bbb94",
+      "inputs": "op/module identity、run_id、device ordinal",
+      "outputs": "TraceMe metadata",
+      "constraint": "导出 JSON 未保留 program_id；end 事件另只带名称，不能任意并发拼接。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound CPU serialized thunks and fresh CPU traces are verified separately; no TPU or internal microkernel claim.",
+      "callers": [
+        "xla.cpu-thunk-traced-execute"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/cpu-executable-and-trace.md",
+        "research/jax-stack/cpu-thunk-results.json"
+      ]
+    },
+    {
+      "id": "xla.cpu-dot-execute",
+      "component": "xla",
+      "layer": "CPU executable and runtime",
+      "symbol": "DotThunk::Execute",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/backends/cpu/runtime/dot_thunk.cc",
+      "line": 74,
+      "end_line": null,
+      "anchor": "tsl::AsyncValueRef<DotThunk::ExecuteEvent> DotThunk::Execute(",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/backends/cpu/runtime/dot_thunk.cc#L74",
+      "source_sha256": "a5f21ad7e949a3315c668f5277d2691439fe511969a874ee6d1051f507c270a1",
+      "inputs": "dot shape/slices 与线程池",
+      "outputs": "矩阵乘完成事件",
+      "constraint": "从 allocation 取得地址，处理行列布局与 transpose，再调用 TypedMatMul。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound CPU serialized thunks and fresh CPU traces are verified separately; no TPU or internal microkernel claim.",
+      "callers": [
+        "xla.cpu-thunk-traced-execute"
+      ],
+      "callees": [
+        "xla.cpu-eigen-typed"
+      ],
+      "related_experiments": [
+        "research/jax-stack/cpu-executable-and-trace.md",
+        "research/jax-stack/cpu-thunk-results.json"
+      ]
+    },
+    {
+      "id": "xla.cpu-eigen-typed",
+      "component": "xla",
+      "layer": "CPU executable and runtime",
+      "symbol": "TypedMatMul",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/backends/cpu/runtime/dot_lib.h",
+      "line": 91,
+      "end_line": null,
+      "anchor": "void TypedMatMul(const Eigen::ThreadPoolDevice* device, void* out, void* lhs,",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/backends/cpu/runtime/dot_lib.h#L91",
+      "source_sha256": "3f2a3b7a2750742dd0bdccbdf0af3a4e42c892c78ea4c37d318d76445bfef210",
+      "inputs": "类型化 lhs/rhs/output 指针与 m/n/k",
+      "outputs": "对应 alignment 的 MatMul",
+      "constraint": "按 16-byte 指针对齐选择模板分支；本轮未测实际指针对齐或内部 microkernel。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound CPU serialized thunks and fresh CPU traces are verified separately; no TPU or internal microkernel claim.",
+      "callers": [
+        "xla.cpu-dot-execute"
+      ],
+      "callees": [
+        "xla.cpu-eigen-contract"
+      ],
+      "related_experiments": [
+        "research/jax-stack/cpu-executable-and-trace.md",
+        "research/jax-stack/cpu-thunk-results.json"
+      ]
+    },
+    {
+      "id": "xla.cpu-eigen-contract",
+      "component": "xla",
+      "layer": "CPU executable and runtime",
+      "symbol": "alignment>",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/backends/cpu/runtime/dot_lib.h",
+      "line": 53,
+      "end_line": null,
+      "anchor": "          Eigen::AlignmentType alignment>",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/backends/cpu/runtime/dot_lib.h#L53",
+      "source_sha256": "3f2a3b7a2750742dd0bdccbdf0af3a4e42c892c78ea4c37d318d76445bfef210",
+      "inputs": "矩阵维度、transpose 与回调",
+      "outputs": "Eigen contraction 赋值",
+      "constraint": "线程池路径与同步无 device 路径不同；不能推导目标 TPU 实现。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound CPU serialized thunks and fresh CPU traces are verified separately; no TPU or internal microkernel claim.",
+      "callers": [
+        "xla.cpu-eigen-typed"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/cpu-executable-and-trace.md",
+        "research/jax-stack/cpu-thunk-results.json"
+      ]
     }
   ],
   "edges": [
+    {
+      "caller": "ifrt.executable-serialize",
+      "callee": "xla.cpu-executable-serialize",
+      "kind": "interface",
+      "condition": "底层 executable 为 PjRtCpuExecutable 时。",
+      "path": "upstream/xla/xla/python/pjrt_ifrt/pjrt_executable.cc",
+      "line": 604,
+      "anchor": "                   pjrt_executable->SerializeExecutable());",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.cpu-aot-create",
+      "callee": "xla.cpu-thunk-sequence-proto",
+      "kind": "direct",
+      "condition": "",
+      "path": "upstream/xla/xla/service/cpu/cpu_aot_compilation_result.cc",
+      "line": 85,
+      "anchor": "                   thunk_sequence_serdes.ToProto(thunks));",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.cpu-thunk-traced-execute",
+      "callee": "xla.cpu-thunk-trace-fields",
+      "kind": "direct",
+      "condition": "profiler active 分支。",
+      "path": "upstream/xla/xla/backends/cpu/runtime/thunk_executor.cc",
+      "line": 231,
+      "anchor": "      [&] { return thunk.TraceMeEncode(params.run_id, params.device_ordinal); },",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.cpu-thunk-traced-execute",
+      "callee": "xla.cpu-dot-execute",
+      "kind": "interface",
+      "condition": "thunk 的动态类型为 DotThunk；当前两组梯度的 serialized kind 与 trace 对应。",
+      "path": "upstream/xla/xla/backends/cpu/runtime/thunk_executor.cc",
+      "line": 234,
+      "anchor": "  auto execute_event = thunk.Execute(params);",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.cpu-dot-execute",
+      "callee": "xla.cpu-eigen-typed",
+      "kind": "direct",
+      "condition": "类型分派后的 batch loop。",
+      "path": "upstream/xla/xla/backends/cpu/runtime/dot_thunk.cc",
+      "line": 176,
+      "anchor": "      internal::TypedMatMul<LhsType, RhsType, OutType>(",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.cpu-eigen-typed",
+      "callee": "xla.cpu-eigen-contract",
+      "kind": "direct",
+      "condition": "is_aligned=true 分支。",
+      "path": "upstream/xla/xla/backends/cpu/runtime/dot_lib.h",
+      "line": 102,
+      "anchor": "    MatMul<LhsType, RhsType, OutType, Eigen::Aligned16>(",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.cpu-eigen-typed",
+      "callee": "xla.cpu-eigen-contract",
+      "kind": "direct",
+      "condition": "is_aligned=false 分支。",
+      "path": "upstream/xla/xla/backends/cpu/runtime/dot_lib.h",
+      "line": 107,
+      "anchor": "    MatMul<LhsType, RhsType, OutType, Eigen::Unaligned>(",
+      "evidence_level": "SOURCE-ONLY"
+    },
     {
       "caller": "xla.cpu-dot-thunk",
       "callee": "xla.cpu-dot-strategy",

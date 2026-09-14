@@ -3,7 +3,8 @@
 这次沿 **源码构建 003** 的四个 matmul 样本逐步解释中间 HLO。原始计算是
 `RUN-CPU`，本次读取已有 dump 是 `REPLAY-OFFLINE`，两者均无 `VERSION-SKEW`。
 生产与复查进程的 native payload 都绑定到同一 wheel；构建身份见
-[源码运行基线](source-runtime-baseline.md)。本次没有重新执行 HLO，也没有 TPU/LLO 证据。
+[源码运行基线](source-runtime-baseline.md)。本次 pass 审计没有重新执行 HLO，也没有 TPU/LLO 证据。
+后续 [CPU executable 与 trace](cpu-executable-and-trace.md) 已单独验证剩余 dot 的 DotThunk/Eigen 分支。
 
 原始 capture：`artifacts/jax-stack/source-runtime-002/suite/matmul/`。
 派生记录：`artifacts/jax-stack/source-lowering-audit-001/passes/`；
@@ -135,7 +136,7 @@ layout 约束入口是 [CpuLayoutAssignment](../../upstream/xla/xla/service/cpu/
 梯度中剩余的 dot 则由
 [EmitDotThunk](../../upstream/xla/xla/service/cpu/thunk_emitter.cc#L985)
 调用 [GetDotImplementationStrategy](../../upstream/xla/xla/service/cpu/dot_op_emitter.cc#L1413)，
-选择 LLVM kernel 或 Eigen DotThunk；本次没有仅根据缺少对象 dump 就把该选择写成实测事实。
+选择 LLVM kernel 或 Eigen DotThunk；本次 pass 审计没有根据缺少对象 dump 推断具体选择；后续序列化与 warm trace 已确认本例走 DotThunk/Eigen，见上述独立记录。
 
 ## 复查入口
 

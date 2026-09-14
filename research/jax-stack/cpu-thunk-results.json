@@ -1,0 +1,1753 @@
+{
+  "audit_manifest": {
+    "path": "artifacts/jax-stack/cpu-thunk-audit-002/capture/manifest.json",
+    "sha256": "583c9f0e943638570b14e43fe7a565acf845d2c93b1986f692143cecfbdcbc70",
+    "artifact_count": 62
+  },
+  "evidence_level": "REPLAY-OFFLINE",
+  "qualifiers": [],
+  "schema": {
+    "path": "artifacts/jax-stack/cpu-thunk-schema-002/manifest.json",
+    "sha256": "ef1ec765bc67ed4b489e97ff5a442b7f6c17a45f2184046559243c222a4783ca",
+    "artifact_count": 94
+  },
+  "original_capture": {
+    "path": "artifacts/jax-stack/source-runtime-002/suite/matmul",
+    "manifest_sha256": "4a99d774f2164eddaaeff6dbc3264055802b8b39a549561040093f3d50c150e0"
+  },
+  "runtime_capture": {
+    "path": "artifacts/jax-stack/cpu-thunk-runtime-002/capture/manifest.json",
+    "sha256": "2215c83c0da2754c7da61315e56309ecb0fc0e51ac5dd0d3409426bb98cf78ff",
+    "artifact_count": 39
+  },
+  "build_binding": {
+    "kind": "source-build-native-payload-bound",
+    "source_build_verified": true,
+    "build_manifest_path": "manifests/build-fingerprints/kickoff-cpu-source-003.json",
+    "build_manifest": {
+      "sha256": "e71c74f91c88d7a3273f8753b0e45bf7ef23435ffb86f9af6158845b258fe622",
+      "size_bytes": 13406
+    },
+    "build_id": "kickoff-cpu-source-003",
+    "input_fingerprint_sha256": "e37cb5059351a11dc611845e1b0b1bdcc69910d6eda680f66192e26963dab494",
+    "source_patches": [],
+    "wheel": {
+      "path": "artifacts/builds/kickoff-cpu-source-003/attempts/0001/wheels/jaxlib-0.11.2.dev0+selfbuilt-cp312-cp312-manylinux_2_27_x86_64.whl",
+      "sha256": "8e0e4f9c87de126cd1316e46897b53368744056a1f14c7208c6061773b9b1cef",
+      "size_bytes": 88323271
+    },
+    "matched_loaded_payloads": [
+      {
+        "wheel_member": "jaxlib/_hlo.so",
+        "package_path": "_hlo.so",
+        "sha256": "d2f2c148131b479eae0da7740b590805c9dc1eb723251c9a056580c7da4e001e",
+        "size_bytes": 7464,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/_hlo.so"
+      },
+      {
+        "wheel_member": "jaxlib/_ifrt_proxy.so",
+        "package_path": "_ifrt_proxy.so",
+        "sha256": "3e96209e5ce27f642c322e21f279e5c1508cf2fb35dc888463108f511298ed45",
+        "size_bytes": 7480,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/_ifrt_proxy.so"
+      },
+      {
+        "wheel_member": "jaxlib/_jax.so",
+        "package_path": "_jax.so",
+        "sha256": "f66ad0e3c36d2173a9a1deaa111fb90bbbf6d790998ade2c90c4e572b154b2f5",
+        "size_bytes": 7464,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/_jax.so"
+      },
+      {
+        "wheel_member": "jaxlib/_pretty_printer.so",
+        "package_path": "_pretty_printer.so",
+        "sha256": "cfde380183392bea2c685119d79d22fd890cd5f927f51eacb3c56c21d25450df",
+        "size_bytes": 7496,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/_pretty_printer.so"
+      },
+      {
+        "wheel_member": "jaxlib/_profile_data.so",
+        "package_path": "_profile_data.so",
+        "sha256": "f72deb0247d091fcfbc6cb759207e029f0b0c006979386787b47dd43d5826053",
+        "size_bytes": 7488,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/_profile_data.so"
+      },
+      {
+        "wheel_member": "jaxlib/_profiler.so",
+        "package_path": "_profiler.so",
+        "sha256": "7299aa3f77374bdb56bf639837b66c64d78582e63df50a1c018d251caefbe5bf",
+        "size_bytes": 7472,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/_profiler.so"
+      },
+      {
+        "wheel_member": "jaxlib/_xla.so",
+        "package_path": "_xla.so",
+        "sha256": "54b91a1c9ddf91cddf75adae9cc8d2e4592762ce5eb2779e4ef85461fd327b25",
+        "size_bytes": 7464,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/_xla.so"
+      },
+      {
+        "wheel_member": "jaxlib/cpu/_lapack.so",
+        "package_path": "cpu/_lapack.so",
+        "sha256": "e4bbd519222b9260afdb326472bdcca2ad194c020e40cfcc81e35d80ac3a8f3b",
+        "size_bytes": 1896736,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/cpu/_lapack.so"
+      },
+      {
+        "wheel_member": "jaxlib/cpu/_sparse.so",
+        "package_path": "cpu/_sparse.so",
+        "sha256": "81daf38d50091286eb0f4a94c31e47096115ab604d90cfbda159bbf28342fa15",
+        "size_bytes": 252840,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/cpu/_sparse.so"
+      },
+      {
+        "wheel_member": "jaxlib/cpu_feature_guard.so",
+        "package_path": "cpu_feature_guard.so",
+        "sha256": "c0ff24e36a27006c3c63ff883885c0f4e8d162db5a9b93ba19bbc3d7e746774f",
+        "size_bytes": 7968,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/cpu_feature_guard.so"
+      },
+      {
+        "wheel_member": "jaxlib/libjax_common.so",
+        "package_path": "libjax_common.so",
+        "sha256": "ad1714b81f1a22fa1195df0522c64f3133a9063d2715bd37983771d1418ac6e9",
+        "size_bytes": 349198048,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/libjax_common.so"
+      },
+      {
+        "wheel_member": "jaxlib/mlir/_mlir_libs/_chlo.so",
+        "package_path": "mlir/_mlir_libs/_chlo.so",
+        "sha256": "dac89f7413d9a0f5873262f1e4f51b03385455b447663899da940ce7a1158893",
+        "size_bytes": 7464,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_chlo.so"
+      },
+      {
+        "wheel_member": "jaxlib/mlir/_mlir_libs/_jax_mlir_ext.so",
+        "package_path": "mlir/_mlir_libs/_jax_mlir_ext.so",
+        "sha256": "da27306f772b5169b2b7e7f380956052fcfa3c7e181a2dcc666ae976a0542131",
+        "size_bytes": 7488,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_jax_mlir_ext.so"
+      },
+      {
+        "wheel_member": "jaxlib/mlir/_mlir_libs/_mlir.so",
+        "package_path": "mlir/_mlir_libs/_mlir.so",
+        "sha256": "9aeaea0612ca59b2150304faa806c8fe5bf6be40ddc9f45538425b00a0583d7a",
+        "size_bytes": 7464,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_mlir.so"
+      },
+      {
+        "wheel_member": "jaxlib/mlir/_mlir_libs/_mlirHlo.so",
+        "package_path": "mlir/_mlir_libs/_mlirHlo.so",
+        "sha256": "325b180ce737ccb848d9e71e39cdd898ce0d3ff25ccb1438cfc31160cccc5dae",
+        "size_bytes": 7472,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_mlirHlo.so"
+      },
+      {
+        "wheel_member": "jaxlib/mlir/_mlir_libs/_mosaic_gpu_ext.so",
+        "package_path": "mlir/_mlir_libs/_mosaic_gpu_ext.so",
+        "sha256": "8e140d05dfc539020ac578b056d05addafcc633b1f1f0bebf010f6b60aee5fdb",
+        "size_bytes": 7496,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_mosaic_gpu_ext.so"
+      },
+      {
+        "wheel_member": "jaxlib/mlir/_mlir_libs/_sdy.so",
+        "package_path": "mlir/_mlir_libs/_sdy.so",
+        "sha256": "1f2d0c9addce813dddf5cc8a71af01abfbea5a5d06fa9b0a26c82ec230ecbf3c",
+        "size_bytes": 7464,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_sdy.so"
+      },
+      {
+        "wheel_member": "jaxlib/mlir/_mlir_libs/_sdyMpmd.so",
+        "package_path": "mlir/_mlir_libs/_sdyMpmd.so",
+        "sha256": "77eb5f69f222efa5919c457618a92250fe82d081369dff6b8f9e89d15cad066d",
+        "size_bytes": 7472,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_sdyMpmd.so"
+      },
+      {
+        "wheel_member": "jaxlib/mlir/_mlir_libs/_stablehlo.so",
+        "package_path": "mlir/_mlir_libs/_stablehlo.so",
+        "sha256": "9f171cf2de4713f0d9c1bd30a431052d4fa5aa18e07a40c98348773ee7d514c3",
+        "size_bytes": 7480,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_stablehlo.so"
+      },
+      {
+        "wheel_member": "jaxlib/mlir/_mlir_libs/_tpu_ext.so",
+        "package_path": "mlir/_mlir_libs/_tpu_ext.so",
+        "sha256": "6ec6f806446841349662e15dedde194e01da201a5dd2f8e351ee840be00f9f56",
+        "size_bytes": 7472,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_tpu_ext.so"
+      },
+      {
+        "wheel_member": "jaxlib/utils.so",
+        "package_path": "utils.so",
+        "sha256": "271bfc22d4f630e9292d6d485e118d12ab3501b99eb2ee4e8d841b02212c1bca",
+        "size_bytes": 7464,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/utils.so"
+      },
+      {
+        "wheel_member": "jaxlib/weakref_lru_cache.so",
+        "package_path": "weakref_lru_cache.so",
+        "sha256": "0ea3970d6694b2a11a74c4554a8caf5552d7f4221306655f33d24c50b056f08f",
+        "size_bytes": 7496,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/weakref_lru_cache.so"
+      }
+    ],
+    "scope": "Loaded jaxlib payloads match the recorded wheel. This does not add GPU/TPU evidence or prove a complete offline dependency closure."
+  },
+  "verification_runtime": {
+    "source_build_verified": true,
+    "build_id": "kickoff-cpu-source-003",
+    "native_payloads": {
+      "jaxlib/_hlo.so": "d2f2c148131b479eae0da7740b590805c9dc1eb723251c9a056580c7da4e001e",
+      "jaxlib/_ifrt_proxy.so": "3e96209e5ce27f642c322e21f279e5c1508cf2fb35dc888463108f511298ed45",
+      "jaxlib/_jax.so": "f66ad0e3c36d2173a9a1deaa111fb90bbbf6d790998ade2c90c4e572b154b2f5",
+      "jaxlib/_pretty_printer.so": "cfde380183392bea2c685119d79d22fd890cd5f927f51eacb3c56c21d25450df",
+      "jaxlib/_profile_data.so": "f72deb0247d091fcfbc6cb759207e029f0b0c006979386787b47dd43d5826053",
+      "jaxlib/_profiler.so": "7299aa3f77374bdb56bf639837b66c64d78582e63df50a1c018d251caefbe5bf",
+      "jaxlib/_xla.so": "54b91a1c9ddf91cddf75adae9cc8d2e4592762ce5eb2779e4ef85461fd327b25",
+      "jaxlib/cpu/_lapack.so": "e4bbd519222b9260afdb326472bdcca2ad194c020e40cfcc81e35d80ac3a8f3b",
+      "jaxlib/cpu/_sparse.so": "81daf38d50091286eb0f4a94c31e47096115ab604d90cfbda159bbf28342fa15",
+      "jaxlib/cpu_feature_guard.so": "c0ff24e36a27006c3c63ff883885c0f4e8d162db5a9b93ba19bbc3d7e746774f",
+      "jaxlib/libjax_common.so": "ad1714b81f1a22fa1195df0522c64f3133a9063d2715bd37983771d1418ac6e9",
+      "jaxlib/mlir/_mlir_libs/_chlo.so": "dac89f7413d9a0f5873262f1e4f51b03385455b447663899da940ce7a1158893",
+      "jaxlib/mlir/_mlir_libs/_jax_mlir_ext.so": "da27306f772b5169b2b7e7f380956052fcfa3c7e181a2dcc666ae976a0542131",
+      "jaxlib/mlir/_mlir_libs/_mlir.so": "9aeaea0612ca59b2150304faa806c8fe5bf6be40ddc9f45538425b00a0583d7a",
+      "jaxlib/mlir/_mlir_libs/_mosaic_gpu_ext.so": "8e140d05dfc539020ac578b056d05addafcc633b1f1f0bebf010f6b60aee5fdb",
+      "jaxlib/mlir/_mlir_libs/_sdy.so": "1f2d0c9addce813dddf5cc8a71af01abfbea5a5d06fa9b0a26c82ec230ecbf3c",
+      "jaxlib/mlir/_mlir_libs/_sdyMpmd.so": "77eb5f69f222efa5919c457618a92250fe82d081369dff6b8f9e89d15cad066d",
+      "jaxlib/mlir/_mlir_libs/_stablehlo.so": "9f171cf2de4713f0d9c1bd30a431052d4fa5aa18e07a40c98348773ee7d514c3",
+      "jaxlib/mlir/_mlir_libs/_tpu_ext.so": "6ec6f806446841349662e15dedde194e01da201a5dd2f8e351ee840be00f9f56",
+      "jaxlib/utils.so": "271bfc22d4f630e9292d6d485e118d12ab3501b99eb2ee4e8d841b02212c1bca",
+      "jaxlib/weakref_lru_cache.so": "0ea3970d6694b2a11a74c4554a8caf5552d7f4221306655f33d24c50b056f08f"
+    },
+    "scope": "Current verifier process imports and loaded native payloads match the capture's source-built wheel."
+  },
+  "newly_loaded_native_libraries": [
+    "mlir/_mlir_libs/_mlirHlo.so"
+  ],
+  "cases": [
+    {
+      "case": "matmul",
+      "views": {
+        "original": {
+          "package": {
+            "path": "artifacts/jax-stack/source-runtime-002/suite/matmul/matmul/executable.bin",
+            "sha256": "558870684f8ac5615f6d6db32fe7c726ac5f6d0ab479b2fcb174759848c1ae4d",
+            "size_bytes": 6863
+          },
+          "packaging": {
+            "pickle_protocol": 4,
+            "pickle_opcode": "BINBYTES",
+            "payload_offset": 103,
+            "payload_size": 5276,
+            "payload_sha256": "ba787b5aa32d8e3228695471e3d45ac01bc5d80bab6a1208425764f4f18643c0",
+            "scope": "Opcode scanning only; no pickle execution.",
+            "metadata_length_prefix_bytes": 2,
+            "metadata_bytes": 133,
+            "pjrt_bytes": 5141,
+            "cpu_proto_bytes": 3908
+          },
+          "projection": {
+            "module_name": "jit_matmul",
+            "module_id": 4,
+            "entry_computation": "main.1",
+            "object_kind": "KERNELS",
+            "compiled_symbols": {},
+            "objects": [],
+            "thunks": [
+              {
+                "kind": "ynn-fusion",
+                "impl": "ynn_fusion_thunk",
+                "op_name": "ynn_fusion",
+                "hlo_instruction_id": 4294967298,
+                "hlo_opcode": "fusion",
+                "arguments": [
+                  {
+                    "shape": [
+                      4,
+                      8
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 1,
+                    "offset": 0,
+                    "size": 128
+                  },
+                  {
+                    "shape": [
+                      8,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 0,
+                    "offset": 0,
+                    "size": 192
+                  }
+                ],
+                "results": [
+                  {
+                    "shape": [
+                      4,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 2,
+                    "offset": 0,
+                    "size": 96
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "fresh": {
+          "package": {
+            "path": "artifacts/jax-stack/cpu-thunk-runtime-002/capture/matmul/executable.bin",
+            "sha256": "699c259763e4730f1a0d42c3c454a50c60a15d5f01dc81f1ef5dfd37aa54f60f",
+            "size_bytes": 6422
+          },
+          "packaging": {
+            "pickle_protocol": 4,
+            "pickle_opcode": "BINBYTES",
+            "payload_offset": 103,
+            "payload_size": 4839,
+            "payload_sha256": "c4c5bb6a93fd282471be8ccde30157d9c488a6db82ff7b85efb7c4afad227b15",
+            "scope": "Opcode scanning only; no pickle execution.",
+            "metadata_length_prefix_bytes": 2,
+            "metadata_bytes": 133,
+            "pjrt_bytes": 4704,
+            "cpu_proto_bytes": 3599
+          },
+          "projection": {
+            "module_name": "jit_matmul",
+            "module_id": 0,
+            "entry_computation": "main.1",
+            "object_kind": "KERNELS",
+            "compiled_symbols": {},
+            "objects": [],
+            "thunks": [
+              {
+                "kind": "ynn-fusion",
+                "impl": "ynn_fusion_thunk",
+                "op_name": "ynn_fusion",
+                "hlo_instruction_id": 4294967298,
+                "hlo_opcode": "fusion",
+                "arguments": [
+                  {
+                    "shape": [
+                      4,
+                      8
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 1,
+                    "offset": 0,
+                    "size": 128
+                  },
+                  {
+                    "shape": [
+                      8,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 0,
+                    "offset": 0,
+                    "size": 192
+                  }
+                ],
+                "results": [
+                  {
+                    "shape": [
+                      4,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 2,
+                    "offset": 0,
+                    "size": 96
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "runtime_trace": {
+        "invocations": [
+          {
+            "iteration": 0,
+            "run_id": "-113118168",
+            "producer_count": 1,
+            "completion_count": 1,
+            "worker_thread_differs_from_python": false
+          },
+          {
+            "iteration": 1,
+            "run_id": "-113118167",
+            "producer_count": 1,
+            "completion_count": 1,
+            "worker_thread_differs_from_python": false
+          },
+          {
+            "iteration": 2,
+            "run_id": "-113118166",
+            "producer_count": 1,
+            "completion_count": 1,
+            "worker_thread_differs_from_python": false
+          }
+        ],
+        "producer_events": 3,
+        "completion_events": 3,
+        "selected_compile_events": [],
+        "limits": "End events have no exported run_id; association is valid for these three non-overlapping blocking windows only. Producer duration is not a general asynchronous operation duration."
+      },
+      "max_absolute_error": 5.102698930059546e-08
+    },
+    {
+      "case": "vmap_matmul",
+      "views": {
+        "original": {
+          "package": {
+            "path": "artifacts/jax-stack/source-runtime-002/suite/matmul/vmap_matmul/executable.bin",
+            "sha256": "0e6204b4de0f75d6719e0a1ad4de66b23e4473167d8593cf74ecc399828ac52f",
+            "size_bytes": 7127
+          },
+          "packaging": {
+            "pickle_protocol": 4,
+            "pickle_opcode": "BINBYTES",
+            "payload_offset": 103,
+            "payload_size": 5499,
+            "payload_sha256": "9e3cc4e16d3df692510eb9602f41f23390dcfaf23ac1a201a2e7426760bad1f2",
+            "scope": "Opcode scanning only; no pickle execution.",
+            "metadata_length_prefix_bytes": 2,
+            "metadata_bytes": 136,
+            "pjrt_bytes": 5361,
+            "cpu_proto_bytes": 4125
+          },
+          "projection": {
+            "module_name": "jit_matmul",
+            "module_id": 14,
+            "entry_computation": "main.1",
+            "object_kind": "KERNELS",
+            "compiled_symbols": {},
+            "objects": [],
+            "thunks": [
+              {
+                "kind": "ynn-fusion",
+                "impl": "ynn_fusion_thunk",
+                "op_name": "ynn_fusion",
+                "hlo_instruction_id": 4294967300,
+                "hlo_opcode": "fusion",
+                "arguments": [
+                  {
+                    "shape": [
+                      12,
+                      8
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 0,
+                    "offset": 0,
+                    "size": 384
+                  },
+                  {
+                    "shape": [
+                      8,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 2,
+                    "offset": 0,
+                    "size": 192
+                  }
+                ],
+                "results": [
+                  {
+                    "shape": [
+                      12,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 1,
+                    "offset": 0,
+                    "size": 288
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "fresh": {
+          "package": {
+            "path": "artifacts/jax-stack/cpu-thunk-runtime-002/capture/vmap_matmul/executable.bin",
+            "sha256": "203ab86f4406ecd66cc8f020ddd6830b15b29f2037f0bb1e1466396a3a79e3e0",
+            "size_bytes": 6686
+          },
+          "packaging": {
+            "pickle_protocol": 4,
+            "pickle_opcode": "BINBYTES",
+            "payload_offset": 103,
+            "payload_size": 5062,
+            "payload_sha256": "7cb4411570157bf333c565ab24e431abdedef2d64a4b152de7013af097564042",
+            "scope": "Opcode scanning only; no pickle execution.",
+            "metadata_length_prefix_bytes": 2,
+            "metadata_bytes": 136,
+            "pjrt_bytes": 4924,
+            "cpu_proto_bytes": 3816
+          },
+          "projection": {
+            "module_name": "jit_matmul",
+            "module_id": 3,
+            "entry_computation": "main.1",
+            "object_kind": "KERNELS",
+            "compiled_symbols": {},
+            "objects": [],
+            "thunks": [
+              {
+                "kind": "ynn-fusion",
+                "impl": "ynn_fusion_thunk",
+                "op_name": "ynn_fusion",
+                "hlo_instruction_id": 4294967300,
+                "hlo_opcode": "fusion",
+                "arguments": [
+                  {
+                    "shape": [
+                      12,
+                      8
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 0,
+                    "offset": 0,
+                    "size": 384
+                  },
+                  {
+                    "shape": [
+                      8,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 2,
+                    "offset": 0,
+                    "size": 192
+                  }
+                ],
+                "results": [
+                  {
+                    "shape": [
+                      12,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 1,
+                    "offset": 0,
+                    "size": 288
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "runtime_trace": {
+        "invocations": [
+          {
+            "iteration": 0,
+            "run_id": "-1085204305",
+            "producer_count": 1,
+            "completion_count": 1,
+            "worker_thread_differs_from_python": true
+          },
+          {
+            "iteration": 1,
+            "run_id": "-1085204304",
+            "producer_count": 1,
+            "completion_count": 1,
+            "worker_thread_differs_from_python": true
+          },
+          {
+            "iteration": 2,
+            "run_id": "-1085204303",
+            "producer_count": 1,
+            "completion_count": 1,
+            "worker_thread_differs_from_python": true
+          }
+        ],
+        "producer_events": 3,
+        "completion_events": 3,
+        "selected_compile_events": [],
+        "limits": "End events have no exported run_id; association is valid for these three non-overlapping blocking windows only. Producer duration is not a general asynchronous operation duration."
+      },
+      "max_absolute_error": 8.485674118929865e-08
+    },
+    {
+      "case": "grad_matmul",
+      "views": {
+        "original": {
+          "package": {
+            "path": "artifacts/jax-stack/source-runtime-002/suite/matmul/grad_matmul/executable.bin",
+            "sha256": "c140c3525c3cd86e72d1784a872d28baef51e15913935f3923097d007f7128fe",
+            "size_bytes": 10027
+          },
+          "packaging": {
+            "pickle_protocol": 4,
+            "pickle_opcode": "BINBYTES",
+            "payload_offset": 103,
+            "payload_size": 8421,
+            "payload_sha256": "40de2d99dcedfdab24852366b1307698191d1c1ca366d89d8e3930c924cd1fcc",
+            "scope": "Opcode scanning only; no pickle execution.",
+            "metadata_length_prefix_bytes": 2,
+            "metadata_bytes": 157,
+            "pjrt_bytes": 8262,
+            "cpu_proto_bytes": 7003
+          },
+          "projection": {
+            "module_name": "jit_loss",
+            "module_id": 24,
+            "entry_computation": "main.1",
+            "object_kind": "KERNELS",
+            "compiled_symbols": {
+              "broadcast_multiply_fusion": 1
+            },
+            "objects": [
+              {
+                "name": "xla_cpu_emitter__loop_fusion_kernel_emitter__hlo_opcode__fusion",
+                "size_bytes": 968,
+                "sha256": "aea08bd2c7941f2d4ce2dfbada7dd843c7cd001ae4ca2fbfa44f04e3b7e27f49",
+                "package_offset": 5162
+              }
+            ],
+            "thunks": [
+              {
+                "kind": "ynn-fusion",
+                "impl": "ynn_fusion_thunk",
+                "op_name": "ynn_fusion.1",
+                "hlo_instruction_id": 4294967301,
+                "hlo_opcode": "fusion",
+                "arguments": [
+                  {
+                    "shape": [
+                      4,
+                      8
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 3,
+                    "offset": 0,
+                    "size": 128
+                  },
+                  {
+                    "shape": [
+                      8,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 1,
+                    "offset": 0,
+                    "size": 192
+                  }
+                ],
+                "results": [
+                  {
+                    "shape": [
+                      4,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 2,
+                    "offset": 0,
+                    "size": 96
+                  }
+                ]
+              },
+              {
+                "kind": "kernel",
+                "impl": "kernel_thunk",
+                "op_name": "broadcast_multiply_fusion",
+                "hlo_instruction_id": 4294967302,
+                "hlo_opcode": "fusion",
+                "kernel_name": "broadcast_multiply_fusion",
+                "workgroups": [
+                  1,
+                  1,
+                  1
+                ],
+                "arguments": [
+                  {
+                    "shape": [
+                      4,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 2,
+                    "offset": 0,
+                    "size": 96
+                  }
+                ],
+                "results": [
+                  {
+                    "shape": [
+                      4,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 5,
+                    "offset": 0,
+                    "size": 96
+                  }
+                ]
+              },
+              {
+                "kind": "ynn-fusion",
+                "impl": "ynn_fusion_thunk",
+                "op_name": "ynn_fusion",
+                "hlo_instruction_id": 4294967300,
+                "hlo_opcode": "fusion",
+                "arguments": [
+                  {
+                    "shape": [
+                      4,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 5,
+                    "offset": 0,
+                    "size": 96
+                  },
+                  {
+                    "shape": [
+                      8,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 1,
+                    "offset": 0,
+                    "size": 192
+                  }
+                ],
+                "results": [
+                  {
+                    "shape": [
+                      4,
+                      8
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 2,
+                    "offset": 0,
+                    "size": 128
+                  }
+                ]
+              },
+              {
+                "kind": "dot",
+                "impl": "dot_thunk",
+                "op_name": "dot",
+                "hlo_instruction_id": 4294967299,
+                "hlo_opcode": "dot",
+                "dimensions": {
+                  "lhs_contracting_dimensions": [
+                    "0"
+                  ],
+                  "rhs_contracting_dimensions": [
+                    "0"
+                  ]
+                },
+                "lhs": {
+                  "shape": [
+                    4,
+                    8
+                  ],
+                  "layout": [
+                    1,
+                    0
+                  ],
+                  "allocation": 3,
+                  "offset": 0,
+                  "size": 128
+                },
+                "rhs": {
+                  "shape": [
+                    4,
+                    6
+                  ],
+                  "layout": [
+                    1,
+                    0
+                  ],
+                  "allocation": 5,
+                  "offset": 0,
+                  "size": 96
+                },
+                "output": {
+                  "shape": [
+                    8,
+                    6
+                  ],
+                  "layout": [
+                    1,
+                    0
+                  ],
+                  "allocation": 0,
+                  "offset": 0,
+                  "size": 192
+                }
+              }
+            ]
+          }
+        },
+        "fresh": {
+          "package": {
+            "path": "artifacts/jax-stack/cpu-thunk-runtime-002/capture/grad_matmul/executable.bin",
+            "sha256": "be547a2d35f36b301621e333fee849f1379db3a271be8319a4a06fc6821a7975",
+            "size_bytes": 9586
+          },
+          "packaging": {
+            "pickle_protocol": 4,
+            "pickle_opcode": "BINBYTES",
+            "payload_offset": 103,
+            "payload_size": 7984,
+            "payload_sha256": "f7f098859a6b10faa84f7e14e416aa9f97cd9eaeef2a31a240746bc9d12468e3",
+            "scope": "Opcode scanning only; no pickle execution.",
+            "metadata_length_prefix_bytes": 2,
+            "metadata_bytes": 157,
+            "pjrt_bytes": 7825,
+            "cpu_proto_bytes": 6694
+          },
+          "projection": {
+            "module_name": "jit_loss",
+            "module_id": 6,
+            "entry_computation": "main.1",
+            "object_kind": "KERNELS",
+            "compiled_symbols": {
+              "broadcast_multiply_fusion": 1
+            },
+            "objects": [
+              {
+                "name": "xla_cpu_emitter__loop_fusion_kernel_emitter__hlo_opcode__fusion",
+                "size_bytes": 968,
+                "sha256": "aea08bd2c7941f2d4ce2dfbada7dd843c7cd001ae4ca2fbfa44f04e3b7e27f49",
+                "package_offset": 4853
+              }
+            ],
+            "thunks": [
+              {
+                "kind": "ynn-fusion",
+                "impl": "ynn_fusion_thunk",
+                "op_name": "ynn_fusion.1",
+                "hlo_instruction_id": 4294967301,
+                "hlo_opcode": "fusion",
+                "arguments": [
+                  {
+                    "shape": [
+                      4,
+                      8
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 3,
+                    "offset": 0,
+                    "size": 128
+                  },
+                  {
+                    "shape": [
+                      8,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 1,
+                    "offset": 0,
+                    "size": 192
+                  }
+                ],
+                "results": [
+                  {
+                    "shape": [
+                      4,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 2,
+                    "offset": 0,
+                    "size": 96
+                  }
+                ]
+              },
+              {
+                "kind": "kernel",
+                "impl": "kernel_thunk",
+                "op_name": "broadcast_multiply_fusion",
+                "hlo_instruction_id": 4294967302,
+                "hlo_opcode": "fusion",
+                "kernel_name": "broadcast_multiply_fusion",
+                "workgroups": [
+                  1,
+                  1,
+                  1
+                ],
+                "arguments": [
+                  {
+                    "shape": [
+                      4,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 2,
+                    "offset": 0,
+                    "size": 96
+                  }
+                ],
+                "results": [
+                  {
+                    "shape": [
+                      4,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 5,
+                    "offset": 0,
+                    "size": 96
+                  }
+                ]
+              },
+              {
+                "kind": "ynn-fusion",
+                "impl": "ynn_fusion_thunk",
+                "op_name": "ynn_fusion",
+                "hlo_instruction_id": 4294967300,
+                "hlo_opcode": "fusion",
+                "arguments": [
+                  {
+                    "shape": [
+                      4,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 5,
+                    "offset": 0,
+                    "size": 96
+                  },
+                  {
+                    "shape": [
+                      8,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 1,
+                    "offset": 0,
+                    "size": 192
+                  }
+                ],
+                "results": [
+                  {
+                    "shape": [
+                      4,
+                      8
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 2,
+                    "offset": 0,
+                    "size": 128
+                  }
+                ]
+              },
+              {
+                "kind": "dot",
+                "impl": "dot_thunk",
+                "op_name": "dot",
+                "hlo_instruction_id": 4294967299,
+                "hlo_opcode": "dot",
+                "dimensions": {
+                  "lhs_contracting_dimensions": [
+                    "0"
+                  ],
+                  "rhs_contracting_dimensions": [
+                    "0"
+                  ]
+                },
+                "lhs": {
+                  "shape": [
+                    4,
+                    8
+                  ],
+                  "layout": [
+                    1,
+                    0
+                  ],
+                  "allocation": 3,
+                  "offset": 0,
+                  "size": 128
+                },
+                "rhs": {
+                  "shape": [
+                    4,
+                    6
+                  ],
+                  "layout": [
+                    1,
+                    0
+                  ],
+                  "allocation": 5,
+                  "offset": 0,
+                  "size": 96
+                },
+                "output": {
+                  "shape": [
+                    8,
+                    6
+                  ],
+                  "layout": [
+                    1,
+                    0
+                  ],
+                  "allocation": 0,
+                  "offset": 0,
+                  "size": 192
+                }
+              }
+            ]
+          }
+        }
+      },
+      "runtime_trace": {
+        "invocations": [
+          {
+            "iteration": 0,
+            "run_id": "1467431885",
+            "producer_count": 4,
+            "completion_count": 4,
+            "worker_thread_differs_from_python": true
+          },
+          {
+            "iteration": 1,
+            "run_id": "1467431886",
+            "producer_count": 4,
+            "completion_count": 4,
+            "worker_thread_differs_from_python": true
+          },
+          {
+            "iteration": 2,
+            "run_id": "1467431887",
+            "producer_count": 4,
+            "completion_count": 4,
+            "worker_thread_differs_from_python": true
+          }
+        ],
+        "producer_events": 12,
+        "completion_events": 12,
+        "selected_compile_events": [],
+        "limits": "End events have no exported run_id; association is valid for these three non-overlapping blocking windows only. Producer duration is not a general asynchronous operation duration."
+      },
+      "max_absolute_error": 9.822404523074368e-08
+    },
+    {
+      "case": "jit_grad_vmap_matmul",
+      "views": {
+        "original": {
+          "package": {
+            "path": "artifacts/jax-stack/source-runtime-002/suite/matmul/jit_grad_vmap_matmul/executable.bin",
+            "sha256": "2d4fbd47885e5edf601818173f932cdbd2f62f0fe66423e84bb96976c74e0d38",
+            "size_bytes": 12944
+          },
+          "packaging": {
+            "pickle_protocol": 4,
+            "pickle_opcode": "BINBYTES",
+            "payload_offset": 103,
+            "payload_size": 11283,
+            "payload_sha256": "f34b0e40a0ddcf56127a1a97411df1158549fe7056f7495caf81d1d664e79a81",
+            "scope": "Opcode scanning only; no pickle execution.",
+            "metadata_length_prefix_bytes": 2,
+            "metadata_bytes": 168,
+            "pjrt_bytes": 11113,
+            "cpu_proto_bytes": 9851
+          },
+          "projection": {
+            "module_name": "jit_batched_loss",
+            "module_id": 34,
+            "entry_computation": "main.1",
+            "object_kind": "KERNELS",
+            "compiled_symbols": {
+              "broadcast_multiply_fusion": 1,
+              "copy_bitcast_fusion": 1
+            },
+            "objects": [
+              {
+                "name": "xla_cpu_emitter__loop_fusion_kernel_emitter__hlo_opcode__fusion",
+                "size_bytes": 1048,
+                "sha256": "85ddb3904fac33eff9e550013a206a5d6077df16409d46a4d3c3ab05459eff8c",
+                "package_offset": 6718
+              },
+              {
+                "name": "xla_cpu_emitter__loop_fusion_kernel_emitter__hlo_opcode__fusion",
+                "size_bytes": 1152,
+                "sha256": "ec92eaa411d21717c71e7a7ad7eed7d39fe82eccc101be6e7ef133d956106c5d",
+                "package_offset": 7837
+              }
+            ],
+            "thunks": [
+              {
+                "kind": "ynn-fusion",
+                "impl": "ynn_fusion_thunk",
+                "op_name": "ynn_fusion.1",
+                "hlo_instruction_id": 4294967303,
+                "hlo_opcode": "fusion",
+                "arguments": [
+                  {
+                    "shape": [
+                      12,
+                      8
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 1,
+                    "offset": 0,
+                    "size": 384
+                  },
+                  {
+                    "shape": [
+                      8,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 3,
+                    "offset": 0,
+                    "size": 192
+                  }
+                ],
+                "results": [
+                  {
+                    "shape": [
+                      12,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 0,
+                    "offset": 0,
+                    "size": 288
+                  }
+                ]
+              },
+              {
+                "kind": "kernel",
+                "impl": "kernel_thunk",
+                "op_name": "broadcast_multiply_fusion",
+                "hlo_instruction_id": 4294967305,
+                "hlo_opcode": "fusion",
+                "kernel_name": "broadcast_multiply_fusion",
+                "workgroups": [
+                  1,
+                  1,
+                  1
+                ],
+                "arguments": [
+                  {
+                    "shape": [
+                      12,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 0,
+                    "offset": 0,
+                    "size": 288
+                  }
+                ],
+                "results": [
+                  {
+                    "shape": [
+                      12,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 5,
+                    "offset": 0,
+                    "size": 288
+                  }
+                ]
+              },
+              {
+                "kind": "kernel",
+                "impl": "kernel_thunk",
+                "op_name": "copy_bitcast_fusion",
+                "hlo_instruction_id": 4294967304,
+                "hlo_opcode": "fusion",
+                "kernel_name": "copy_bitcast_fusion",
+                "workgroups": [
+                  1,
+                  1,
+                  1
+                ],
+                "arguments": [
+                  {
+                    "shape": [
+                      12,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 0,
+                    "offset": 0,
+                    "size": 288
+                  }
+                ],
+                "results": [
+                  {
+                    "shape": [
+                      6,
+                      12
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 5,
+                    "offset": 320,
+                    "size": 288
+                  }
+                ]
+              },
+              {
+                "kind": "ynn-fusion",
+                "impl": "ynn_fusion_thunk",
+                "op_name": "ynn_fusion",
+                "hlo_instruction_id": 4294967302,
+                "hlo_opcode": "fusion",
+                "arguments": [
+                  {
+                    "shape": [
+                      12,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 5,
+                    "offset": 0,
+                    "size": 288
+                  },
+                  {
+                    "shape": [
+                      8,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 3,
+                    "offset": 0,
+                    "size": 192
+                  }
+                ],
+                "results": [
+                  {
+                    "shape": [
+                      12,
+                      8
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 0,
+                    "offset": 0,
+                    "size": 384
+                  }
+                ]
+              },
+              {
+                "kind": "dot",
+                "impl": "dot_thunk",
+                "op_name": "dot.3",
+                "hlo_instruction_id": 4294967299,
+                "hlo_opcode": "dot",
+                "dimensions": {
+                  "lhs_contracting_dimensions": [
+                    "0"
+                  ],
+                  "rhs_contracting_dimensions": [
+                    "1"
+                  ]
+                },
+                "lhs": {
+                  "shape": [
+                    12,
+                    8
+                  ],
+                  "layout": [
+                    1,
+                    0
+                  ],
+                  "allocation": 1,
+                  "offset": 0,
+                  "size": 384
+                },
+                "rhs": {
+                  "shape": [
+                    6,
+                    12
+                  ],
+                  "layout": [
+                    1,
+                    0
+                  ],
+                  "allocation": 5,
+                  "offset": 320,
+                  "size": 288
+                },
+                "output": {
+                  "shape": [
+                    8,
+                    6
+                  ],
+                  "layout": [
+                    1,
+                    0
+                  ],
+                  "allocation": 2,
+                  "offset": 0,
+                  "size": 192
+                }
+              }
+            ]
+          }
+        },
+        "fresh": {
+          "package": {
+            "path": "artifacts/jax-stack/cpu-thunk-runtime-002/capture/jit_grad_vmap_matmul/executable.bin",
+            "sha256": "1d9c54ae261d835895c28a2433affe12d17634896d9406e3a60a412035f3883f",
+            "size_bytes": 12499
+          },
+          "packaging": {
+            "pickle_protocol": 4,
+            "pickle_opcode": "BINBYTES",
+            "payload_offset": 103,
+            "payload_size": 10842,
+            "payload_sha256": "0c03c397ebeb55dc3f6f6075e278360239cbb78b0f3395eaef0d584736b2fa33",
+            "scope": "Opcode scanning only; no pickle execution.",
+            "metadata_length_prefix_bytes": 2,
+            "metadata_bytes": 168,
+            "pjrt_bytes": 10672,
+            "cpu_proto_bytes": 9538
+          },
+          "projection": {
+            "module_name": "jit_batched_loss",
+            "module_id": 9,
+            "entry_computation": "main.1",
+            "object_kind": "KERNELS",
+            "compiled_symbols": {
+              "broadcast_multiply_fusion": 1,
+              "copy_bitcast_fusion": 1
+            },
+            "objects": [
+              {
+                "name": "xla_cpu_emitter__loop_fusion_kernel_emitter__hlo_opcode__fusion",
+                "size_bytes": 1048,
+                "sha256": "85ddb3904fac33eff9e550013a206a5d6077df16409d46a4d3c3ab05459eff8c",
+                "package_offset": 6405
+              },
+              {
+                "name": "xla_cpu_emitter__loop_fusion_kernel_emitter__hlo_opcode__fusion",
+                "size_bytes": 1152,
+                "sha256": "ec92eaa411d21717c71e7a7ad7eed7d39fe82eccc101be6e7ef133d956106c5d",
+                "package_offset": 7524
+              }
+            ],
+            "thunks": [
+              {
+                "kind": "ynn-fusion",
+                "impl": "ynn_fusion_thunk",
+                "op_name": "ynn_fusion.1",
+                "hlo_instruction_id": 4294967303,
+                "hlo_opcode": "fusion",
+                "arguments": [
+                  {
+                    "shape": [
+                      12,
+                      8
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 1,
+                    "offset": 0,
+                    "size": 384
+                  },
+                  {
+                    "shape": [
+                      8,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 3,
+                    "offset": 0,
+                    "size": 192
+                  }
+                ],
+                "results": [
+                  {
+                    "shape": [
+                      12,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 0,
+                    "offset": 0,
+                    "size": 288
+                  }
+                ]
+              },
+              {
+                "kind": "kernel",
+                "impl": "kernel_thunk",
+                "op_name": "broadcast_multiply_fusion",
+                "hlo_instruction_id": 4294967305,
+                "hlo_opcode": "fusion",
+                "kernel_name": "broadcast_multiply_fusion",
+                "workgroups": [
+                  1,
+                  1,
+                  1
+                ],
+                "arguments": [
+                  {
+                    "shape": [
+                      12,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 0,
+                    "offset": 0,
+                    "size": 288
+                  }
+                ],
+                "results": [
+                  {
+                    "shape": [
+                      12,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 5,
+                    "offset": 0,
+                    "size": 288
+                  }
+                ]
+              },
+              {
+                "kind": "kernel",
+                "impl": "kernel_thunk",
+                "op_name": "copy_bitcast_fusion",
+                "hlo_instruction_id": 4294967304,
+                "hlo_opcode": "fusion",
+                "kernel_name": "copy_bitcast_fusion",
+                "workgroups": [
+                  1,
+                  1,
+                  1
+                ],
+                "arguments": [
+                  {
+                    "shape": [
+                      12,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 0,
+                    "offset": 0,
+                    "size": 288
+                  }
+                ],
+                "results": [
+                  {
+                    "shape": [
+                      6,
+                      12
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 5,
+                    "offset": 320,
+                    "size": 288
+                  }
+                ]
+              },
+              {
+                "kind": "ynn-fusion",
+                "impl": "ynn_fusion_thunk",
+                "op_name": "ynn_fusion",
+                "hlo_instruction_id": 4294967302,
+                "hlo_opcode": "fusion",
+                "arguments": [
+                  {
+                    "shape": [
+                      12,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 5,
+                    "offset": 0,
+                    "size": 288
+                  },
+                  {
+                    "shape": [
+                      8,
+                      6
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 3,
+                    "offset": 0,
+                    "size": 192
+                  }
+                ],
+                "results": [
+                  {
+                    "shape": [
+                      12,
+                      8
+                    ],
+                    "layout": [
+                      1,
+                      0
+                    ],
+                    "allocation": 0,
+                    "offset": 0,
+                    "size": 384
+                  }
+                ]
+              },
+              {
+                "kind": "dot",
+                "impl": "dot_thunk",
+                "op_name": "dot.3",
+                "hlo_instruction_id": 4294967299,
+                "hlo_opcode": "dot",
+                "dimensions": {
+                  "lhs_contracting_dimensions": [
+                    "0"
+                  ],
+                  "rhs_contracting_dimensions": [
+                    "1"
+                  ]
+                },
+                "lhs": {
+                  "shape": [
+                    12,
+                    8
+                  ],
+                  "layout": [
+                    1,
+                    0
+                  ],
+                  "allocation": 1,
+                  "offset": 0,
+                  "size": 384
+                },
+                "rhs": {
+                  "shape": [
+                    6,
+                    12
+                  ],
+                  "layout": [
+                    1,
+                    0
+                  ],
+                  "allocation": 5,
+                  "offset": 320,
+                  "size": 288
+                },
+                "output": {
+                  "shape": [
+                    8,
+                    6
+                  ],
+                  "layout": [
+                    1,
+                    0
+                  ],
+                  "allocation": 2,
+                  "offset": 0,
+                  "size": 192
+                }
+              }
+            ]
+          }
+        }
+      },
+      "runtime_trace": {
+        "invocations": [
+          {
+            "iteration": 0,
+            "run_id": "913669628",
+            "producer_count": 5,
+            "completion_count": 5,
+            "worker_thread_differs_from_python": true
+          },
+          {
+            "iteration": 1,
+            "run_id": "913669629",
+            "producer_count": 5,
+            "completion_count": 5,
+            "worker_thread_differs_from_python": true
+          },
+          {
+            "iteration": 2,
+            "run_id": "913669630",
+            "producer_count": 5,
+            "completion_count": 5,
+            "worker_thread_differs_from_python": true
+          }
+        ],
+        "producer_events": 15,
+        "completion_events": 15,
+        "selected_compile_events": [],
+        "limits": "End events have no exported run_id; association is valid for these three non-overlapping blocking windows only. Producer duration is not a general asynchronous operation duration."
+      },
+      "max_absolute_error": 1.4270093773305348e-07
+    }
+  ],
+  "limits": [
+    "Source-built CPU serialized structure and separate fresh CPU executions; no TPU or LLO evidence.",
+    "Data-only pickle opcode/protobuf parsing; no package loading or native deserialization.",
+    "Protobuf 7.34.0 pure-Python and cached protoc 32.1 are fingerprinted analysis tools; schema definitions come from pinned sources.",
+    "Trace counts/identities prove observed CPU thunk dispatch, not internal Eigen/YNN microkernel selection or performance."
+  ],
+  "negative_tests": [
+    "hash",
+    "missing",
+    "level",
+    "wrong-persistent-id",
+    "ambiguous-byte-payload",
+    "trailing-pickle-bytes",
+    "invalid-metadata-varint",
+    "unknown-protobuf-field",
+    "kind-oneof-disagree",
+    "dot-dimensions-disagree",
+    "wrong-ynn-instruction",
+    "slice-outside-allocation",
+    "wrong-kernel-symbol",
+    "duplicate-object-bytes",
+    "missing-dot-events",
+    "merged-run-identities",
+    "completion-outside-window",
+    "existing-native-payload-changed",
+    "source-changed-during-run"
+  ]
+}

@@ -1,7 +1,7 @@
 # 软件栈与入口总览：第一轮源码核对
 
 依据 [kickoff revision 51](https://outline.infiscale-tech.com/doc/research-plan-jax-kickoff-ib5QULKSS4)。
-当前索引有 134 个经过文件指纹和行号核对的入口、40 条带调用位置的关系，见
+当前索引有 148 个经过文件指纹和行号核对的入口、47 条带调用位置的关系，见
 [source-index.json](source-index.json)。这是入口索引；完整调用图、私有 libtpu/LLO、
 实际推理业务和 TPU 执行验收仍未完成。
 
@@ -99,7 +99,7 @@ Mosaic module，再通过 helper 进入 custom call 接口。
 
 ## 本轮可以验证到哪里
 
-- 源码：134 个入口和 40 条调用/分派关系的路径、revision、行号与 SHA-256，含已锁定的 XProf tooling 源码。
+- 源码：148 个入口和 47 条调用/分派关系的路径、revision、行号与 SHA-256，含已锁定的 XProf tooling 源码。
 - CPU：四组 matmul 变换的数值、实际 native HLO dump、部分 MLIR/LLVM 代码生成、
   ELF 目标文件，以及四个序列化 executable 的同进程重新加载。
 - Pallas/profiling：两种解释路径、host 生命周期及统计、现有 wheel 的编译 pass 事件，

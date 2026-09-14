@@ -20,7 +20,8 @@
 对象大小和符号长度在这两次 capture 中相同，序列化包的位置不同；不能沿用旧偏移。
 每个对象的完整字节都在自己的包中恰好出现一次。这里只读字节，没有反序列化加载。
 前向样本的库 fusion、梯度图剩余 dot 与普通 fusion 的区别见
-[逐 pass 导读](matmul-pass-walkthrough.md)。
+[逐 pass 导读](matmul-pass-walkthrough.md)。后续 [CPU executable/trace](cpu-executable-and-trace.md)
+已确认两处剩余 dot 的 DotThunk/Eigen 路径，并将源码中的入口与新运行的事件对应。
 
 ## 保留的旧 wheel 对象记录
 
