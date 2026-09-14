@@ -28,7 +28,8 @@
 ## 本轮进度与恢复入口
 
 CPU matmul、两种 Pallas 解释路径、host/编译事件和开放源码 Mosaic 标记已有可复查材料；
-完整 kickoff 尚未完成。源码索引扩展至 45 个入口，新增 Notebook 的 5 个代码单元已真实执行。
+完整 kickoff 尚未完成。源码索引扩展至 63 个入口，包括固定 XProf 源码；Pallas/profiling
+Notebook 的 5 个代码单元已真实执行。
 原始 capture 继续留在忽略目录；验证器校验清单、哈希与关键语义。
 
 固定源码构建已在唯一容器 `jax-kickoff-cpu-source-001` 中运行，原始上游树保持干净。
@@ -36,7 +37,13 @@ CPU matmul、两种 Pallas 解释路径、host/编译事件和开放源码 Mosai
 `artifacts/builds/kickoff-cpu-source-001/attempts/0001/build.log`；不要依据宿主机同号 PID
 重新启动构建。当前尚未完成 wheel 及加载验收，细节见 [source-build.md](source-build.md)。
 
-构建运行期间的下一项独立工作是 HLO pass/内存分配解释与属性/cost 对照。
+属性/cost 对照已完成 CPU capture：六种 metadata 情形、直接 MLIR 属性丢失边界、native
+HLO 属性 setter、HLO add→subtract 的编译执行、opaque custom-call 未知成本。结果见
+[attributes-and-cost.md](attributes-and-cost.md)。已有 roofline 模块与修正位置见
+[roofline.md](roofline.md)，其中 XProf native converter 与目标 TPU 运行尚未验证。
+
+上一里程碑已在隔离 worktree 合并远端文档并正常推送（merge `771068b`），主工作区和原暂存
+修改保留。构建运行期间的下一项独立工作是 HLO pass/fusion 与内存分配/复用解释和对照。
 完整恢复队列、已确认 U04 和未回答 U01–U03 保存在 [status.json](status.json)。
 
 ## 执行次序

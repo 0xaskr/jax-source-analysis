@@ -1,0 +1,158 @@
+{
+  "capture_id": "attributes-cost-002",
+  "manifest_path": "artifacts/jax-stack/attributes-cost-002/manifest.json",
+  "manifest_sha256": "d7503bb6b0bc849b989f1266f4425c3b4889d2a209eb15ef1e21379c78174073",
+  "artifact_count": 60,
+  "qualifiers": [
+    "VERSION-SKEW"
+  ],
+  "evidence_level": "RUN-CPU",
+  "cases": [
+    {
+      "case": "plain",
+      "tagged_hlo_instructions": 0,
+      "cost": {
+        "flops": 384.0,
+        "bytes accessed": 416.0,
+        "utilization0{}": 1.0,
+        "utilization1{}": 1.0,
+        "bytes accessed0{}": 128.0,
+        "bytes accessed1{}": 192.0,
+        "bytes accessedout{}": 96.0
+      },
+      "max_absolute_error": 5.102698930059546e-08
+    },
+    {
+      "case": "context",
+      "tagged_hlo_instructions": 1,
+      "cost": {
+        "flops": 384.0,
+        "bytes accessed": 416.0,
+        "utilization0{}": 1.0,
+        "utilization1{}": 1.0,
+        "bytes accessed0{}": 128.0,
+        "bytes accessed1{}": 192.0,
+        "bytes accessedout{}": 96.0
+      },
+      "max_absolute_error": 5.102698930059546e-08
+    },
+    {
+      "case": "value",
+      "tagged_hlo_instructions": 1,
+      "cost": {
+        "flops": 384.0,
+        "bytes accessed": 416.0,
+        "utilization0{}": 1.0,
+        "utilization1{}": 1.0,
+        "bytes accessed0{}": 128.0,
+        "bytes accessed1{}": 192.0,
+        "bytes accessedout{}": 96.0
+      },
+      "max_absolute_error": 5.102698930059546e-08
+    },
+    {
+      "case": "call",
+      "tagged_hlo_instructions": 1,
+      "cost": {
+        "flops": 384.0,
+        "bytes accessed": 416.0,
+        "utilization0{}": 1.0,
+        "utilization1{}": 1.0,
+        "bytes accessed0{}": 128.0,
+        "bytes accessed1{}": 192.0,
+        "bytes accessedout{}": 96.0
+      },
+      "max_absolute_error": 5.102698930059546e-08
+    },
+    {
+      "case": "grad-call-same",
+      "tagged_hlo_instructions": 2,
+      "cost": {
+        "flops": 792.0,
+        "bytes accessed": 1220.0,
+        "utilization0{}": 4.0,
+        "utilization1{}": 3.0,
+        "bytes accessed0{}": 324.0,
+        "bytes accessed1{}": 480.0,
+        "bytes accessedout{}": 416.0
+      },
+      "max_absolute_error": 7.892122444452809e-08
+    },
+    {
+      "case": "grad-call-drop",
+      "tagged_hlo_instructions": 1,
+      "cost": {
+        "flops": 792.0,
+        "bytes accessed": 1220.0,
+        "utilization0{}": 4.0,
+        "utilization1{}": 3.0,
+        "bytes accessed0{}": 324.0,
+        "bytes accessed1{}": 480.0,
+        "bytes accessedout{}": 416.0
+      },
+      "max_absolute_error": 7.892122444452809e-08
+    }
+  ],
+  "direct_attribute_transfer": {
+    "preserved": [
+      "research_string",
+      "research_bool"
+    ],
+    "dropped": [
+      "research_integer",
+      "research.raw"
+    ],
+    "cost": {
+      "flops": 384.0,
+      "bytes accessed": 416.0,
+      "utilization0{}": 1.0,
+      "utilization1{}": 1.0,
+      "bytes accessed0{}": 128.0,
+      "bytes accessed1{}": 192.0,
+      "bytes accessedout{}": 96.0
+    }
+  },
+  "opaque_custom_call": {
+    "analysis_backend": "cpu",
+    "input_target": "tpu_custom_call",
+    "origin": {
+      "path": "artifacts/jax-stack/mosaic-events-001/named/stablehlo.mlir",
+      "sha256": "c8de8c78711c9023dacf7de339993aac2b5e42a7f2c6f09f2cd1b6413317d686",
+      "size_bytes": 4172
+    },
+    "cost": {
+      "flops": -1.0,
+      "bytes accessed": -1.0,
+      "optimal_seconds": -1.0,
+      "utilization0{}": 1.0,
+      "utilization1{}": 1.0,
+      "bytes accessed0{}": -1.0,
+      "bytes accessed1{}": -1.0,
+      "bytes accessedout{}": -1.0
+    },
+    "roofline_available": false,
+    "reason": "Negative values denote unknown cost. They must not be treated as zero work or divided to produce an intensity.",
+    "scope": "CPU reference analyzer applied to TPU-targeted IR; no libtpu cost analysis or device execution."
+  },
+  "hlo_edit": {
+    "edit": "one add opcode replaced by subtract; identical input/output types",
+    "results": [
+      {
+        "case": "before",
+        "max_absolute_error": 3.683228411155426e-08
+      },
+      {
+        "case": "after",
+        "max_absolute_error": 7.337873109136694e-08
+      }
+    ],
+    "output_difference": "before - after equals 2*b",
+    "malformed_rejection": {
+      "type": "JaxRuntimeError",
+      "message": "INVALID_ARGUMENT: Syntax error when trying to parse the text as a HloModule:\nwas parsing 8:30: error: expects opcode but sees: not_a_real_opcode, error: Unknown opcode: not_a_real_opcode\n  ROOT add.1 = f32[4,6]{1,0} not_a_real_opcode(dot_general.1, b.1)\n                             ^",
+      "stage": "HLO text parser"
+    },
+    "interface_scope": "Private jaxlib parser/import/compiler bindings; not a stable public JAX graph-editing API."
+  },
+  "validation_scope": "Reparsed native HLO metadata/opcodes, current CPU cost reader, immutable artifact hashes, independent NumPy outputs. Executable rerun is in the producer capture."
+}
