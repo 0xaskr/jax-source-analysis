@@ -6,6 +6,8 @@
 绑定、pass 对照和完整 18 组 CPU 数值复验，见 [源码运行基线](source-runtime-baseline.md)。
 自定义 pass 补丁也已完成 C++ 测试、构建、实际加载和源码/运行回滚，见
 [Hack 验收](pass-event-acceptance.md)；原始上游树未修改。
+构建后的 199 个缓存 repository 描述和 Python 3.12→3.12.13 工具链记录见
+[外部依赖与 Python](build-inputs.md)，与核心归档/补丁审计分开说明实际覆盖范围。
 
 ## 已完成的环境核查
 

@@ -6,11 +6,11 @@ from __future__ import annotations
 import argparse
 import contextlib
 from datetime import datetime, timezone
-import importlib.util
 import json
 import os
 from pathlib import Path
 import shutil
+import sys
 
 from matmul_probe import ROOT, fingerprint, write_json
 
@@ -20,12 +20,15 @@ CASES = [("plain", None), ("integer", 30000), ("string", "30000"), ("zero", 0),
          ("int64-overflow", 2**63)]
 
 
-def collect(output):
+def collect(output, build_manifest=None):
     import jax
     import jax.numpy as jnp
     import numpy as np
     from jax.experimental.xla_metadata import set_xla_metadata
     from jaxlib import _hlo
+    from capture_runtime import environment
+
+    write_json(output / "environment-before.json", environment(output, build_manifest))
 
     jax.config.update("jax_enable_compilation_cache", False)
     rng = np.random.default_rng(20260915)
@@ -76,13 +79,9 @@ def collect(output):
               "Successful propagation, including invalid/negative/overflow strings, is not validation of latency values or proof of scheduling use.",
               "latency_metadata is a recognized key in inspected GPU estimator source, but does not define FLOPs or bytes for this CPU cost API.",
               "No timing, speedup, interconnect model, real inference split or TPU runtime behavior is established.",
-              "Native observations remain VERSION-SKEW until matching source-built jaxlib is loaded and rechecked."]
+              "Native revision/build qualifiers are recorded in this capture's environment and manifest."]
     write_json(output / "summary.json", {"outcome": "pass", "cases": cases, "limits": limits})
-    spec = importlib.util.spec_from_file_location("baseline_capture", ROOT / "tools/capture-baseline.py")
-    baseline = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(baseline)
-    env = baseline.capture_baseline()
-    assert all(not s["dirty"] for s in env["repository"]["sources"].values())
+    env = environment(output, build_manifest)
     write_json(output / "environment.json", env)
     return cases, env
 
@@ -90,23 +89,28 @@ def collect(output):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
-    output = parser.parse_args().output.resolve()
+    parser.add_argument("--jaxlib-build-manifest", type=Path)
+    args = parser.parse_args()
+    output = args.output.resolve()
     if not output.is_relative_to(ROOT / "artifacts/jax-stack") or os.environ.get("XLA_FLAGS"):
         parser.error("Use a new artifacts/jax-stack directory and unset XLA_FLAGS")
     os.environ.update(JAX_PLATFORMS="cpu", PYTHONDONTWRITEBYTECODE="1")
     output.mkdir(parents=True, exist_ok=False)
     shutil.copy2(__file__, output / "producer.py")
+    from capture_runtime import preflight
+    build_manifest = preflight(output, args.jaxlib_build_manifest)
     started = datetime.now(timezone.utc).isoformat()
     with (output / "run.log").open("w") as log, contextlib.redirect_stdout(log), contextlib.redirect_stderr(log):
         try:
-            cases, env = collect(output)
+            cases, env = collect(output, build_manifest)
         except BaseException:
             import traceback
             traceback.print_exc()
             raise
     write_json(output / "manifest.json", {"capture_id": output.name, "outcome": "pass", "evidence_level": "RUN-CPU",
         "qualifiers": env["status"]["qualifiers"], "started_at": started, "finished_at": datetime.now(timezone.utc).isoformat(),
-        "producer": {"argv": [".venv/bin/python", "-B", "research/jax-stack/latency_metadata_probe.py", "--output", str(output.relative_to(ROOT))],
+        "jaxlib_build_manifest": str(build_manifest.relative_to(ROOT)) if build_manifest else None,
+        "producer": {"argv": [sys.executable, "-B", *sys.argv],
                      "source": str((output / "producer.py").relative_to(ROOT)), **fingerprint(output / "producer.py")},
         "cases": [c["case"] for c in cases],
         "artifacts": [{"path": str(p.relative_to(ROOT)), **fingerprint(p)} for p in sorted(output.rglob("*")) if p.is_file()]})

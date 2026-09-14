@@ -1,9 +1,11 @@
 # StableHLO/HLO 属性、编辑与 cost model
 
 对应 R09、R11，并为 R10 提供可用输入。脚本
-[attributes_cost_probe.py](attributes_cost_probe.py) 的成功捕获为 `attributes-cost-002`，
+[attributes_cost_probe.py](attributes_cost_probe.py) 的历史捕获为 `attributes-cost-002`，
 60 个产物经 [verify_attributes.py](verify_attributes.py) 独立复查；结果见
-[attributes-results.json](attributes-results.json)。本节运行证据为 `RUN-CPU + VERSION-SKEW`。
+[attributes-results.json](attributes-results.json)，保留 `RUN-CPU + VERSION-SKEW`。
+新增源码 wheel 003 复验有 66 个产物，采集与复查 native 身份均通过，无 `VERSION-SKEW`；
+本例属性、cost 与 HLO 编辑结论一致，见 [源码 metadata 基线](source-metadata-baseline.md)。
 
 结论是：**现有接口支持“携带自定义属性，同时运行默认 cost analysis”；自定义属性不会自动
 定义新的 cost 语义。** 还要区分 JAX metadata、任意 MLIR 属性和 native HLO 属性。

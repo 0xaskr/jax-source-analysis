@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "updated_at": "2026-09-14T20:29:32.198533+00:00",
+  "updated_at": "2026-09-14T21:02:26.824576+00:00",
   "goal_state": "active",
   "objective": "按 Outline kickoff revision 51 完成软件栈总览、源码/API 索引和实际推理场景 Hack 实验。",
   "kickoff_source": "research/jax-stack/kickoff-source.json",
@@ -57,7 +57,7 @@
     },
     {
       "id": "attributes-notebook",
-      "result": "属性/cost Notebook 扩展为 6 个代码单元，已在真实 Jupyter 内核执行，含新的 8 组 latency metadata CPU capture。",
+      "result": "7 个真实 Jupyter 单元通过：原有 CPU native/metadata 路径，以及新增匹配源码的 117 个产物、已保存身份与 16 组数值复查。",
       "evidence": "research/jax-stack/attributes-cost.ipynb"
     },
     {
@@ -131,7 +131,7 @@
     },
     {
       "id": "source-runtime-capture-adapters",
-      "result": "matmul/fusion/overlap 接入可验证的 build/native 绑定和实际 Python argv；独立旧 wheel 环境 18 组数值与 3,687 个产物通过，4 个旧 overlap 失败重新记录。成功自建 wheel 分支仍待执行。",
+      "result": "最初三组 matmul/fusion/overlap 适配及旧 wheel 18 组复验保留；现有源码 003 基线已通过，另外两组 metadata 适配及当前 native reader 身份也已实际验证。",
       "evidence": "research/jax-stack/cpu-revalidation-results.json"
     },
     {
@@ -158,6 +158,21 @@
       "id": "compiler-hack-notebook",
       "result": "5 个真实 Jupyter 单元复查保存的源码/补丁/C++ 证据、六组 trace 与数值，复现导出字段缺失拒绝。",
       "evidence": "research/jax-stack/compiler-pass-hack.ipynb"
+    },
+    {
+      "id": "source-metadata-runtime-accepted",
+      "result": "源码 wheel 003 的 14 组 metadata 与 2 组 HLO 改写执行通过；117 个产物、生产和当前 native reader 的 build/wheel 字节绑定通过，未携带 VERSION-SKEW。",
+      "evidence": "research/jax-stack/source-metadata-results.json"
+    },
+    {
+      "id": "metadata-native-identity-rejections",
+      "result": "两次 running build、两次旧 wheel 生产和两次旧 native reader 复查均被实际拒绝；旧 capture 和源码 capture 的 CLI/selftest 均通过。",
+      "evidence": "research/jax-stack/source-metadata-results.json"
+    },
+    {
+      "id": "external-descriptor-and-python-audit",
+      "result": "199 个缓存 repository、451 份描述文件、467 个产物通过检查；Python 3.12.13 归档与解释器/共享库/版本头文件对应。未声明完整 action 闭包或缓存条目都参与构建。",
+      "evidence": "research/jax-stack/external-descriptor-results.json"
     }
   ],
   "requirements": [
@@ -211,9 +226,11 @@
         "research/jax-stack/cpu-revalidation-results.json",
         "research/jax-stack/source-build-results.json",
         "research/jax-stack/source-runtime-results.json",
-        "research/jax-stack/pass-hack-results.json"
+        "research/jax-stack/pass-hack-results.json",
+        "research/jax-stack/source-metadata-results.json",
+        "research/jax-stack/external-descriptor-results.json"
       ],
-      "remaining": "CPU 源码构建、安装/加载、可逆 pass Hack 及三状态回滚已验收；完整 action 输入闭包、目标 TPU 编译/设备环境仍需取证。"
+      "remaining": "CPU 源码构建、安装/加载、可逆 pass Hack 与回滚已验收；构建输入描述及工具链已补记，完整 action 闭包仍未声明。指定业务与目标 TPU 环境的 Hack 验证仍待完成。"
     },
     {
       "id": "R05",
@@ -262,9 +279,10 @@
       "evidence": [
         "research/jax-stack/cpu-results.json",
         "research/jax-stack/attributes-and-cost.md",
-        "research/jax-stack/attributes-results.json"
+        "research/jax-stack/attributes-results.json",
+        "research/jax-stack/source-metadata-results.json"
       ],
-      "remaining": "CPU 参考接口及 matmul 转换/编辑证据已取得；匹配源码二进制后复验，继续补齐目标 TPU 的属性与阶段信息边界。"
+      "remaining": "匹配源码的 CPU 属性传递、MLIR 属性丢失、native setter 与 HLO 改写执行已通过；目标 TPU 属性/阶段边界仍需继续。"
     },
     {
       "id": "R10",
@@ -273,7 +291,8 @@
         "research/jax-stack/cpu-results.json",
         "research/jax-stack/source-index.json",
         "research/jax-stack/roofline.md",
-        "research/jax-stack/attributes-results.json"
+        "research/jax-stack/attributes-results.json",
+        "research/jax-stack/source-metadata-results.json"
       ],
       "remaining": "已有模块、静态输入和修正位置已定位；目标硬件上限、成本来源与时间/内存分解需 U03 的实际环境验证。"
     },
@@ -285,9 +304,10 @@
         "research/jax-stack/attributes-results.json",
         "research/jax-stack/latency-model.md",
         "research/jax-stack/latency-model-contract.json",
-        "research/jax-stack/latency-metadata-results.json"
+        "research/jax-stack/latency-metadata-results.json",
+        "research/jax-stack/source-metadata-results.json"
       ],
-      "remaining": "已验证标签传递与 CPU 成本边界，定位已有 latency_metadata 在特定 GPU 模型中的消费链；仍需匹配源码 wheel 复验，目标 TPU 模型取证，以及 U01/U02 定义的真实可并行维度和分块 cost 语义。"
+      "remaining": "匹配源码 CPU metadata 与默认 cost API 已复验，GPU 消费链已有固定源码依据；下一步原生 latency parser 单元测试。目标 TPU 模型及 U01/U02 的真实分块 cost 语义仍待取证。"
     },
     {
       "id": "R12",
@@ -326,20 +346,20 @@
   ],
   "next_actions": [
     {
-      "id": "source-attributes-latency-revalidation",
+      "id": "native-latency-parser-tests",
+      "ready": true,
+      "depends_on": [
+        "source-metadata-runtime-accepted"
+      ],
+      "action": "在固定镜像和干净隔离 XLA clone 中运行 @xla//xla/service:latency_hiding_scheduler_test，先过滤 LatencyEstimatorTest.GetLatencyFromMetadata；使用已验证的 test-only Googletest override。若补充负数/零/溢出边界测试，保留可逆 test-only patch 并恢复 clone。不得把 C++ CPU 单元测试计为 GPU/TPU 执行。"
+    },
+    {
+      "id": "source-matmul-pass-walkthrough",
       "ready": true,
       "depends_on": [
         "source-built-cpu-baseline-003"
       ],
-      "action": "将 attributes_cost_probe.py 与 latency_metadata_probe.py 接入既有显式 build/native 绑定，在固定镜像的源码基线环境重跑并验证；保留旧 VERSION-SKEW capture。"
-    },
-    {
-      "id": "final-build-input-boundary",
-      "ready": true,
-      "depends_on": [
-        "terminal-core-dependency-audit"
-      ],
-      "action": "记录实际 external module/repository 与 hermetic Python 的来源、版本和输入描述；若进一步做 action 输入闭包审计，单独记录证据，不将 cache 校验称为完整离线重放。"
+      "action": "基于 source-runtime-002/suite/matmul 的源码 CPU capture，逐个解释关键 pass 的实际前后变化、源码入口和 IR 打印位置；将已有 LLVM/object 对应复查扩展到该匹配源码 capture。"
     },
     {
       "id": "tpu-device-profile",
@@ -417,7 +437,12 @@
     "terminal_dependencies": "50 artifacts, 3 archives, 43 patch targets and 1093 cached payloads / 734532494 bytes verified; 6 negative cases passed; no complete offline closure claim.",
     "project_state": "Project-status selftest passed positive summary plus 20 negative contracts; old root queue remains intentionally absent.",
     "compiler_hack_notebook": "5 code cells executed in a real Jupyter kernel; saved artifact hashes, six raw traces, independent NumPy, C++ XML and real metadata-loss regression passed. This Notebook run is archive revalidation, not a new native compile.",
-    "patch_whitespace": "Canonical patch context is preserved via directory-scoped Git attributes; all added C++ lines checked separately for trailing whitespace."
+    "patch_whitespace": "Canonical patch context is preserved via directory-scoped Git attributes; all added C++ lines checked separately for trailing whitespace.",
+    "source_metadata": "14 metadata cases + 2 HLO edit executions, 117 artifacts; source 003 producer and current native reader bound; matching-source CLI/selftests passed.",
+    "source_metadata_rejections": "Two running builds rejected before runtime; two old-wheel producers rejected before inputs; two old native readers rejected before cost recomputation.",
+    "source_metadata_notebook": "7 code cells executed in a real Jupyter kernel, including new saved source-bound result/trace-free numeric audits; legacy kernel remains VERSION-SKEW.",
+    "external_descriptors": "467 artifacts, 199 repositories, 451 descriptors; 111512478-byte Python archive and three runtime/header members rechecked; configured and observed local Python is 3.12.13.",
+    "external_descriptor_selftest": "Four invalid closure/dependency/version/build-process claims, incomplete inventory and historical missing producer rejected."
   },
   "completion_claim": "本状态未宣称 kickoff 的任一完整交付组已经验收。",
   "artifact_fingerprints": {
@@ -426,28 +451,28 @@
       "size_bytes": 114
     },
     "PLAN.md": {
-      "sha256": "fc7cb8330add06420aeed31e1d51fcdef15c044fda90bc865ff4a4dadbf4b103",
-      "size_bytes": 10086
+      "sha256": "c403da730666f8c812bd73a703e90117f39df4e36c337f9f8d7159648ac38eb9",
+      "size_bytes": 10888
     },
     "README.md": {
-      "sha256": "c61e0cd004bee1904747737be7522aa3c750c55563020bffbc1e784057e88062",
-      "size_bytes": 9061
+      "sha256": "2189909cea56b4cc7e686c4fb75290676e1d46f0171cf05f645e85af9912741b",
+      "size_bytes": 9404
     },
     "attributes-and-cost.md": {
-      "sha256": "974465ff934b069b0302dd9e9b8202ec8ed7f33906682923745e7a662bc95025",
-      "size_bytes": 8098
+      "sha256": "026265fc41df52be91ccdee9d462dcaf36f132b3af4f0bdc69a6a361522052ee",
+      "size_bytes": 8304
     },
     "attributes-cost.ipynb": {
-      "sha256": "5ac30522f637f2512f40abaa8e9d1855704482400e78b3b61d3a106d601e4e79",
-      "size_bytes": 13065
+      "sha256": "efe22022acb500c9bc0b8d2da0741a7a3dab3650cceb5b6303746a1a18779981",
+      "size_bytes": 16344
     },
     "attributes-results.json": {
       "sha256": "4f4034ddb72d1f32f74bc13255cdfba6edd92791c4c99e8b5a5039bcecfd1fd1",
       "size_bytes": 4926
     },
     "attributes_cost_probe.py": {
-      "sha256": "01a10fb88ef4ba90389d6d32c84c2e1f3666365a1fa63fd4352b5be1e55935da",
-      "size_bytes": 13707
+      "sha256": "7b0415b4c9c81d37346b8b903ad68768023d599b6644df4e67d9e64ec48b39c7",
+      "size_bytes": 13803
     },
     "audit_build_dependencies.py": {
       "sha256": "e04a1abeb0905432fe8ad212703efa70b455d0b3c25e5ecb938aee8255571e84",
@@ -457,17 +482,25 @@
       "sha256": "d94fcf20831b06150e5e6210a7a5c941a277785b7af3fb7c40c9ceb01a6f6793",
       "size_bytes": 7165
     },
+    "audit_external_descriptors.py": {
+      "sha256": "f9d3253fbda6443ba103f47f79d44c3f03e2e7181a1d52bce5ab2b4b1e9d5dc7",
+      "size_bytes": 7716
+    },
     "build-dependency-results.json": {
       "sha256": "a71afa62eaede16df2a5977347fea076cffa59b497794e9aa0f2966a6dd5f5b3",
       "size_bytes": 3774
+    },
+    "build-inputs.md": {
+      "sha256": "b63c8975bc025b13a64e52c704c5619ae5b3a93416bda1220a5d9b7ec6eced85",
+      "size_bytes": 3471
     },
     "build_source_index.py": {
       "sha256": "430fbc9a1831db207bab8af8101bf87ca89bb84eb9262538c4c29f8a112541a0",
       "size_bytes": 53908
     },
     "capture_runtime.py": {
-      "sha256": "41eafb5052b3ba0cfaf3c5393feccf02cef7d30ae4cbba7f998ee044d1a00082",
-      "size_bytes": 2282
+      "sha256": "7f040f7a36aea060ed57c217d109dc498cfe96082a81a0fe297ede87d540b025",
+      "size_bytes": 3151
     },
     "codegen-results.json": {
       "sha256": "78ec98b44139dc0d01be4ab688f08a8627a15b30febeed7be5be2023a9189cb9",
@@ -492,6 +525,10 @@
     "extension-results.json": {
       "sha256": "3e9e3f1909236e94fe278be96918df1055dcb6e19647d5a701778f6ddc1c8e61",
       "size_bytes": 18092
+    },
+    "external-descriptor-results.json": {
+      "sha256": "6d447e5529b17ee7c9a30f35d3e86d580295e1576d03d817429dc6ac89f360ad",
+      "size_bytes": 9979
     },
     "fusion-and-memory.md": {
       "sha256": "810807a3356f43a404d4e4077735631d7f32d072a78fdb756b21bee1ef7529af",
@@ -522,12 +559,12 @@
       "size_bytes": 2510
     },
     "latency-model.md": {
-      "sha256": "c33683ea3f9c4c0c29ae22d00c80d2ef1cd0943be572bcb9e21323b15e236c00",
-      "size_bytes": 7878
+      "sha256": "2e8667940a17df8b2989bff7c4277fc5e750642c798268ee28868475bf716244",
+      "size_bytes": 8087
     },
     "latency_metadata_probe.py": {
-      "sha256": "5d864e787f93dd0832c027ddb13f22aadfafe0889ee55bbcba13111ed6e95f0e",
-      "size_bytes": 6133
+      "sha256": "77f6297c5298c21ebc331f54396e057df3f89aeb3f1d05cdc1b2254a3fee7e4a",
+      "size_bytes": 6218
     },
     "llvm-and-objects.md": {
       "sha256": "f9be580debf147be32996c40df03b62d852de3c586446c89a9e13fbf5e7a8f14",
@@ -650,12 +687,20 @@
       "size_bytes": 1904
     },
     "source-build.md": {
-      "sha256": "a343ea05f722868272bc5929bcc81f0ce199be1778d94be2194cf46b33a78a35",
-      "size_bytes": 8473
+      "sha256": "b39e884edc85cc6b7859f84c43bf0ea939296f77d54fe0f788052cf6a4776769",
+      "size_bytes": 8668
     },
     "source-index.json": {
       "sha256": "75cbd4124e5ddf9a3f203232d9ae5b7b14d8f7f85975951e260fdab303541531",
       "size_bytes": 147032
+    },
+    "source-metadata-baseline.md": {
+      "sha256": "7e38c32cebeafafb0d5ed33a330e037d260b204dd6c154462c0cf57ff6430db6",
+      "size_bytes": 4362
+    },
+    "source-metadata-results.json": {
+      "sha256": "41b6f39652e95a6d735f145d7d51dd34a9483a9d658bb469710c5fc2c7665045",
+      "size_bytes": 31128
     },
     "source-runtime-baseline.md": {
       "sha256": "1c39e40c6fc98082c412851472ee9cca4a3434f8ca3389ec2cef137454b93cdd",
@@ -666,12 +711,12 @@
       "size_bytes": 5156
     },
     "source_runtime_suite.py": {
-      "sha256": "f252bfae43d7d258c264b1567854146db6e4f96108a237d7630db6745a4aee7b",
-      "size_bytes": 3448
+      "sha256": "ff3328621f785166b2c7128b82cc57919c97a75b4ba963bfe40e322f0ea59eeb",
+      "size_bytes": 4063
     },
     "verify_attributes.py": {
-      "sha256": "cb58cee7f4e3b5b553dc00c77a907e20b4ae2c57af4c52d7e0005ffac00a6e60",
-      "size_bytes": 7224
+      "sha256": "256bf701a562c48b50d30ac2a55f4467174f71b236805a7ee235761800bad9b9",
+      "size_bytes": 7657
     },
     "verify_build_dependencies.py": {
       "sha256": "e8802c9de2daafdabe5fd32302a28a93a907459979c99be128644af90e321baa",
@@ -685,13 +730,17 @@
       "sha256": "d4343988e980e21f5669dc73e186a8414b64524adff8e87d1f0f33806afa4267",
       "size_bytes": 10759
     },
+    "verify_external_descriptors.py": {
+      "sha256": "f75c033e2e2da4b3a7158bf3c305b646a70e48b907b7130b588557e5bf4f5f42",
+      "size_bytes": 7423
+    },
     "verify_fusion_memory.py": {
       "sha256": "eb9c5996f95734758df0a7e5b6ecc44c3f2a315e928dabf39c2f87d97cea3bf9",
       "size_bytes": 12242
     },
     "verify_latency_metadata.py": {
-      "sha256": "0cab9faed2c6d37206e3d918aac8dfcb011328ea8a1d85a3f93d2492e35f96e8",
-      "size_bytes": 8842
+      "sha256": "53664dba103ce8b9e7e3d58d4214d66b08130c32732ecdf8a851a92b285f5538",
+      "size_bytes": 9276
     },
     "verify_overlap.py": {
       "sha256": "f8f0f310862e59ca23ed80e37a2aaa8301208682972fbb755035928c643c18c0",
@@ -750,7 +799,7 @@
     "log": "artifacts/builds/kickoff-cpu-pass-events-002/attempts/0001/build.log"
   },
   "publication": {
-    "local_commit": "44c076911328a50c1f0dbea12dc6ef9e0328f9ef",
+    "local_commit": "87383d68e7b6fcffd5b928e08776902d80cef774",
     "original_staged_diff_preserved": true,
     "push_attempt": {
       "command": "git push origin main",
@@ -761,9 +810,9 @@
     },
     "remaining": "Root worktree retains its local research history and staged cleanup; remote merge integration is performed only in the isolated publication worktree.",
     "state": "pushed",
-    "integration_commit": "f2e95d73bcba84b243aa1e707d94a0e6d9963bf8",
-    "push_result": "eb569ff..f2e95d7 HEAD -> main; normal fast-forward push",
-    "latest_milestone": "pinned-wheel-git-identity-support"
+    "integration_commit": "29bff3cf150f1718f6efcbc286a3c6f5afbae1a4",
+    "push_result": "normal push origin HEAD:main",
+    "latest_milestone": "source-built-compiler-pass-hack-and-rollback"
   },
   "additional_sources": [
     {
@@ -942,5 +991,14 @@
     "runtime_accepted": true,
     "launch_record": "artifacts/jax-stack/pass-patch-rollback-001/launch.json",
     "state_must_be_refreshed": false
+  },
+  "active_metadata_runtime": {
+    "container_id": "e358ab4e606f8efc7161e2d7e3aabfbc92355ab11fd14407822a1ac431eace69",
+    "state_at_last_inspection": "exited",
+    "state_must_be_refreshed": false,
+    "exit_code": 0,
+    "runtime_accepted": true,
+    "launch_record": "artifacts/jax-stack/source-metadata-runtime-001/launch.json",
+    "result": "research/jax-stack/source-metadata-results.json"
   }
 }
