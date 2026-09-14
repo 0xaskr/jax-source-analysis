@@ -81,6 +81,8 @@ def verify(capture):
     actual_files = {path for path in capture.rglob("*") if path.is_file() and path != manifest_path}
     check(actual_files == registered, "capture inventory is incomplete")
     environment = read_json(capture / "environment.json")
+    from capture_runtime import verify_binding
+    build_binding = verify_binding(capture, environment, manifest)
     source_commit = environment["repository"]["sources"]["jax"]["git_commit"]
     binary_commit = environment["runtime"]["jaxlib"]["build_revision"]
     if source_commit != binary_commit:
@@ -149,6 +151,7 @@ def verify(capture):
         "capture_id": manifest["capture_id"], "manifest_path": str(manifest_path.relative_to(ROOT)),
         "manifest_sha256": sha256(manifest_path), "evidence_level": "RUN-CPU",
         "qualifiers": manifest["qualifiers"], "source_entries_checked": len(index["entries"]),
+        "build_binding": build_binding,
         "source_edges_checked": len(index["edges"]), "artifact_count": len(registered),
         "artifact_bytes": sum(a["size_bytes"] for a in manifest["artifacts"]),
         "artifact_suffix_counts": dict(sorted(Counter(p.suffix for p in registered).items())),

@@ -75,6 +75,51 @@ capture 的 native 文件复查会失败。
 未来源码 wheel 的默认/过滤 pair 使用 `verify_pass_events.py --default ... --filtered ...`
 复查，不把初始环境验证当作安装分支已经执行。
 
+## 完整 CPU 实验的源码身份与复验
+
+matmul、fusion/memory 和 overlap 生产脚本现均支持 `--jaxlib-build-manifest`，通过
+[capture_runtime.py](capture_runtime.py) 复用成功构建 gate 与 native/wheel 字节核对。
+指定构建时只接受无补丁源码基线；补丁事件实验继续使用专门的 pass 入口。命令记录
+改为实际 `sys.executable` 和进程启动参数，能够区分宿主机与独立环境。
+
+不指定构建记录时，baseline 采集器也能识别仓库内的本地 wheel；但本地文件路径本身
+不等于完整构建来源或已加载 native payload 绑定。因此源码复验显式传入 manifest，
+并保存 `build-binding.json`；相应验证器会重新核对，缺少或不一致的选择会被拒绝。
+
+已在保留的独立旧 wheel 环境实际执行并复查 [CPU 复验结果](cpu-revalidation-results.json)：
+
+| Capture | 数值对照 | 产物 |
+|---|---:|---:|
+| cpu-matmul-runtime-001 | 4 组，含 executable 同进程序列化重载 | 1,063 |
+| fusion-memory-runtime-001 | 11 组 | 2,029 |
+| overlap-runtime-001 | 3 组，以及 4 个重新观察的失败 | 595 |
+
+共 18 组数值对照、3,687 个产物，仍为 `RUN-CPU + VERSION-SKEW`。三个 CLI 的 running
+构建拒绝已实际测试，发生在运行采集前；另用两个反例检查构建选择缺失与不一致。
+记录保存在 `artifacts/jax-stack/source-revalidation-gates-001`。这不是成功构建分支的证据。
+
+无补丁源码环境成功建立后，以下命令执行完整 matmul，并复查实际加载身份及原始产物：
+
+```bash
+artifacts/jax-stack/runtime-source-baseline-001/venv/bin/python -B \
+  research/jax-stack/matmul_probe.py \
+  --output artifacts/jax-stack/cpu-matmul-source-001 \
+  --jaxlib-build-manifest manifests/build-fingerprints/kickoff-cpu-source-002.json
+artifacts/jax-stack/runtime-source-baseline-001/venv/bin/python -B \
+  research/jax-stack/verify_research.py --capture artifacts/jax-stack/cpu-matmul-source-001
+```
+
+fusion/memory 和 overlap 同样传入该 manifest，在各自新目录采集；对应验证器均支持
+`--capture`。overlap 源码复验另外使用 `--observe-prior-failures`，记录四个历史失败
+用例的本次 lowering、编译或执行结果。若某个用例现在成功，必须执行并通过独立 NumPy
+参考；数值错误仍会终止采集。当前旧 wheel 中四个用例仍失败，历史用例转为成功的分支
+尚未实际触发，不能宣称修复。
+
+fusion 验证器对已绑定源码构建的 capture 重新报告 reduction peak 是否仍与 inclusive
+logical max 不同，保留原始 allocation、live-range 和数值约束。它不要求新 binary
+继续出现旧诊断差异，也不会据此推导物理峰值或 TPU 内存变化。旧 capture 的严格历史
+检查仍可复现。
+
 本轮环境检查另发现上游源码树中有 305 个忽略的 `.pyc/.pyo` 文件。调用现有
 `tools/sync-environment.py` 的 `quarantine_bytecode` 将它们移动到
 `artifacts/environment/bytecode/backup-ai8r8u6z`，全部备份字节核对通过；记录在

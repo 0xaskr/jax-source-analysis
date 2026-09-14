@@ -104,6 +104,8 @@ def entry_operations(text):
 def verify(capture):
     result=audit(capture)
     manifest=read_json(capture/"manifest.json")
+    from capture_runtime import verify_binding
+    build_binding=verify_binding(capture,read_json(capture/"environment.json"),manifest)
     names={"chain-fused","chain-donated","chain-external-view","chain-no-instruction-fusion","chain-no-fusion-no-wrapper",
            "reshape-not-donated","reshape-donated","reduce-donation-unused","identity","matmul-bias","matmul-bias-no-fusion"}
     check(set(manifest["cases"])==names,"missing comparison case")
@@ -148,9 +150,12 @@ def verify(capture):
     check(cases["chain-donated"]["memory_analysis"]==cases["chain-external-view"]["memory_analysis"],"external view changed compiler plan")
     check(cases["chain-external-view"]["visible_distinct_payload_bytes_after_call"]>cases["chain-external-view"]["memory_analysis"]["accounted_bytes"],"runtime/static distinction missing")
     check(cases["reshape-donated"]["memory_analysis"]["accounted_bytes"]==cases["reshape-not-donated"]["memory_analysis"]["accounted_bytes"],"reshape counterfactual differs")
-    check(not cases["reduce-donation-unused"]["storage_analysis"]["reported_peak_is_inclusive_logical_max"],"expected diagnostic peak discrepancy absent")
+    peak_difference=not cases["reduce-donation-unused"]["storage_analysis"]["reported_peak_is_inclusive_logical_max"]
+    if build_binding is None:
+        check(peak_difference,"expected historical diagnostic peak discrepancy absent")
     check(any("not usable" in w for w in cases["reduce-donation-unused"]["warnings"]),"missing unused donation warning")
-    result.update(cases=verified,limits=read_json(capture/"summary.json")["limits"])
+    result.update(cases=verified,limits=read_json(capture/"summary.json")["limits"],build_binding=build_binding,
+                  historical_peak_difference_present=peak_difference)
     return result
 
 
@@ -158,15 +163,17 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--write",action="store_true")
     parser.add_argument("--selftest",action="store_true")
-    args=parser.parse_args();capture=ROOT/"artifacts/jax-stack/fusion-memory-002"
+    parser.add_argument("--capture",type=Path,default=ROOT/"artifacts/jax-stack/fusion-memory-002")
+    args=parser.parse_args();capture=args.capture.resolve()
     if args.selftest:
-        original=read_json(capture/"manifest.json")
+        historical=ROOT/"artifacts/jax-stack/fusion-memory-002"
+        original=read_json(historical/"manifest.json")
         for kind in ["hash","inventory","qualifier"]:
             fake=copy.deepcopy(original)
             if kind=="hash":fake["artifacts"][0]["sha256"]="0"*64
             elif kind=="inventory":fake["artifacts"].pop()
             else:fake["qualifiers"]=[]
-            try:audit(capture,fake)
+            try:audit(historical,fake)
             except ValueError:pass
             else:raise AssertionError(f"bad manifest accepted: {kind}")
         try:allocations("BufferAssignment:\nallocation 0: size 4, page 0:\n value: <0 x @0> (size=8,offset=0): f32[2]\n")
