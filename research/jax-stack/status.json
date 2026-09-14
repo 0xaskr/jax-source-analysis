@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "updated_at": "2026-09-14T14:34:35.045202+00:00",
+  "updated_at": "2026-09-14T15:01:12.955105+00:00",
   "goal_state": "active",
   "objective": "按 Outline kickoff revision 51 完成软件栈总览、源码/API 索引和实际推理场景 Hack 实验。",
   "kickoff_source": "research/jax-stack/kickoff-source.json",
@@ -17,7 +17,7 @@
     },
     {
       "id": "source-entry-index",
-      "result": "已核对 45 个源码入口和 13 条调用/接口关系。完整调用图未完成。",
+      "result": "已核对 63 个源码入口、17 条调用/接口关系；包含锁定的 XProf tooling 源码。完整调用图仍在补充。",
       "evidence": "research/jax-stack/source-index.json"
     },
     {
@@ -49,6 +49,25 @@
       "id": "source-build-preflight",
       "result": "固定 Docker 镜像预检通过；隔离 JAX/XLA 克隆构建已启动并进入 C++ 编译，尚未产出已验证 wheel。",
       "evidence": "research/jax-stack/source-build.md"
+    },
+    {
+      "id": "attributes-cost-and-hlo-edit",
+      "result": "六种 metadata 情形、直接 IR 属性丢失边界、native HLO setter、add→subtract 真实编译执行、opaque custom-call 未知成本均完成 CPU 取证；60 个产物通过独立验证。",
+      "evidence": "research/jax-stack/attributes-results.json"
+    },
+    {
+      "id": "attributes-notebook",
+      "result": "真实 Jupyter kernel 已执行属性/cost Notebook 的 4 个代码单元。",
+      "evidence": "research/jax-stack/attributes-cost.ipynb"
+    },
+    {
+      "id": "xprof-roofline-source",
+      "result": "补齐锁定 XProf 68dba182 源码，定位 session/OpStats/roofline/CLI 处理链及缺失值、group_by 边界；尚未执行 XProf native converter。",
+      "evidence": "research/jax-stack/roofline.md"
+    },
+    {
+      "id": "publication-repaired",
+      "result": "在隔离 worktree 中无冲突合并双方提交，正常推送 merge 771068b；原暂存 diff 按字节比对未变。"
     }
   ],
   "requirements": [
@@ -119,26 +138,33 @@
     },
     {
       "id": "R09",
-      "state": "artifacts-collected",
+      "state": "partial",
       "evidence": [
-        "research/jax-stack/cpu-results.json"
+        "research/jax-stack/cpu-results.json",
+        "research/jax-stack/attributes-and-cost.md",
+        "research/jax-stack/attributes-results.json"
       ],
-      "remaining": "StableHLO/HLO 信息逐项对照与自定义属性传递/丢失实验。"
+      "remaining": "CPU 参考接口及 matmul 转换/编辑证据已取得；匹配源码二进制后复验，继续补齐目标 TPU 的属性与阶段信息边界。"
     },
     {
       "id": "R10",
       "state": "partial",
       "evidence": [
         "research/jax-stack/cpu-results.json",
-        "research/jax-stack/source-index.json"
+        "research/jax-stack/source-index.json",
+        "research/jax-stack/roofline.md",
+        "research/jax-stack/attributes-results.json"
       ],
-      "remaining": "从静态 cost 到目标 roofline 的输入、实现与修正方案。"
+      "remaining": "已有模块、静态输入和修正位置已定位；目标硬件上限、成本来源与时间/内存分解需 U03 的实际环境验证。"
     },
     {
       "id": "R11",
-      "state": "pending",
-      "evidence": [],
-      "remaining": "自定义属性与 cost model 的连接实验及所需组件修改。"
+      "state": "partial",
+      "evidence": [
+        "research/jax-stack/attributes-and-cost.md",
+        "research/jax-stack/attributes-results.json"
+      ],
+      "remaining": "已验证自定义标签与默认成本可共存，任意标签不自动覆盖成本，并定位扩展组件；待匹配源码 wheel 复验。实际分块属性语义随 U01/U02 的业务改写定义。"
     },
     {
       "id": "R12",
@@ -177,12 +203,7 @@
     {
       "id": "hlo-pass-explanations",
       "ready": true,
-      "action": "构建运行期间，沿已捕获的 before/after HLO 深入 fusion、调度、buffer assignment 与 cost 源码和约束。"
-    },
-    {
-      "id": "attributes-cost-probe",
-      "ready": true,
-      "action": "验证 StableHLO/HLO 自定义属性的传递边界及与 cost model 的关系，保留转换前后 IR。"
+      "action": "基于现有 native HLO/dump，补齐关键 pass 的 before/after 解释；运行 fusion、alias/donation、schedule/liveness 与 buffer 复用的对照，保持 CPU 与 TPU 证据分离。"
     },
     {
       "id": "compiler-custom-event",
@@ -212,7 +233,7 @@
     }
   ],
   "validation": {
-    "source_index": "45 entries / 13 edges verified",
+    "source_index": "63 entries / 17 edges verified; five core sources plus pinned XProf are clean",
     "capture": "1062 artifact sizes and SHA-256 verified",
     "numerics": "4 cases; NumPy float64 forward/analytic gradients",
     "serialized_executable": "4 in-process reloads, bit-for-bit comparison passed",
@@ -227,28 +248,47 @@
     "extension_selftest": "3 corrupted manifest variants rejected",
     "notebook_extensions": "5 code cells executed using nbclient and real Jupyter kernel",
     "legacy_state_check": "tools/project-status.py --check and summary both report missing manifests/status.json; this file was intentionally removed by authorized cleanup. Active recovery state is research/jax-stack/status.json.",
-    "project_status_selftest": "PASS: positive summary and 20 negative contracts"
+    "project_status_selftest": "PASS: positive summary and 20 negative contracts",
+    "attributes": "60 artifact inventories/hashes, six NumPy cases, native HLO metadata/opcode parsing, cost reads, semantic edit outputs verified",
+    "attributes_selftest": "3 corrupted manifests plus metadata-as-FLOPs claim rejected",
+    "notebook_attributes": "4 code cells executed using a real Jupyter kernel"
   },
   "completion_claim": "本状态未宣称 kickoff 的任一完整交付组已经验收。",
   "artifact_fingerprints": {
     "PLAN.md": {
-      "sha256": "c7c94c02345ec849e274053ccb9e8b3da9be4baaccaf924a8841a0807c232583",
-      "size_bytes": 6097
+      "sha256": "0a71347c581c5e7cb9944cbbc5835191557528ba9c90780d603acc8664fe8bc2",
+      "size_bytes": 6670
     },
     "README.md": {
-      "sha256": "36597244008733d2fa714dc0b44069a688ba6e89ca5f74679619d59c3057167b",
-      "size_bytes": 6912
+      "sha256": "44df038b3755e11e5e4fcf4d0ffb5f917f33974546aa4b15239f25d42d925260",
+      "size_bytes": 7339
+    },
+    "attributes-and-cost.md": {
+      "sha256": "2e8e638ee4cfbf9add3d47ac7b50702b5ed7f9a66a6d86f8dba4fc26be825463",
+      "size_bytes": 7811
+    },
+    "attributes-cost.ipynb": {
+      "sha256": "7588e222273485f817acfbb1fa4d5ae4e8bc0bdef924adbd52f52178149767dd",
+      "size_bytes": 8485
+    },
+    "attributes-results.json": {
+      "sha256": "4f4034ddb72d1f32f74bc13255cdfba6edd92791c4c99e8b5a5039bcecfd1fd1",
+      "size_bytes": 4926
+    },
+    "attributes_cost_probe.py": {
+      "sha256": "01a10fb88ef4ba90389d6d32c84c2e1f3666365a1fa63fd4352b5be1e55935da",
+      "size_bytes": 13707
     },
     "build_source_index.py": {
-      "sha256": "307781abafea30d1822d2393cbace0e48f3761989189553ec461475f26119623",
-      "size_bytes": 21000
+      "sha256": "36ba19b86085787deaf1ee64245c0ecc8e69792ce4d05bf2b433c029e0a55297",
+      "size_bytes": 28525
     },
     "compiler_events_probe.py": {
       "sha256": "98659bc1df7d2c0afb830e6ac01dc9b3bf845003b53e37e3b02f080b69d7eadc",
       "size_bytes": 7467
     },
     "cpu-results.json": {
-      "sha256": "5efb837b54503b9b82894eabfab3e72344d047b301222beacb74a58a3c89e0dc",
+      "sha256": "36a6e4af109988ff03cddf77a7cb8cbf5889e04f6a20a6f83e914fc03e033087",
       "size_bytes": 91475
     },
     "extension-results.json": {
@@ -272,8 +312,8 @@
       "size_bytes": 7289
     },
     "overview.md": {
-      "sha256": "1f7d218f547a66b57bffff829bcecf68f420b3b55ad8ab6bff95f05a017f1394",
-      "size_bytes": 7876
+      "sha256": "12f6f9aa0c69eeda103656d7cbef880a7dba1e4a19a077725057c31236771752",
+      "size_bytes": 8167
     },
     "pallas-comparison.md": {
       "sha256": "6c7577ccc2315b8d1bf4c7663e3ea75d0d1d54cc0a7dabe69ba63654a24e7a0a",
@@ -295,13 +335,21 @@
       "sha256": "ce46b16f95b0d9b0ad1ed1ff3afc9103b0b4475b3b02b3730d82db3eabbe405d",
       "size_bytes": 7113
     },
+    "roofline.md": {
+      "sha256": "4a7c4f5e44f316b31820cec469f26e4fa58cbd6702f25644449808ed3c982bce",
+      "size_bytes": 6576
+    },
     "source-build.md": {
       "sha256": "935edb550d2e5f19a03a2e6bc7f37a33acb15c398320f3a73ac8636ce62127cc",
       "size_bytes": 3353
     },
     "source-index.json": {
-      "sha256": "dfdb7b33e80f45baa311c4fa55b9759d4165a526fbd5504c03254545eb9a7ce9",
-      "size_bytes": 51866
+      "sha256": "87d4e94ed9aa113c692b7220bfa3b6014e8030ab7bffac35dc0b00a8db0546c9",
+      "size_bytes": 72959
+    },
+    "verify_attributes.py": {
+      "sha256": "cb58cee7f4e3b5b553dc00c77a907e20b4ae2c57af4c52d7e0005ffac00a6e60",
+      "size_bytes": 7224
     },
     "verify_extensions.py": {
       "sha256": "d4343988e980e21f5669dc73e186a8414b64524adff8e87d1f0f33806afa4267",
@@ -333,6 +381,35 @@
     "state_must_be_refreshed": true,
     "launch_record": "artifacts/jax-stack/source-build-001/launch.json",
     "log": "artifacts/builds/kickoff-cpu-source-001/attempts/0001/build.log",
-    "pid_namespace_warning": "Inspect the Docker container; wrapper PIDs are container-local."
-  }
+    "pid_namespace_warning": "Inspect the Docker container; wrapper PIDs are container-local.",
+    "inspected_at": "2026-09-14T14:37:34.557715+00:00"
+  },
+  "publication": {
+    "local_commit": "5ef59201b5dc9abdb7246ca9c7738afa7a4973c5",
+    "original_staged_diff_preserved": true,
+    "push_attempt": {
+      "command": "git push origin main",
+      "remote": "git@github.com:0xaskr/jax-source-analysis.git",
+      "exit_code": 1,
+      "result": "rejected (non-fast-forward)",
+      "observed_divergence": "local: 5ef5920, c3c17cc; origin/main: 519c3e5, cc9972f; common ancestor 9af7706"
+    },
+    "remaining": "Current worktree HEAD kept unchanged to preserve its staged cleanup; remote integration was performed in an isolated worktree.",
+    "state": "pushed",
+    "integration_commit": "771068b52d96d5c86c6ba24b187fbfe920ba4ab9",
+    "push_result": "519c3e5..771068b HEAD -> main; normal fast-forward push"
+  },
+  "additional_sources": [
+    {
+      "component": "xprof",
+      "path": "upstream/tooling/xprof",
+      "revision": "68dba1826c37986af41f6119930ec315592a51f6",
+      "authority": "upstream-sources.lock",
+      "state": "materialized-clean",
+      "runtime_installed": false,
+      "evidence_level": "SOURCE-ONLY",
+      "manifest": "artifacts/jax-stack/xprof-source-001/manifest.json"
+    }
+  ],
+  "pending_user_inputs_last_requested": "2026-09-14T15:01:12.955105+00:00"
 }

@@ -151,6 +151,60 @@ SITES = [
     ("xla.trace-json", "xla", "Trace export", "xla/tsl/profiler/convert/trace_events_to_json.cc", "inline void AddTraceEvent(", 87,
      "TraceEvent 的 ps 时间、device/resource ID、名称和 args", "Chrome Trace Event JSON 的 X 事件",
      "ts/dur 转成微秒；displayTimeUnit=ns 不改变这些数值的单位。嵌套时长不可直接求和当作 wall time。"),
+    ("jax.metadata-api", "jax", "Metadata API", "jax/_src/xla_metadata.py", "def set_xla_metadata(", 109,
+     "可选数组值或 kwargs metadata", "标记 producer op 的 identity primitive 或 metadata context",
+     "Python 值转成字符串（布尔小写）；属性能被传递不代表 backend 有消费逻辑。"),
+    ("jax.metadata-call", "jax", "Metadata API", "jax/_src/xla_metadata.py", "def xla_metadata_call2(", 215,
+     "函数、metadata、ad_metadata 策略", "带 metadata 的 staged call",
+     "ad_metadata 控制线性化/转置派生调用；same/drop 的 matmul 反向调用已分别捕获。"),
+    ("jax.metadata-call-lower", "jax", "Metadata lowering", "jax/_src/xla_metadata.py", "def _xla_metadata_call_lowering(", 316,
+     "Jaxpr、operands、metadata", "带 mhlo.frontend_attributes 的 func.call",
+     "属性最初在 call 上；后端内联和 fusion 可能改变属性所有者，不能按节点数量一一对应。"),
+    ("xla.frontend-export", "xla", "Metadata export", "xla/hlo/translate/mhlo_to_hlo/mlir_hlo_to_hlo.cc", "void CreateFrontendAttributes(mlir::ArrayRef", 970,
+     "MLIR 命名属性数组", "XLA FrontendAttributes 字符串 map",
+     "此重载接受 StringAttr 和 BoolAttr；直接写入 IntegerAttr 的自定义值未被导出。"),
+    ("jaxlib.cost-binding", "jax", "Cost binding", "jaxlib/xla_compiler.cc", "void BuildXlaCompilerSubmodule(", 86,
+     "hlo_module_cost_analysis 的 client 与 HloModule", "properties dict",
+     "从该 client 的 PJRT backend 获取 analyzer 并遍历 entry computation；没有 Python rates 参数。"),
+    ("xla.cost-preprocess", "xla", "Cost analysis", "xla/service/hlo_cost_analysis.cc", "absl::Status HloCostAnalysis::Preprocess(", 58,
+     "HloInstruction 与 shapes", "默认输入/输出字节、utilization 等 properties",
+     "这是静态估计，后续 handler 可覆盖，不等于实际 HBM/DRAM 流量。"),
+    ("xla.cost-postprocess", "xla", "Cost analysis", "xla/service/hlo_cost_analysis.cc", "absl::Status HloCostAnalysis::Postprocess(", 91,
+     "当前 properties、per_second_rates 与最小延迟选项", "逐指令 bottleneck time 与累计 properties",
+     "最大资源时间需要配置 rates；默认空 rates 不产生目标硬件 roofline 或真实运行时间。"),
+    ("xla.cost-custom-call", "xla", "Cost analysis", "xla/service/hlo_cost_analysis.cc", "absl::Status HloCostAnalysis::HandleCustomCall(", 1362,
+     "未知 custom-call instruction", "未知 cost 的 -1 sentinel（内部 call markers 例外为 0）",
+     "CPU analyzer 对本次 tpu_custom_call 返回 -1；这不是 libtpu backend cost 行为的验证。"),
+    ("xprof.roofline-cli", "xprof", "Profiler CLI", "plugin/xprof/cli/tools/get_roofline_model_tool.py", "def get_roofline_model(", 24,
+     "session_id、top_n、group_by、bypass_cache", "program/device/top_operations JSON 摘要",
+     "此固定版 del group_by；获取 roofline_model.json 后 fallback roofline_model。缺失值部分转 0，必须结合原始数据判断。"),
+    ("xprof.roofline-processor", "xprof", "Profiler conversion", "xprof/convert/roofline_model_processor.cc", "absl::Status RooflineModelProcessor::ProcessSession(", 39,
+     "SessionSnapshot 和 ToolOptions", "合并 XSpace→OpStats→RooflineModel 的 JSON",
+     "分别生成包含/排除 infeed/outfeed 的记录；没有在本轮执行 XProf native converter。"),
+    ("xprof.roofline-record", "xprof", "Profiler analysis", "xprof/convert/op_stats_to_roofline_model.cc", "RooflineModelRecord ConvertOpMetricsToRooflineModelRecord(", 62,
+     "OpMetrics、PerfEnv/RunEnvironment、record type 和总时间", "时间、强度、资源上限与效率记录",
+     "利用率使用资源最大值；异步 copy 的估计可能超过 1，不应一律裁剪或解释为测量正确。"),
+    ("xprof.roofline-db", "xprof", "Profiler analysis", "xprof/convert/op_stats_to_roofline_model.cc", "RooflineModelDatabase ConvertOpStatsToRooflineModel(", 272,
+     "Combined OpStats 与 RooflineModelOptions", "profile/step 记录和 diagnostics",
+     "输入必须已有运行环境及成本/时间数据；函数不是从单张 StableHLO 推导全部设备信息。"),
+    ("xprof.roofline-program", "xprof", "Profiler aggregation", "xprof/convert/op_stats_to_roofline_model.cc", "RooflineModelRecord GenerateRooflineModelProgramRecord(", 145,
+     "OpMetricsDb、OpStats、record type 和总时间", "聚合后的 program 记录",
+     "跳过 MayHaveInnerOps 类别避免重复计数；infeed/outfeed 由选项控制。"),
+    ("xprof.roofline-metrics", "xprof", "Profiler analysis", "xprof/convert/op_metrics_to_record.h", "inline void SetRooflineMetrics(", 180,
+     "OpMetrics、PerfEnv、RunEnvironment 与 record", "吞吐、各级内存强度和 bottleneck",
+     "measured_flop_rate 是 flops_v2/实测时间，不自动等于硬件 counter；无分层字节时此版按 HBM 处理。"),
+    ("xprof.cost-wrapper", "xprof", "Profiler cost conversion", "xprof/utils/hlo_cost_analysis_wrapper.cc", "HloCostAnalysisWrapper::GeneratePerformanceInfo(", 60,
+     "HloInstruction 与 backend cost analysis wrapper", "PerformanceInfo 的 FLOPs/字节和内存分解",
+     "内存分解仅输出正值，跳过 0 与 -1；TPU/GPU 获取 cost 的路径需分别追踪。"),
+    ("xprof.unknown-cost", "xprof", "Profiler cost conversion", "xprof/utils/cost_utils.h", "inline int64_t ValidHloCost(", 30,
+     "cost 数值，包括 -1 未知 sentinel", "-1 映射为 0，其他值保持原样",
+     "下游出现 0 不足以证明该算子没有计算/流量；需要追踪原始 cost 可用性。"),
+    ("xla.cpu-cost-factory", "xla", "CPU cost factory", "xla/pjrt/cpu/cpu_client.cc", "PjRtCpuClient::GetHloCostAnalysis()", 470,
+     "CPU PJRT client", "通用 HloCostAnalysis，使用 CPU ShapeSizeBytes",
+     "没有在此 factory 填入硬件 per_second_rates；不能把 optimal_seconds 缺失当作零耗时。"),
+    ("xla.hlo-metadata-setter", "xla", "Native HLO Python API", "xla/python/hlo.cc", "    void set_frontend_attribute(", 783,
+     "HloInstruction wrapper、string key/value", "更新 instruction 的 FrontendAttributes map",
+     "可修改 native HLO 属性；语义性图编辑仍受 shape/opcode/effect/alias 等验证约束。"),
 ]
 
 
@@ -169,15 +223,27 @@ EDGES = [
     ("pallas.tpu-lower", "mosaic.module", "    mosaic_module = lowering.lower_jaxpr_to_pipelined_module(", "direct", ""),
     ("xla.cpu-codegen", "xla.cpu-schedule", "  ABSL_ASSIGN_OR_RETURN(HloSchedule schedule, CreateHloSchedule(*module));", "direct", ""),
     ("xla.cpu-codegen", "xla.cpu-buffers", "                   CreateBufferAssignment(*module));", "direct", ""),
+    ("jaxlib.cost-binding", "xla.cpu-cost-factory", "                            client->pjrt_client()->GetHloCostAnalysis());", "interface", "当传入 client 为 PjRtCpuClient 时。"),
+    ("xprof.roofline-processor", "xprof.roofline-db", "  RooflineModelDatabase result = ConvertOpStatsToRooflineModel(", "direct", ""),
+    ("xprof.roofline-program", "xprof.roofline-record", "  RooflineModelRecord program_record = ConvertOpMetricsToRooflineModelRecord(", "direct", ""),
+    ("xprof.roofline-record", "xprof.roofline-metrics", "  SetRooflineMetrics(metrics, op_stats.perf_env(), op_stats.run_environment(),", "direct", ""),
 ]
 
 
 def main():
     baseline = json.loads((ROOT / "manifests/baseline.json").read_text())
-    sources = baseline["repository"]["sources"]
+    sources = dict(baseline["repository"]["sources"])
+    # This optional tooling source was already pinned in the lock, then materialized
+    # for the roofline investigation. Do not change the five core baseline entries.
+    matches = [line.split("|") for line in (ROOT / "upstream-sources.lock").read_text().splitlines()
+               if line.startswith("tooling-reference|upstream/tooling/xprof|")]
+    if len(matches) != 1:
+        raise RuntimeError("Missing or duplicate pinned XProf source")
+    _, path, url, revision, *_ = matches[0]
+    sources["xprof"] = {"path": path, "git_commit": revision}
     origins = {"jax": "https://github.com/jax-ml/jax", "xla": "https://github.com/openxla/xla",
                "stablehlo": "https://github.com/openxla/stablehlo", "shardy": "https://github.com/openxla/shardy",
-               "llvm": "https://github.com/llvm/llvm-project"}
+               "llvm": "https://github.com/llvm/llvm-project", "xprof": url.removesuffix(".git")}
     for source in sources.values():
         path = ROOT / source["path"]
         revision = subprocess.check_output(["git", "-C", str(path), "rev-parse", "HEAD"], text=True).strip()

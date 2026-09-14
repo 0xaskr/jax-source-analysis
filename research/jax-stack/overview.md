@@ -1,7 +1,7 @@
 # 软件栈与入口总览：第一轮源码核对
 
 依据 [kickoff revision 51](https://outline.infiscale-tech.com/doc/research-plan-jax-kickoff-ib5QULKSS4)。
-当前索引有 45 个经过文件指纹和行号核对的入口、13 条带调用位置的关系，见
+当前索引有 63 个经过文件指纹和行号核对的入口、17 条带调用位置的关系，见
 [source-index.json](source-index.json)。这是入口索引；完整调用图、私有 libtpu/LLO、
 实际推理业务和 TPU 执行验收仍未完成。
 
@@ -99,11 +99,13 @@ Mosaic module，再通过 helper 进入 custom call 接口。
 
 ## 本轮可以验证到哪里
 
-- 源码：45 个入口和 13 条调用/分派关系的路径、revision、行号与 SHA-256。
+- 源码：63 个入口和 17 条调用/分派关系的路径、revision、行号与 SHA-256，含已锁定的 XProf tooling 源码。
 - CPU：四组 matmul 变换的数值、实际 native HLO dump、部分 MLIR/LLVM 代码生成、
   ELF 目标文件，以及四个序列化 executable 的同进程重新加载。
 - Pallas/profiling：两种解释路径、host 生命周期及统计、现有 wheel 的编译 pass 事件，
   以及开放源码 TPU lowering 生成的配对 Mosaic 标记，见 [profiling.md](profiling.md)。
+- 属性/cost：六种 metadata 情形、直接编辑 IR 的属性传递边界、native HLO 属性 API、
+  add→subtract 改写后的真实执行，以及已定位的 XProf roofline 处理链，见 [attributes-and-cost.md](attributes-and-cost.md)。
 - 仍未证明：完整源码调用图、匹配源码构建/加载、libtpu 编译与 TPU runtime/LLO、真实业务
   fusion/Pallas 注入、split 降低运行峰值、通信 overlap、设备 trace 与自建编译器标记。
 
