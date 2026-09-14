@@ -1,0 +1,167 @@
+{
+  "capture": "artifacts/jax-stack/runtime-environment-001",
+  "evidence_level": "RUN-CPU",
+  "qualifiers": [
+    "VERSION-SKEW"
+  ],
+  "mode": "inherited-wheel-negative-control",
+  "metadata_files": {
+    "create-venv.command.json": {
+      "sha256": "cbd4b4f7f6084fd6fa7851fbb447f1ef2a89df6f07247c13815ec442f3f98c79",
+      "size_bytes": 214
+    },
+    "create-venv.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    },
+    "dependency-files-after.json": {
+      "sha256": "53049182f95284de6e51e299e66214f06821f19eb397f8daed56cfa384b427c2",
+      "size_bytes": 1973794
+    },
+    "dependency-files-before.json": {
+      "sha256": "53049182f95284de6e51e299e66214f06821f19eb397f8daed56cfa384b427c2",
+      "size_bytes": 1973794
+    },
+    "interpreter.command.json": {
+      "sha256": "572dab8c0faa06d91531c7b9bab1e3ec2a86b57f23dd0306b6386bbc8e61b8b8",
+      "size_bytes": 417
+    },
+    "interpreter.json": {
+      "sha256": "bc75d281e2e8ec9ba9ddb4a97114ebe3d12bc068472cf5eb04e59bf273bd4733",
+      "size_bytes": 926
+    },
+    "interpreter.log": {
+      "sha256": "7cd1d812eb256ab2e13cc547c3a3420d088321f6510022b4efad7ec46bca5462",
+      "size_bytes": 872
+    },
+    "pair-results.json": {
+      "sha256": "d244d3e2cb81665f540088a2de2b9594a7eaa0ad10904bc5426dac3295c095b2",
+      "size_bytes": 4266
+    },
+    "preparation.json": {
+      "sha256": "6883ff1b945368b0c486a9cfd52f563b9bb2972bb79ca5bf20839a5d26bdffc1",
+      "size_bytes": 869
+    },
+    "probe-default.command.json": {
+      "sha256": "45db4a25076017e7c62c9ed45079a032f31df79f661b5c5d4898c9dcd61ccff7",
+      "size_bytes": 341
+    },
+    "probe-default.log": {
+      "sha256": "fc2dc2b7e1e6051e54bd939936068bba9cee5a389e051c760c9fc972fa77ab66",
+      "size_bytes": 120
+    },
+    "probe-filtered.command.json": {
+      "sha256": "1a694d974b707c932657e2707e4bd6540ebb738c8f6ce66ece32a491657b7347",
+      "size_bytes": 375
+    },
+    "probe-filtered.log": {
+      "sha256": "b4fe2d0c67100dc65fa6bb13904e491f20625588f1ea771305cbbc13b11af856",
+      "size_bytes": 121
+    },
+    "producer.py": {
+      "sha256": "89e0a29ea4a9d02ca154d023694b95c542391a1a9c6fadf6b53fd92fc48b6b7c",
+      "size_bytes": 8125
+    }
+  },
+  "copied_dependency_files": 12603,
+  "copied_dependency_bytes": 784588999,
+  "python_executable_sha256": "a92f0f95e883390c7256b2e441484aac06b1002dbe1d924141a77c8d82f96223",
+  "no_shared_dependency_inodes": true,
+  "host_package_files_unchanged": true,
+  "runtime_sys_path_excludes_host_venv": true,
+  "pair": {
+    "default": {
+      "manifest_sha256": "6f575849e9e52ee0305e2fe9032531b48ce9d6f5262424bae7a82bea9db1008a",
+      "native_binding": "unbound-wheel-negative-control",
+      "generic_known_pass_counts": {
+        "algsimp": 3,
+        "constant_folding": 2,
+        "layout-assignment": 1
+      },
+      "custom_events": 0,
+      "max_absolute_errors": [
+        5.551717559629243e-09,
+        5.551717559629243e-09,
+        5.551717559629243e-09
+      ]
+    },
+    "filtered": {
+      "manifest_sha256": "c10bcaeae1e08992a84b92427ae32d7a1d5640e2c26d2c32a6c9c4781a7b0fa4",
+      "native_binding": "unbound-wheel-negative-control",
+      "generic_known_pass_counts": {
+        "constant_folding": 2,
+        "layout-assignment": 1
+      },
+      "custom_events": 0,
+      "max_absolute_errors": [
+        5.551717559629243e-09,
+        5.551717559629243e-09,
+        5.551717559629243e-09
+      ]
+    }
+  },
+  "source_built_wheel_installed": false,
+  "patched_runtime_accepted": false,
+  "entry_rejections": [
+    {
+      "capture": "artifacts/jax-stack/runtime-environment-missing-build-rejected-001",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_created": false,
+      "error": "present events require a successful patched build manifest",
+      "files": {
+        "command.json": {
+          "sha256": "5b14d786f36d7be2726286bda1121133c62e510c950ef06e7c16c2b3a4ffa3ac",
+          "size_bytes": 203
+        },
+        "failure.json": {
+          "sha256": "d3c82c6c0777383f6011d1c647316570e89bf1a51c601f376d5ae1de1e3118bc",
+          "size_bytes": 152
+        },
+        "producer.py": {
+          "sha256": "89e0a29ea4a9d02ca154d023694b95c542391a1a9c6fadf6b53fd92fc48b6b7c",
+          "size_bytes": 8125
+        },
+        "run.log": {
+          "sha256": "657e1b16e7a13daf638f0982bc0afc15674d8b9c3e270e50f7b9cbe2349bb5f9",
+          "size_bytes": 961
+        }
+      }
+    },
+    {
+      "capture": "artifacts/jax-stack/runtime-environment-running-build-rejected-001",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_created": false,
+      "error": "build manifest is not a successful real build",
+      "files": {
+        "build-gate-observation.input.json": {
+          "sha256": "4850c288cdda6ec52bd253a6b8335c226b76cd79cffa0a0f0bd91b2e74ca4b16",
+          "size_bytes": 11696
+        },
+        "build-gate-observation.json": {
+          "sha256": "c30b43a30f00b36d111214ea54544307104de0745628ad105c577c55be292ece",
+          "size_bytes": 448
+        },
+        "command.json": {
+          "sha256": "6501388e1fec66ee2bc31715eefb72ea9491f675d93fe2ced7ea052e17730156",
+          "size_bytes": 294
+        },
+        "failure.json": {
+          "sha256": "a634ef4f4a829be901d3a3d8fef68a8e12a26bd42ee371fdc2a940074a328935",
+          "size_bytes": 139
+        },
+        "producer.py": {
+          "sha256": "89e0a29ea4a9d02ca154d023694b95c542391a1a9c6fadf6b53fd92fc48b6b7c",
+          "size_bytes": 8125
+        },
+        "run.log": {
+          "sha256": "07c62dba0ab3fccc82aad137dba2f4ed17138c1447737a6b15e7d540160cc60b",
+          "size_bytes": 982
+        }
+      }
+    }
+  ],
+  "limits": [
+    "Dependency/Python files are copied; OS libraries, standard library and the pinned editable JAX checkout are shared. This is not a hermetic system or TPU runtime.",
+    "The source-built wheel installation branch has not yet run; this environment retains the old wheel."
+  ]
+}

@@ -10,6 +10,7 @@
 - [扩展实验结果](extension-results.json)：四组 capture、62 个产物的独立复查。
 - [Pallas/profiling Notebook](pallas-profiling.ipynb)：实算对照、trace 统计与 Mosaic 标记检查。
 - [源码构建](source-build.md)：固定镜像、隔离克隆与实际构建状态。
+- [独立运行环境](runtime-environment.md)：依赖文件复制、导入/native 身份检查及成功 wheel 的安装入口。
 - [LLVM、对象与 ORC](llvm-and-objects.md)：三个 ELF 对象与 HLO/LLVM 函数、序列化字节的对应。
 - [自定义 pass 事件补丁](pass-event-patch.md)：规范补丁已验证应用和回滚，尚未编译加载。
 - [Pass 事件验收](pass-event-acceptance.md)：cold/warm/filter 负对照、构建状态拒绝与 wheel/native 身份核对。
