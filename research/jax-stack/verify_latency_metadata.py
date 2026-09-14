@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+from pathlib import Path
 
 import numpy as np
 
@@ -64,6 +65,9 @@ def verify(capture):
     result = audit(capture)
     source_contract = verify_source_contract()
     env = read_json(capture / "environment.json")
+    from capture_runtime import verify_binding, verify_current_reader
+    binding = verify_binding(capture, env, read_json(capture / "manifest.json"))
+    reader = verify_current_reader(binding)
     for binary in env["runtime"]["jaxlib"]["native_binaries"]:
         check(sha256(local_path(binary["artifact_path"])) == binary["sha256"], "native identity changed")
     with np.load(capture / "inputs.npz", allow_pickle=False) as inputs:
@@ -109,7 +113,8 @@ def verify(capture):
                       "max_absolute_error": float(np.max(np.abs(actual-reference)))})
     for case in cases[1:]:
         check(case["cpu_lowered_cost"] == cases[0]["cpu_lowered_cost"] and case["cpu_compiled_cost"] == cases[0]["cpu_compiled_cost"], "CPU cost dictionaries differ")
-    result.update(cases=cases, source_contract=source_contract, limits=read_json(capture / "summary.json")["limits"],
+    result.update(cases=cases, build_binding=binding, verification_runtime=reader,
+                  source_contract=source_contract, limits=read_json(capture / "summary.json")["limits"],
                   validation_scope="Artifact hashes and current native identity; independent NumPy reference; parsed MLIR/HLO labels and owners; recomputed CPU cost. GPU latency parsing/estimators and scheduling were not executed.")
     return result
 
@@ -118,6 +123,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--write", action="store_true")
     parser.add_argument("--selftest", action="store_true")
+    parser.add_argument("--capture", type=Path, default=ROOT / "artifacts/jax-stack/latency-metadata-001")
     args = parser.parse_args()
     capture = ROOT / "artifacts/jax-stack/latency-metadata-001"
     if args.selftest:
@@ -138,6 +144,7 @@ def main():
         except ValueError: pass
         else: raise AssertionError("source-only test reported as executed")
         print("selftest: 3 invalid manifests, latency-as-FLOPs and source-only-test-as-executed rejected")
+    capture = args.capture.resolve()
     result = verify(capture)
     if args.write:
         (HERE / "latency-metadata-results.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")

@@ -11,16 +11,18 @@
 - [Pallas/profiling Notebook](pallas-profiling.ipynb)：实算对照、trace 统计与 Mosaic 标记检查。
 - [源码构建](source-build.md)：固定镜像、隔离克隆与实际构建状态。
 - [匹配源码的 CPU 基线](source-runtime-baseline.md)：003 wheel 的 Git/native 身份、18 组数值和 3,898 个产物已验证。
+- [匹配源码的 metadata 基线](source-metadata-baseline.md)：14 组标签、2 组 HLO 改写及 117 个产物，采集与复查进程分别绑定 native 身份。
 - [独立运行环境](runtime-environment.md)：依赖文件复制、导入/native 身份检查及成功 wheel 的安装入口。
 - [LLVM、对象与 ORC](llvm-and-objects.md)：三个 ELF 对象与 HLO/LLVM 函数、序列化字节的对应。
 - [自定义 pass 事件补丁](pass-event-patch.md)：25 个 C++ 测试，真实编译、加载和源码恢复，含导出字段修正。
 - [Pass 事件验收](pass-event-acceptance.md)：源码基线/补丁/回滚、cold/warm/filter 和 wheel/native 身份；[结果](pass-hack-results.json)。
 - [编译 pass Hack Notebook](compiler-pass-hack.ipynb)：5 个单元已执行，复查三状态 trace、数值、C++ 测试及导出字段丢失。
 - [构建依赖审计](build-dependency-results.json)：三份归档、43 个补丁目标与已缓存 payload 的校验边界。
+- [Bazel 外部依赖与 Python](build-inputs.md)：199 个缓存 repository、451 份描述文件和配置的 Python 3.12.13 归档/字节核对。
 - [通信与调度](overlap-and-scheduling.md)：CPU async→sync、控制依赖和四个实验性 API 失败。
 - [调度 Notebook](overlap-scheduling.ipynb) 与 [结果](overlap-results.json)：双 CPU 数值、IR、593 个产物的独立复查。
 - [属性、HLO 编辑与成本](attributes-and-cost.md)：六种 metadata 情形、属性丢失边界、HLO 改写执行与成本读取。
-- [属性/cost Notebook](attributes-cost.ipynb) 与 [验证结果](attributes-results.json)：原始 60 个产物复查，现有 6 个代码单元已执行。
+- [属性/cost Notebook](attributes-cost.ipynb) 与 [验证结果](attributes-results.json)：7 个代码单元已执行，包含旧 CPU 路径和新增源码 metadata 证据复查。
 - [latency_metadata 与模型](latency-model.md)：解析、消费者、PGLE 优先级、调度 gate；[8 组 CPU 对照](latency-metadata-results.json) 分开验证传递与成本。
 - [Roofline 模块与边界](roofline.md)：XProf 处理链、硬件/时间输入、Unknown 与零值，以及修正位置。
 - [Fusion 与内存复用](fusion-and-memory.md)：11 组 CPU 对照，区分 fusion、donation、实际指针、allocation 与逻辑 peak。

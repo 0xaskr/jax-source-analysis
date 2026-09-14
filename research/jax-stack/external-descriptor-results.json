@@ -1,0 +1,336 @@
+{
+  "capture": "artifacts/jax-stack/external-descriptors-002",
+  "manifest_sha256": "054f90dce600d44246b94709be6aefc001714c795c2e66e879c73b9bab2bcab3",
+  "artifact_count": 467,
+  "evidence_level": "SOURCE-ONLY",
+  "build_id": "kickoff-cpu-pass-events-002",
+  "repository_count": 199,
+  "descriptor_count": 451,
+  "declared_modules": [
+    {
+      "repository": "abseil-cpp+",
+      "declared_module": "abseil-cpp",
+      "declared_version": "20260526.0"
+    },
+    {
+      "repository": "apple_support+",
+      "declared_module": "apple_support",
+      "declared_version": "2.8.0"
+    },
+    {
+      "repository": "aspect_bazel_lib+",
+      "declared_module": "aspect_bazel_lib",
+      "declared_version": "2.22.5"
+    },
+    {
+      "repository": "aspect_rules_esbuild+",
+      "declared_module": "aspect_rules_esbuild",
+      "declared_version": "0.21.0"
+    },
+    {
+      "repository": "aspect_rules_js+",
+      "declared_module": "aspect_rules_js",
+      "declared_version": "2.1.3"
+    },
+    {
+      "repository": "bazel_features+",
+      "declared_module": "bazel_features",
+      "declared_version": "1.50.0"
+    },
+    {
+      "repository": "bazel_lib+",
+      "declared_module": "bazel_lib",
+      "declared_version": "3.0.0"
+    },
+    {
+      "repository": "bazel_skylib+",
+      "declared_module": "bazel_skylib",
+      "declared_version": "1.9.0"
+    },
+    {
+      "repository": "bazel_tools",
+      "declared_module": "bazel_tools",
+      "declared_version": null
+    },
+    {
+      "repository": "boringssl+",
+      "declared_module": "boringssl",
+      "declared_version": "0.20250818.0"
+    },
+    {
+      "repository": "cel-spec+",
+      "declared_module": "cel-spec",
+      "declared_version": "0.25.1"
+    },
+    {
+      "repository": "curl+",
+      "declared_module": "curl",
+      "declared_version": "8.12.0.bcr.1"
+    },
+    {
+      "repository": "envoy_api+",
+      "declared_module": "envoy_api",
+      "declared_version": "0.0.0-20260130-84e8436"
+    },
+    {
+      "repository": "flatbuffers+",
+      "declared_module": "flatbuffers",
+      "declared_version": "25.2.10"
+    },
+    {
+      "repository": "google_benchmark+",
+      "declared_module": "google_benchmark",
+      "declared_version": "1.9.4"
+    },
+    {
+      "repository": "googleapis+",
+      "declared_module": "googleapis",
+      "declared_version": "0.0.0-20251003-2193a2bf"
+    },
+    {
+      "repository": "googleapis-rules-registry+",
+      "declared_module": "googleapis-rules-registry",
+      "declared_version": "1.0.0"
+    },
+    {
+      "repository": "googletest+",
+      "declared_module": "googletest",
+      "declared_version": "1.17.0.bcr.2"
+    },
+    {
+      "repository": "grpc+",
+      "declared_module": "grpc",
+      "declared_version": "1.81.0"
+    },
+    {
+      "repository": "highway+",
+      "declared_module": "highway",
+      "declared_version": "1.4.0"
+    },
+    {
+      "repository": "jsoncpp+",
+      "declared_module": "jsoncpp",
+      "declared_version": "1.9.6"
+    },
+    {
+      "repository": "local_config_platform",
+      "declared_module": "local_config_platform",
+      "declared_version": null
+    },
+    {
+      "repository": "or-tools+",
+      "declared_module": "or-tools",
+      "declared_version": null
+    },
+    {
+      "repository": "package_metadata+",
+      "declared_module": "package_metadata",
+      "declared_version": "0.0.7"
+    },
+    {
+      "repository": "platforms",
+      "declared_module": "platforms",
+      "declared_version": "1.1.0"
+    },
+    {
+      "repository": "protobuf+",
+      "declared_module": "protobuf",
+      "declared_version": "32.1"
+    },
+    {
+      "repository": "protoc-gen-validate+",
+      "declared_module": "protoc-gen-validate",
+      "declared_version": "1.2.1.bcr.2"
+    },
+    {
+      "repository": "pybind11_abseil+",
+      "declared_module": "pybind11_abseil",
+      "declared_version": "202402.0"
+    },
+    {
+      "repository": "pybind11_bazel+",
+      "declared_module": "pybind11_bazel",
+      "declared_version": "3.0.0"
+    },
+    {
+      "repository": "pybind11_protobuf+",
+      "declared_module": "pybind11_protobuf",
+      "declared_version": "0.0.0-20250210-f02a2b7"
+    },
+    {
+      "repository": "re2+",
+      "declared_module": "re2",
+      "declared_version": "2025-11-05.bcr.1"
+    },
+    {
+      "repository": "rules_apple+",
+      "declared_module": "rules_apple",
+      "declared_version": "3.16.0"
+    },
+    {
+      "repository": "rules_cc+",
+      "declared_module": "rules_cc",
+      "declared_version": "0.2.20"
+    },
+    {
+      "repository": "rules_go+",
+      "declared_module": "rules_go",
+      "declared_version": "0.59.0"
+    },
+    {
+      "repository": "rules_java+",
+      "declared_module": "rules_java",
+      "declared_version": "9.0.3"
+    },
+    {
+      "repository": "rules_kotlin+",
+      "declared_module": "rules_kotlin",
+      "declared_version": "1.9.6"
+    },
+    {
+      "repository": "rules_license+",
+      "declared_module": "rules_license",
+      "declared_version": "1.0.0"
+    },
+    {
+      "repository": "rules_ml_toolchain+",
+      "declared_module": "rules_ml_toolchain",
+      "declared_version": null
+    },
+    {
+      "repository": "rules_nodejs+",
+      "declared_module": "rules_nodejs",
+      "declared_version": "6.3.3"
+    },
+    {
+      "repository": "rules_perl+",
+      "declared_module": "rules_perl",
+      "declared_version": "0.2.4"
+    },
+    {
+      "repository": "rules_pkg+",
+      "declared_module": "rules_pkg",
+      "declared_version": "1.0.1"
+    },
+    {
+      "repository": "rules_proto+",
+      "declared_module": "rules_proto",
+      "declared_version": "7.1.0"
+    },
+    {
+      "repository": "rules_python+",
+      "declared_module": "rules_python",
+      "declared_version": "2.2.0"
+    },
+    {
+      "repository": "rules_shell+",
+      "declared_module": "rules_shell",
+      "declared_version": "0.8.0"
+    },
+    {
+      "repository": "rules_swift+",
+      "declared_module": "rules_swift",
+      "declared_version": "2.5.0"
+    },
+    {
+      "repository": "snappy+",
+      "declared_module": "snappy",
+      "declared_version": "1.2.1"
+    },
+    {
+      "repository": "tar.bzl+",
+      "declared_module": "tar.bzl",
+      "declared_version": "0.5.1"
+    },
+    {
+      "repository": "toml.bzl+",
+      "declared_module": "toml.bzl",
+      "declared_version": "0.4.1"
+    },
+    {
+      "repository": "xds+",
+      "declared_module": "xds",
+      "declared_version": "0.0.0-20251210-ee656c7"
+    },
+    {
+      "repository": "xla+",
+      "declared_module": "xla",
+      "declared_version": null
+    },
+    {
+      "repository": "xla++third_party_ext+XNNPACK",
+      "declared_module": "xnnpack",
+      "declared_version": null
+    },
+    {
+      "repository": "xla++third_party_ext+cpuinfo",
+      "declared_module": "cpuinfo",
+      "declared_version": null
+    },
+    {
+      "repository": "xla++third_party_ext+riegeli",
+      "declared_module": "riegeli",
+      "declared_version": null
+    },
+    {
+      "repository": "xla++third_party_ext+slinky",
+      "declared_module": "slinky",
+      "declared_version": null
+    },
+    {
+      "repository": "xla++third_party_ext+stablehlo",
+      "declared_module": "stablehlo",
+      "declared_version": null
+    },
+    {
+      "repository": "zlib+",
+      "declared_module": "zlib",
+      "declared_version": "1.3.2"
+    }
+  ],
+  "python": {
+    "requested_minor": "3.12",
+    "configured_version": "3.12.13",
+    "archive": {
+      "path": "artifacts/builds/kickoff-cpu-bazel-cache/cache/repos/v1/content_addressable/sha256/cdcf8724d46e4857f8db5ee9f4252dc2f5da34f7940294ec6b312389dd3f41e0/file",
+      "sha256": "cdcf8724d46e4857f8db5ee9f4252dc2f5da34f7940294ec6b312389dd3f41e0",
+      "size_bytes": 111512478
+    },
+    "source_url": "https://github.com/astral-sh/python-build-standalone/releases/download/20260414/cpython-3.12.13+20260414-x86_64-unknown-linux-gnu-install_only.tar.gz",
+    "matched_archive_members": [
+      {
+        "member": "python/bin/python3.12",
+        "actual_path": "artifacts/builds/kickoff-cpu-bazel-cache/777193f2a9867a2e91177d2ba2b775c1/external/rules_python++python+python_3_12_x86_64-unknown-linux-gnu/bin/python3.12",
+        "sha256": "a73ad9c67b1c4809adf0b21ef544d942218e6afff998bc1bdaf1d55575ef4075",
+        "size_bytes": 102289504
+      },
+      {
+        "member": "python/lib/libpython3.12.so.1.0",
+        "actual_path": "artifacts/builds/kickoff-cpu-bazel-cache/777193f2a9867a2e91177d2ba2b775c1/external/rules_python++python+python_3_12_x86_64-unknown-linux-gnu/lib/libpython3.12.so.1.0",
+        "sha256": "bcd61ad98fb56623716e31a27370a9a62f5e683bf9dfc9a2f118b24f499f6b2e",
+        "size_bytes": 218430976
+      },
+      {
+        "member": "python/include/python3.12/patchlevel.h",
+        "actual_path": "artifacts/builds/kickoff-cpu-bazel-cache/777193f2a9867a2e91177d2ba2b775c1/external/rules_python++python+python_3_12_x86_64-unknown-linux-gnu/include/python3.12/patchlevel.h",
+        "sha256": "1874b11aeecce0ca8b94c22d3e9c5945581d17e241e30cc6375863ba2f64cead",
+        "size_bytes": 1301
+      }
+    ],
+    "local_interpreter_executed": true,
+    "per_build_action_process_observed": false
+  },
+  "observed_python_version": "3.12.13 (main, Apr 14 2026, 14:29:00) [Clang 22.1.3 ]",
+  "cached_test_override": {
+    "repository": "googletest+",
+    "symlink": true,
+    "resolved_on_host": "artifacts/jax-stack/pass-event-build-001/googletest-test-only",
+    "used_by_build": null
+  },
+  "complete_action_input_closure": false,
+  "limits": [
+    "Post-build host-resolved cache snapshot; repository presence and module declarations do not establish use by the wheel target.",
+    "Build-time container mounts are recorded separately; host symlink resolution is not the build's physical source mount mapping.",
+    "Python selection, archive identity and three member bytes are checked; no complete action input graph, offline rebuild or JAX workload is executed by this audit."
+  ]
+}

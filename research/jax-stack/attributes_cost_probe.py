@@ -6,12 +6,12 @@ from __future__ import annotations
 import argparse
 import contextlib
 from datetime import datetime, timezone
-import importlib.util
 import json
 import os
 from pathlib import Path
 import re
 import shutil
+import sys
 
 from matmul_probe import ROOT, fingerprint, write_json
 
@@ -31,7 +31,7 @@ def frontend_attributes(module):
     return result
 
 
-def collect(output):
+def collect(output, build_manifest=None):
     import jax
     import jax.numpy as jnp
     import numpy as np
@@ -41,6 +41,9 @@ def collect(output):
     from jax._src.lib import _jax
     from jax._src.lib.mlir import ir
     from jaxlib import _hlo
+    from capture_runtime import environment
+
+    write_json(output/"environment-before.json",environment(output,build_manifest))
 
     jax.config.update("jax_enable_compilation_cache",False)
     origin=ROOT/"artifacts/jax-stack/cpu-matmul-003/inputs.npz"
@@ -188,9 +191,7 @@ def collect(output):
                   "FLOPs and bytes are compiler estimates, not hardware counters or measured memory traffic.",
                   "No TPU runtime, LLO, hardware roofline or real inference workload was executed."]}
     write_json(output/"summary.json",summary)
-    spec=importlib.util.spec_from_file_location("baseline_capture",ROOT/"tools/capture-baseline.py")
-    baseline=importlib.util.module_from_spec(spec);spec.loader.exec_module(baseline)
-    env=baseline.capture_baseline();assert all(not s["dirty"] for s in env["repository"]["sources"].values())
+    env=environment(output,build_manifest)
     write_json(output/"environment.json",env)
     return summary,env
 
@@ -198,21 +199,25 @@ def collect(output):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output",type=Path,required=True)
-    output=parser.parse_args().output.resolve()
+    parser.add_argument("--jaxlib-build-manifest",type=Path)
+    args=parser.parse_args();output=args.output.resolve()
     if not output.is_relative_to(ROOT/"artifacts/jax-stack") or os.environ.get("XLA_FLAGS"):
         parser.error("Use a new artifacts/jax-stack directory and unset ambient XLA_FLAGS")
     os.environ.update(JAX_PLATFORMS="cpu",PYTHONDONTWRITEBYTECODE="1")
     output.mkdir(parents=True,exist_ok=False);shutil.copy2(__file__,output/"producer.py")
+    from capture_runtime import preflight
+    build_manifest=preflight(output,args.jaxlib_build_manifest)
     started=datetime.now(timezone.utc).isoformat()
     with (output/"run.log").open("w") as log,contextlib.redirect_stdout(log),contextlib.redirect_stderr(log):
-        try:summary,env=collect(output)
+        try:summary,env=collect(output,build_manifest)
         except BaseException:
             import traceback
             traceback.print_exc()
             raise
     write_json(output/"manifest.json",{"capture_id":output.name,"outcome":"pass","evidence_level":"RUN-CPU",
         "qualifiers":env["status"]["qualifiers"],"started_at":started,"finished_at":datetime.now(timezone.utc).isoformat(),
-        "producer":{"argv":[".venv/bin/python","-B","research/jax-stack/attributes_cost_probe.py","--output",str(output.relative_to(ROOT))],
+        "jaxlib_build_manifest":str(build_manifest.relative_to(ROOT)) if build_manifest else None,
+        "producer":{"argv":[sys.executable,"-B",*sys.argv],
                     "source":str((output/"producer.py").relative_to(ROOT)),**fingerprint(output/"producer.py")},
         "artifacts":[{"path":str(p.relative_to(ROOT)),**fingerprint(p)} for p in sorted(output.rglob("*")) if p.is_file()]})
     print(json.dumps({"capture":output.name,"metadata_cases":len(summary["metadata_cases"]),"hlo_edit":"executed","qualifiers":env["status"]["qualifiers"]}))

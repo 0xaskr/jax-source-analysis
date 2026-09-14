@@ -37,7 +37,7 @@ Notebook 的 7 个代码单元已真实执行。
 该组证据没有 `VERSION-SKEW`；旧 wheel 和失败记录单独保留。原始上游树保持干净，
 宿主机环境未覆盖。自定义 pass 补丁已完成 25 个 C++ 测试、实际构建/加载与回滚。
 
-属性/cost 对照已完成 CPU capture：六种 metadata 情形、直接 MLIR 属性丢失边界、native
+属性/cost 对照已在源码 wheel 003 完成复验：六种 metadata 情形、直接 MLIR 属性丢失边界、native
 HLO 属性 setter、HLO add→subtract 的编译执行、opaque custom-call 未知成本。结果见
 [attributes-and-cost.md](attributes-and-cost.md)。已有 roofline 模块与修正位置见
 [roofline.md](roofline.md)，其中 XProf native converter 与目标 TPU 运行尚未验证。
@@ -56,9 +56,12 @@ Bazel 源码相等，1,085 个缓存 payload 的哈希通过；这不等于完�
 [调度 Notebook](overlap-scheduling.ipynb) 的 4 个单元已真实执行，包含新的双 CPU capture。
 
 LHS `latency_metadata` 的解析、模型选择与调度调用链已核对，见
-[latency-model.md](latency-model.md)。新增 8 个 CPU 标签/成本对照与 45 个产物；
-源码中的 GPU 模型消费不计为 GPU/TPU 执行。属性 Notebook 现有 6 个代码单元，已全部
-真实执行，包含新进程重新捕获。
+[latency-model.md](latency-model.md)。8 个 CPU 标签/成本样本已在源码 wheel 复验。
+两类实验共 14 组 metadata、2 组 HLO 改写执行、117 个产物；生产与复查进程均绑定
+源码 native payload，旧结论在本例保持一致，见 [源码 metadata 基线](source-metadata-baseline.md)。
+实际检查了 2 次 running build 拒绝、2 次旧 wheel 生产拒绝、2 次旧 native reader 拒绝。
+源码中的 GPU 模型消费仍不计为 GPU/TPU 执行。属性 Notebook 的 7 个代码单元已全部
+真实执行，包含新进程旧 wheel 对照和新增源码结果的归档复查。
 
 CPU LLVM/对象代码/ORC 的选定接口已对应到运行产物，见 [LLVM 与对象](llvm-and-objects.md)。
 三个 ELF 对象与 HLO/LLVM 函数及序列化包中的原始字节唯一对应；这是离线审计，不新增
@@ -81,7 +84,11 @@ overlap、编译和设备事件仍需 U03。
 
 构建终态追加依赖审计：三份归档、43 个补丁目标与 1,093 个缓存 payload 的完整性通过；
 50 个产物及六个反例由验证器复查。它仍不证明完整 action 输入闭包或离线可重放。
-下一步复验匹配源码的属性/cost 与 latency metadata，并补齐可观测的构建输入边界。
+另已保存 199 个缓存 repository 的 451 份描述文件，核对配置的 Python 3.12.13
+归档及解释器/共享库/头文件，467 个产物通过语义与反例验证，见 [构建输入记录](build-inputs.md)。
+该记录不把缓存条目当作实际目标依赖，不把构建后本机探测当作构建期进程采样。
+下一步执行固定源码的原生 latency parser 单元测试，并围绕已捕获的源码 matmul
+逐个解释关键 pass 的实际变化；TPU 与业务实验继续等待 U01–U03。
 
 [独立环境](runtime-environment.md) 的旧 wheel 复验与新增源码 wheel 复验分别保留，
 不改写旧证据。源码基线仍观察到 logical peak 诊断差异，不能据此推导物理内存峰值。

@@ -7,6 +7,7 @@ import argparse
 from collections import Counter
 import copy
 import json
+from pathlib import Path
 
 import numpy as np
 
@@ -33,6 +34,9 @@ def verify(capture):
     from jaxlib import _hlo
 
     result=audit(capture);backend=xla_bridge.get_backend("cpu")
+    from capture_runtime import verify_binding, verify_current_reader
+    binding=verify_binding(capture,read_json(capture/"environment.json"),read_json(capture/"manifest.json"))
+    reader=verify_current_reader(binding)
     with np.load(capture/"inputs.npz",allow_pickle=False) as data:
         a,w,b=[data[k].astype(np.float64) for k in ("a","w","b")]
     reference=a@w;gradient=2*reference@w.T
@@ -98,7 +102,7 @@ def verify(capture):
     try:_hlo.hlo_module_from_text((directory/"malformed.hlo").read_text())
     except Exception as error:check("Unknown opcode" in str(error),"unexpected malformed HLO failure")
     else:raise ValueError("malformed HLO accepted")
-    result.update(cases=cases,direct_attribute_transfer=read_json(capture/"direct-ir-attributes/summary.json"),
+    result.update(cases=cases,build_binding=binding,verification_runtime=reader,direct_attribute_transfer=read_json(capture/"direct-ir-attributes/summary.json"),
                   opaque_custom_call=read_json(capture/"opaque-custom-call-cost/summary.json"),
                   hlo_edit=read_json(capture/"hlo-edit/summary.json"),
                   validation_scope="Reparsed native HLO metadata/opcodes, current CPU cost reader, immutable artifact hashes, independent NumPy outputs. Executable rerun is in the producer capture.")
@@ -109,6 +113,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--write",action="store_true")
     parser.add_argument("--selftest",action="store_true")
+    parser.add_argument("--capture",type=Path,default=ROOT/"artifacts/jax-stack/attributes-cost-002")
     args=parser.parse_args();capture=ROOT/"artifacts/jax-stack/attributes-cost-002"
     if args.selftest:
         original=read_json(capture/"manifest.json")
@@ -124,6 +129,7 @@ def main():
         except ValueError:pass
         else:raise AssertionError("metadata-as-FLOPs accepted")
         print("selftest: 3 corrupted manifests and a metadata-as-FLOPs claim rejected")
+    capture=args.capture.resolve()
     result=verify(capture)
     if args.write:(HERE/"attributes-results.json").write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n")
     print(json.dumps({"capture":capture.name,"artifacts":result["artifact_count"],"cases":len(result["cases"]),"qualifiers":result["qualifiers"]}))

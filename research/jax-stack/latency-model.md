@@ -8,7 +8,9 @@
 [latency-metadata-results.json](latency-metadata-results.json)，source contract 见
 [latency-model-contract.json](latency-model-contract.json)。CPU capture 为
 `artifacts/jax-stack/latency-metadata-001`，45 个登记产物；GPU estimator 和 TPU
-runtime 均未执行。所有 native CPU 观察仍为 `RUN-CPU + VERSION-SKEW`。
+runtime 均未执行。该历史 capture 保留 `RUN-CPU + VERSION-SKEW`。
+源码 wheel 003 的新增 8 组对照、51 个产物与当前 native reader 绑定均通过，
+标签、拥有者及 CPU 成本观察一致，无 `VERSION-SKEW`，见 [源码复验](source-metadata-baseline.md)。
 
 ## 解析器与模型消费者是两层
 
