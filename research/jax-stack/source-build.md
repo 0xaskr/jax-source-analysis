@@ -20,7 +20,7 @@ XLA、Bazel 8.7.0、Clang 18.1.3。工作区另建 JAX/XLA 的同 revision 克�
 - 镜像和宿主机原始仓库只读；仅隔离克隆、构建产物与 build manifest 目录可写。
 - 原有宿主机 `.venv` 不被覆盖；构建使用保留的 Docker venv。
 - Bazel 使用 4 个 jobs，JVM 上限 4 GiB；容器限 4 CPU、24 GiB 内存，资源配置保存到启动记录。
-- 当前构建 ID：`kickoff-cpu-source-002`。实际容器 ID 和挂载映射保存到
+- 002 已构建完成；下一构建为带 Git metadata 的 003。002 的容器 ID 和挂载映射保存到
   `artifacts/jax-stack/source-build-002/launch.json`。
 
 构建是否运行必须通过该容器的当前 `docker inspect` 状态判断。wrapper 的 PID
@@ -29,7 +29,7 @@ XLA、Bazel 8.7.0、Clang 18.1.3。工作区另建 JAX/XLA 的同 revision 克�
 
 ## 仍需验收
 
-1. 构建真实结束且 wheel/RECORD/native payload 验证通过。
+1. 带固定 Git identity 的新构建结束，wheel/RECORD/native payload 验证通过。
 2. 在隔离环境安装 wheel，核对实际加载二进制及 build revision，重新执行 matmul。
 3. 记录 Bazel 外部 module/repository 来源与下载完整性。现有 wrapper 固定
    `--lockfile_mode=off`；在外部依赖闭包补齐前，不宣称整个构建可完整离线重放。
@@ -43,11 +43,34 @@ XLA、Bazel 8.7.0、Clang 18.1.3。工作区另建 JAX/XLA 的同 revision 克�
 
 ## 当前 attempt
 
-容器 `jax-kickoff-cpu-source-002` 已启动，ID 为
+构建 `kickoff-cpu-source-002` 已成功结束，容器 ID 为
 `82c9bf9dfe02ba334964a856a5b41c652e83ade2af2ffdb4ce6b950fb4acc077`。
-恢复时必须重新 inspect；状态记录只是带时效的快照。
-2026-09-14 本轮观察已进入 C++ 编译（LLVM/MLIR 等），尚无成功 wheel/加载验收。
+容器于 `2026-09-14T18:44:25.142Z` 退出，退出码 0；生成的 wheel 为
+`jaxlib-0.11.2.dev0+selfbuilt-cp312-cp312-manylinux_2_27_x86_64.whl`，88,323,241 bytes，
+SHA-256 `c4d8f981c3d24ca8c53eb57c629d69cf9e6bb25c4a40c50fc12ca555ef4e25b4`。
+构建成功与运行门槛的记录见 [source-build-results.json](source-build-results.json)。
 日志：`artifacts/builds/kickoff-cpu-source-002/attempts/0001/build.log`。
+
+首次宿主机安装入口在 canonical manifest 检查阶段被拒绝，因为
+[`_fixed_input_errors`](../../tools/build-jaxlib.py#L1080) 即使验证历史输入，也读取当前
+主机的 Clang 路径与字节。改在同一固定镜像中运行后，完整构建记录检查、离线安装及
+新 Python 导入成功；随后 `_git_hash=None` 被 baseline 身份门槛拒绝。两次失败分别
+保留在 `runtime-source-baseline-001` 和 `source-runtime-001`，不计为运行验收通过。
+
+固定上游 [jaxlib_git_hash flag](../../upstream/jax/jaxlib/tools/BUILD.bazel#L129) 默认空；
+[wheel rule](../../upstream/jax/jaxlib/jax.bzl#L618) 说明须显式设置，
+[build_utils](../../upstream/jax/jaxlib/tools/build_utils.py#L125) 只在非空时传递 `JAX_GIT_HASH`。
+因此下一构建使用新的 `kickoff-cpu-source-003` ID，并增加：
+
+```text
+--bazel-option=--//jaxlib/tools:jaxlib_git_hash=5832e866449a41c3eea6333416528039119a0fde
+```
+
+包装器只允许与锁定 JAX revision 相等的值，拒绝空值、其他 hash、缩写与 dirty 后缀；
+原有无该选项的历史构建仍可验证。自测通过后，先提交输入工具，再按
+`artifacts/jax-stack/source-build-003/launch.json` 复用固定镜像、4 jobs、原 clone 和缓存。
+缓存复用量须以新日志为准，不预先承诺只重做打包。旧 wheel 与 manifest 保留。
+后续安装和验证继续在固定镜像中进行，取得 Git identity 与 native 字节绑定后才验收。
 
 旧尝试 `kickoff-cpu-source-001` 实测约使用 2 CPU 后，为利用原有容器额度，发送 SIGTERM
 正常停止，再以 4 jobs 创建新尝试。旧 manifest 明确记为 `interrupted`、signal 15；

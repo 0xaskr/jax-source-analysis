@@ -396,6 +396,19 @@ def _patched_fixture(root: Path) -> tuple[dict[str, Any], Path]:
 
 
 def main() -> int:
+    pinned_hash = BUILD.EXPECTED_SOURCE_COMMITS["jax"]
+    BUILD._validate_extension_options(
+        [], [f"--//jaxlib/tools:jaxlib_git_hash={pinned_hash}"]
+    )
+    for incorrect_hash in ("", "0" * 40, pinned_hash[:12], pinned_hash + "-dirty"):
+        _expect_rejected(
+            "incorrect wheel Git hash " + repr(incorrect_hash),
+            lambda h=incorrect_hash: BUILD._validate_extension_options(
+                [], [f"--//jaxlib/tools:jaxlib_git_hash={h}"]
+            ),
+            "unsupported Bazel build option",
+        )
+    print("OK: wheel Git hash option accepts only the pinned source revision")
     with tempfile.TemporaryDirectory(prefix="build-jaxlib-selftest-") as temporary:
         temporary_root = Path(temporary)
 

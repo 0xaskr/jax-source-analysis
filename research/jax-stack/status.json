@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "updated_at": "2026-09-14T18:17:29.131251+00:00",
+  "updated_at": "2026-09-14T18:59:51.881995+00:00",
   "goal_state": "active",
   "objective": "按 Outline kickoff revision 51 完成软件栈总览、源码/API 索引和实际推理场景 Hack 实验。",
   "kickoff_source": "research/jax-stack/kickoff-source.json",
@@ -133,6 +133,11 @@
       "id": "source-runtime-capture-adapters",
       "result": "matmul/fusion/overlap 接入可验证的 build/native 绑定和实际 Python argv；独立旧 wheel 环境 18 组数值与 3,687 个产物通过，4 个旧 overlap 失败重新记录。成功自建 wheel 分支仍待执行。",
       "evidence": "research/jax-stack/cpu-revalidation-results.json"
+    },
+    {
+      "id": "source-build-wheel-002",
+      "result": "002 在固定镜像中编译与 wheel/RECORD 校验成功；固定镜像独立环境安装/导入成功，但 wheel 未嵌入 Git hash，运行身份门槛拒绝。已定位上游打包设置并准备 exact-pin 参数支持。",
+      "evidence": "research/jax-stack/source-build-results.json"
     }
   ],
   "requirements": [
@@ -182,9 +187,10 @@
         "research/jax-stack/pass-events-results.json",
         "research/jax-stack/runtime-environment.md",
         "research/jax-stack/runtime-environment-results.json",
-        "research/jax-stack/cpu-revalidation-results.json"
+        "research/jax-stack/cpu-revalidation-results.json",
+        "research/jax-stack/source-build-results.json"
       ],
-      "remaining": "当前 002 容器仍运行；规范事件补丁仅在独立副本完成应用/回滚。先验收无补丁 wheel/加载，再应用并重编译、验证事件/数值及回滚；完整依赖闭包仍需补齐。"
+      "remaining": "002 完成原生构建，但 Git metadata 为空，尚未通过运行身份验收；需003带固定Git hash构建、独立安装及数值/native验证，再完成自定义pass补丁重编译、实际事件和回滚。"
     },
     {
       "id": "R05",
@@ -293,9 +299,9 @@
   ],
   "next_actions": [
     {
-      "id": "inspect-active-source-build",
+      "id": "launch-stamped-source-build",
       "ready": true,
-      "action": "检查当前容器 82c9bf9dfe02ba334964a856a5b41c652e83ade2af2ffdb4ce6b950fb4acc077 的真实状态，并读取 kickoff-cpu-source-002/attempts/0001/build.log；001 已有意中断以增加并发，不应恢复旧容器。"
+      "action": "构建 wrapper 的 exact-pin Git hash 选项通过自测后，提交 tools/build-jaxlib.py、tools/selftest-build-jaxlib.py 及研究记录，再执行 artifacts/jax-stack/source-build-003/launch.json 的 argv，记录真实 CID。001/002 已终止，不应恢复。"
     },
     {
       "id": "source-built-wheel-validation",
@@ -303,7 +309,7 @@
       "depends_on": [
         "source-build-terminal-success"
       ],
-      "action": "002 构建成功后，运行 .venv/bin/python -B research/jax-stack/prepare_pass_runtime.py --output artifacts/jax-stack/runtime-source-baseline-001 --jaxlib-build-manifest manifests/build-fingerprints/kickoff-cpu-source-002.json --expected-events absent；验证真实 wheel/native 绑定和负对照，再复验完整 matmul。保留宿主机和初始独立环境。"
+      "action": "003 构建成功后在同一固定 Docker 镜像中验证 manifest、安装到新的独立环境并运行 prepare_pass_runtime.py --jaxlib-build-manifest manifests/build-fingerprints/kickoff-cpu-source-003.json --expected-events absent。宿主机 canonical validator 依赖当前 Clang，002 wheel 缺 Git hash；保留两次失败。"
     },
     {
       "id": "async-control-matching-wheel",
@@ -311,7 +317,7 @@
       "depends_on": [
         "source-built-wheel-validation"
       ],
-      "action": "用匹配源码环境运行 overlap_probe.py --jaxlib-build-manifest manifests/build-fingerprints/kickoff-cpu-source-002.json --observe-prior-failures；记录四个历史用例的本次失败阶段或成功数值，不要求保留旧错误。随后 verify_overlap.py --capture 复查，保留旧 VERSION-SKEW 证据。"
+      "action": "用匹配源码环境运行 overlap_probe.py --jaxlib-build-manifest manifests/build-fingerprints/kickoff-cpu-source-003.json --observe-prior-failures；记录四个历史用例的本次失败阶段或成功数值，不要求保留旧错误。随后 verify_overlap.py --capture 复查，保留旧 VERSION-SKEW 证据。"
     },
     {
       "id": "final-build-dependency-closure",
@@ -367,7 +373,7 @@
       "VERSION-SKEW"
     ],
     "negative_inputs": "passed: forged artifact hash, missing case, missing VERSION-SKEW were rejected without modifying capture files",
-    "documentation": "Python syntax, JSON, 5 executed Notebook schemas, 201 local Markdown links, fences, 63 file fingerprints and recovery invariants passed",
+    "documentation": "Python/JSON syntax, 207 local Markdown links and 64 file fingerprints passed; source build 002 remains without accepted runtime identity",
     "extensions": "62 artifacts across 4 captures; hashes, inventory, references, trace containment/counts/statistics, parsed Mosaic marker pairing verified",
     "extension_selftest": "3 corrupted manifest variants rejected",
     "notebook_extensions": "7 code cells executed using nbclient and real Jupyter kernel; includes fresh subprocess default/filtered negative controls",
@@ -397,13 +403,16 @@
     "bytecode_quarantine": "artifacts/jax-stack/bytecode-quarantine-001/record.json; generated cache only, no source edits; notebooks must inherit PYTHONDONTWRITEBYTECODE=1 in kernel process",
     "cpu_revalidation": "1063 matmul + 2029 fusion/memory + 595 overlap artifacts verified; 18 numerical cases, serialization reloads and 4 observed prior errors checked in the inherited isolated runtime",
     "cpu_revalidation_selftest": "3 CLI running-build rejections before runtime capture; omitted/inconsistent build selections rejected; fusion and overlap semantic selftests and historical capture compatibility passed",
-    "source_runtime_binding": "Successful unpatched build manifest and wheel/native payload binding supported in 3 probes and rechecked by their verifiers; not yet exercised with a completed source build"
+    "source_runtime_binding": "Successful unpatched build manifest and wheel/native payload binding supported in 3 probes and rechecked by their verifiers; not yet exercised with a completed source build",
+    "source_build_002": "container exited 0; canonical wheel/RECORD validation passed in fixed image; 88,323,241-byte wheel preserved",
+    "source_runtime_002": "host canonical Clang check rejected before installation; fixed-image install/import succeeded, then missing wheel Git revision rejected before profiler/numerical acceptance",
+    "wheel_git_option": "wrapper selftest passed; only exact pinned JAX hash allowed, empty/other/abbreviated/dirty hashes rejected; historical wrapper contracts retained"
   },
   "completion_claim": "本状态未宣称 kickoff 的任一完整交付组已经验收。",
   "artifact_fingerprints": {
     "PLAN.md": {
-      "sha256": "36efc98959037b02b7881c889e0e8b1854ca0ed8b15cc17b7defa31c6f4d6b22",
-      "size_bytes": 9622
+      "sha256": "a67fcf08a70766157f3595fed6a8d6b07e2018c852ad1dc58a80e898fd3b84fa",
+      "size_bytes": 9693
     },
     "README.md": {
       "sha256": "5b9a72abbc7feb2942a1c3ff8f84ac042221dbf0e6ea599b804363cb84406eca",
@@ -598,12 +607,16 @@
       "size_bytes": 5955
     },
     "runtime-environment.md": {
-      "sha256": "4b306063131a84c7caa7485a9a72fe04f7528961bcab158188821bd1cf31a2d0",
-      "size_bytes": 7976
+      "sha256": "fa25f2f0e924c77494bc35c845115fc8d212c85abbab602bbb8170fd73e16068",
+      "size_bytes": 8356
+    },
+    "source-build-results.json": {
+      "sha256": "d346de81789cbd1d6f2e18365dd38380d99a23fff6279c5eca8045fd3dcce4f0",
+      "size_bytes": 1904
     },
     "source-build.md": {
-      "sha256": "05e8407f8762b374ffd431782f23669adfd53083d0a0b98967900d76c1a1b705",
-      "size_bytes": 6424
+      "sha256": "ade68aba1f054467efda137e5207cebe5d9739efb07d789cbaa2b9160d3bbe44",
+      "size_bytes": 8143
     },
     "source-index.json": {
       "sha256": "aa9d9e47ab18bcf2bc0ff3f33f4dc35505f28d27aab7b204f84c961d4659bdae",
@@ -670,8 +683,8 @@
     "build_id": "kickoff-cpu-source-002",
     "attempt": 1,
     "container_id": "82c9bf9dfe02ba334964a856a5b41c652e83ade2af2ffdb4ce6b950fb4acc077",
-    "state_at_last_inspection": "running",
-    "state_must_be_refreshed": true,
+    "state_at_last_inspection": "exited",
+    "state_must_be_refreshed": false,
     "launch_record": "artifacts/jax-stack/source-build-002/launch.json",
     "log": "artifacts/builds/kickoff-cpu-source-002/attempts/0001/build.log",
     "jobs": 4,
@@ -680,10 +693,14 @@
     "pid_namespace_warning": "Inspect this Docker container; wrapper PIDs are container-local.",
     "inspected_at": "2026-09-14T18:19:51.181064+00:00",
     "last_observed_phase": "C++ compilation",
-    "state_record": "artifacts/jax-stack/source-build-002/container-state.json"
+    "state_record": "artifacts/jax-stack/source-build-002/container-state.json",
+    "terminal_status": "build-succeeded",
+    "finished_at": "2026-09-14T18:44:25.142521059Z",
+    "wheel_git_hash": null,
+    "runtime_accepted": false
   },
   "publication": {
-    "local_commit": "2ac689cf7cca4c644dbf7ef5bc3f9c35dcca9ab0",
+    "local_commit": "937d44a7633378995c07f2aab8981bb366960aad",
     "original_staged_diff_preserved": true,
     "push_attempt": {
       "command": "git push origin main",
@@ -694,9 +711,9 @@
     },
     "remaining": "Root worktree retains its local research history and staged cleanup; remote merge integration is performed only in the isolated publication worktree.",
     "state": "pushed",
-    "integration_commit": "90b8551d6a934097fcabd47710df6471b08ae890",
-    "push_result": "8c5a20d..90b8551 HEAD -> main; normal fast-forward push",
-    "latest_milestone": "isolated-runtime-environment-and-installation-entry"
+    "integration_commit": "eb569ff556fd4291ddb88a4895b547aaf164cc59",
+    "push_result": "90b8551..eb569ff HEAD -> main; normal fast-forward push",
+    "latest_milestone": "source-bound-cpu-revalidation-entrypoints"
   },
   "additional_sources": [
     {
@@ -740,5 +757,11 @@
     "native_compiled": false,
     "applied_to_running_build": false,
     "next_gate": "unpatched source-built wheel and load validation"
+  },
+  "pending_build": {
+    "build_id": "kickoff-cpu-source-003",
+    "launch_record": "artifacts/jax-stack/source-build-003/launch.json",
+    "state": "prepared",
+    "reason": "Stamp exact pinned JAX Git identity into wheel packaging; previous build 002 succeeded with _git_hash=None."
   }
 }

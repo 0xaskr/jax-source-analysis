@@ -809,6 +809,11 @@ def _validate_extension_options(startup_options: list[str], build_options: list[
         else:
             raise BuildError(f"unsupported Bazel startup option: {option}")
     for option in build_options:
+        # The upstream wheel rule defaults to an empty Git hash. Permit only
+        # the pinned JAX revision so packaging can record a usable identity
+        # without allowing a caller to stamp an unrelated source revision.
+        if option == f"--//jaxlib/tools:jaxlib_git_hash={EXPECTED_SOURCE_COMMITS['jax']}":
+            continue
         if option in SAFE_BUILD_EXACT or any(
                 pattern.fullmatch(option) for pattern in SAFE_BUILD_PATTERNS):
             continue

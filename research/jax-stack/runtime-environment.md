@@ -2,8 +2,11 @@
 
 对应 R04/R12。[准备脚本](prepare_pass_runtime.py) 已实际创建并运行独立 CPU 环境；
 [结果](runtime-environment-results.json) 与 [验证器](verify_runtime_environment.py) 保留复制、
-导入路径、事件和数值检查。当前完成的是继承旧 wheel 的环境验证，**尚未安装源码构建
-wheel，也没有补丁事件执行证据**。
+导入路径、事件和数值检查。初始环境使用继承的旧 wheel，已完成负对照验证。
+002 源码 wheel 后来在固定镜像中安装并导入，但缺少 `_git_hash`，身份验收被拒绝；
+宿主机还缺少验证器要求的固定 Clang。后续使用同一固定镜像和带 Git identity 的 003
+构建，见 [构建记录](source-build.md)。**源码 wheel 运行验收和补丁事件均未通过**。
+下文原宿主机直接运行的源码安装命令是最初入口，不能按已经验收的成功步骤使用。
 
 ## 已完成的独立环境
 

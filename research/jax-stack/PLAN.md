@@ -32,11 +32,11 @@ CPU matmul、两种 Pallas 解释路径、host/编译事件和开放源码 Mosai
 Notebook 的 7 个代码单元已真实执行。
 原始 capture 继续留在忽略目录；验证器校验清单、哈希与关键语义。
 
-固定源码构建已在唯一容器 `jax-kickoff-cpu-source-002` 中运行，原始上游树保持干净。
-首个尝试为提高 jobs 从 2 到 4 而正常中断，缓存复用；不要重启旧容器。
-恢复时先执行 `docker inspect --format '{{json .State}}' jax-kickoff-cpu-source-002`，再读
-`artifacts/builds/kickoff-cpu-source-002/attempts/0001/build.log`；不要依据宿主机同号 PID
-重新启动构建。当前尚未完成 wheel 及加载验收，细节见 [source-build.md](source-build.md)。
+固定源码构建 002 已成功退出并产出 wheel；原始上游树保持干净。首次运行验收发现
+canonical manifest 检查需固定镜像中的 Clang，且 wheel 默认未嵌入 Git hash。固定镜像
+内安装/导入成功，但 Git identity 门槛未通过。下一步按 [source-build.md](source-build.md)
+提交受限的打包参数支持并启动 003，复用原缓存、明确写入锁定 revision；不重启 001/002。
+当前仍未完成源码 wheel 的数值、native 字节绑定和补丁事件验收。
 
 属性/cost 对照已完成 CPU capture：六种 metadata 情形、直接 MLIR 属性丢失边界、native
 HLO 属性 setter、HLO add→subtract 的编译执行、opaque custom-call 未知成本。结果见
@@ -69,8 +69,8 @@ wrapper 要求生成规范 Git diff。未修改当前运行中的 clone/config�
 构建期间已完成 [cold/warm/filter 验收脚本](pass-event-acceptance.md)：当前 wheel 的两组
 负对照、运行中构建拒绝、事件语义反例和 Notebook 新进程重跑均通过；两组各三次输出
 的最大绝对误差低于 5.56e-9，自定义事件计数均为 0。正对照要求成功的指定补丁构建及
-wheel/native payload 字节绑定，目前仍未执行。完成构建后先做无补丁 wheel 加载基线，
-再应用补丁、重编译和回滚。下一命令仍是 inspect 当前构建容器。目标 TPU overlap 仍需 U03。
+wheel/native payload 字节绑定，目前仍未执行。完成带 Git identity 的 003 构建后先做无补丁 wheel 加载基线，
+再应用补丁、重编译和回滚。下一步先提交打包参数支持并启动 003，再 inspect 其真实容器。目标 TPU overlap 仍需 U03。
 [独立环境](runtime-environment.md) 已创建并完成真实 CPU 负对照，12,603 个依赖文件的
 字节与独立 inode 已核对；源码构建 wheel 的安装入口已准备，但仍待构建成功后实际执行。
 完整 matmul/fusion/overlap 也已接入显式 build/native 身份，独立旧 wheel 环境重新跑通
