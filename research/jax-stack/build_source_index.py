@@ -386,7 +386,25 @@ SITES = [
 
 
 # Edges are limited to calls or dispatch interfaces read in the pinned source.
+
+# Source-built matmul transition walkthrough.
+SITES.extend([
+    ('xla.dot-canonicalize', 'xla', 'CPU pass and dispatch', 'xla/hlo/transforms/expanders/dot_decomposer.cc', 'HloInstruction* CanonicalizeOperand(', 68, 'dot operand 与 batch/contracting 维度', 'transpose 和二维/三维 reshape', '合并非收缩维度；本例共享 W 的 batch 展平成 12 行。'),
+    ('xla.identity-reshape', 'xla', 'CPU pass and dispatch', 'xla/hlo/transforms/simplifiers/dynamic_dimension_simplifier.cc', 'absl::StatusOr<bool> IdentityReshapeRemoving(HloInstruction* reshape) {', 158, 'reshape 与其 operand', 'operand use 重接', 'Shape::Equal 才转发；此函数没有立即删除原 reshape。'),
+    ('xla.reshape-decompose', 'xla', 'CPU pass and dispatch', 'xla/hlo/transforms/expanders/reshape_decomposer.cc', '  absl::Status HandleReshape(HloInstruction* reshape) override {', 34, '带 layout 的 reshape', 'bitcast 或 copy/bitcast', '只有 layout 兼容才只需 bitcast；其他分支可插入一个或两个 copy。'),
+    ('xla.algsimp-transpose', 'xla', 'CPU pass and dispatch', 'xla/hlo/transforms/simplifiers/algebraic_simplifier.cc', 'absl::Status AlgebraicSimplifierVisitor::HandleTranspose(', 9795, 'transpose 及前驱', '删除恒等转置或改写 dot 等', '本例还把 transpose(dot) 改写为调换操作数的 dot；不能将整个 algsimp 归结为单一规则。'),
+    ('xla.reshape-mover', 'xla', 'CPU pass and dispatch', 'xla/hlo/transforms/simplifiers/reshape_mover.cc', 'absl::StatusOr<bool> ReshapeMover::RunImpl(', 399, '非 fusion computation 的候选', '移过 elementwise 的 reshape', '本例乘 2 从 [3,4,6] 改为 [12,6]；后续 algsimp 清理连锁 reshape。'),
+    ('xla.transpose-folding', 'xla', 'CPU pass and dispatch', 'xla/service/transpose_folding.cc', 'absl::StatusOr<bool> TransposeFolding::RunImpl(', 221, 'dot/convolution 的转置操作数', '可由后端接受的维度改写', '先调用后端合法性回调；本例 W.T 折入 rhs contracting dims。'),
+    ('xla.cpu-layout-constraints', 'xla', 'CPU pass and dispatch', 'xla/service/cpu/cpu_layout_assignment.cc', 'absl::Status CpuLayoutAssignment::AddBackendConstraints(', 133, 'CPU HLO 与 layout constraints', 'operand/result 布局约束', '与通用 layout assignment 配合；本例出现 copy，不等价于运行流量测量。'),
+    ('xla.library-fusion-create', 'xla', 'CPU pass and dispatch', 'xla/backends/cpu/transforms/library_rewriter.cc', 'absl::StatusOr<HloFusionInstruction*> CreateLibraryFusion(', 66, '库 matcher 选中的 HLO 指令', 'kCustom fusion 与 backend_config', '写入库 fusion kind 并替换原指令；本例为 __ynn_fusion。'),
+    ('xla.cpu-dot-thunk', 'xla', 'CPU pass and dispatch', 'xla/service/cpu/thunk_emitter.cc', 'absl::StatusOr<ThunkSequence> ThunkEmitter::EmitDotThunk(', 985, 'dot、buffer assignment、target features', 'KernelThunk 或 DotThunk', '由 implementation strategy 分支决定；不能仅凭没有 .o 推断具体分支。'),
+    ('xla.cpu-dot-strategy', 'xla', 'CPU pass and dispatch', 'xla/service/cpu/dot_op_emitter.cc', 'DotImplementationStrategy GetDotImplementationStrategy(', 1413, 'HLO config、dot、target features', 'DotImplementationStrategy', 'batch 转 inner dot 后选择策略；形状、布局、类型、配置均影响分支。'),
+    ('xla.cpu-ynn-thunk', 'xla', 'CPU pass and dispatch', 'xla/service/cpu/thunk_emitter.cc', 'absl::StatusOr<ThunkSequence> ThunkEmitter::EmitYnnFusionThunk(', 1410, 'YNN fusion 与 allocation slices', 'YNN subgraph builder / thunk', '收集参数与结果，常量单独捕获；源码路径不是本次 runtime sampling。'),
+    ('xla.cpu-ynn-invoke', 'xla', 'CPU pass and dispatch', 'xla/backends/cpu/runtime/ynnpack/ynn_fusion_thunk.cc', 'YnnFusionThunk::YnnExecutable::Invoke(', 90, '线程池、参数和结果地址', 'ynn_invoke_runtime 状态', '设置 external values 与线程池后调用 YNN runtime；不推导库内部机器码。'),
+])
+
 EDGES = [
+    ("xla.cpu-dot-thunk", "xla.cpu-dot-strategy", "  DotImplementationStrategy strategy = GetDotImplementationStrategy(", "direct", "EmitDotThunk passes allow_runtime_calls=true."),
     ("xla.xplane-trace-events", "xla.internal-trace-stat", "            if (IsInternalStat(stat.Type())) return;", "direct", "转换每个有值的 metadata/occurrence stat 时。"),
     ("xla.ir-compile", "xla.llvm-pass-manager", "          RunIrPasses(module, target_machine->get())) {", "direct", "目标机器创建成功后。"),
     ("xla.ir-compile", "xla.emit-object", "      EmitMachineCode(module, target_machine->get());", "direct", "LLVM IR passes 成功后。"),
@@ -509,6 +527,10 @@ def main():
         if entry["id"] in {"xla.lhs-metadata-parser", "xla.lhs-metadata-test"}:
             entry["related_experiments"] = ["research/jax-stack/latency-parser-native.md",
                                             "research/jax-stack/latency-parser-results.json"]
+        if entry["id"] in {'xla.cpu-ynn-invoke', 'xla.cpu-ynn-thunk', 'xla.identity-reshape', 'xla.library-fusion-create', 'xla.dot-canonicalize', 'xla.reshape-mover', 'xla.cpu-dot-strategy', 'xla.reshape-decompose', 'xla.cpu-layout-constraints', 'xla.cpu-dot-thunk', 'xla.algsimp-transpose', 'xla.transpose-folding'}:
+            entry["related_experiments"] = ["research/jax-stack/matmul-pass-walkthrough.md",
+                                            "research/jax-stack/pass-transition-results.json"]
+            entry["runtime_boundary"] = "Source-built CPU dumps are separately bound to build 003; this entry does not claim runtime dispatch sampling or TPU execution."
     index = {
         "schema_version": "1.0", "kickoff_revision": 51,
         "source_roots": {name: {"path": s["path"], "revision": s["git_commit"]} for name, s in sources.items()},

@@ -28,7 +28,7 @@
 ## 本轮进度与恢复入口
 
 CPU matmul、两种 Pallas 解释路径、host/编译事件和开放源码 Mosaic 标记已有可复查材料；
-完整 kickoff 尚未完成。源码索引扩展至 122 个入口、39 条关系，包括固定 XProf 源码；Pallas/profiling
+完整 kickoff 尚未完成。源码索引扩展至 134 个入口、40 条关系，包括固定 XProf 源码；Pallas/profiling
 Notebook 的 7 个代码单元已真实执行。
 原始 capture 继续留在忽略目录；验证器校验清单、哈希与关键语义。
 
@@ -71,7 +71,8 @@ int64 越界、小数、空串、非法文本与科学计数法返回 nullopt；
 
 CPU LLVM/对象代码/ORC 的选定接口已对应到运行产物，见 [LLVM 与对象](llvm-and-objects.md)。
 三个 ELF 对象与 HLO/LLVM 函数及序列化包中的原始字节唯一对应；这是离线审计，不新增
-runtime load 证据。matmul Notebook 扩展为 8 个单元，已真实执行。
+runtime load 证据。匹配源码 003 的三个对象也已单独复查；matmul Notebook 扩展为
+10 个单元，已真实执行，包含旧 CPU 实算、源码 pass/对象归档及 NumPy 对照。
 
 [编译事件补丁](pass-event-patch.md) 已完成规范 Git diff、应用/反向应用及原始字节恢复。
 无补丁源码基线里，默认和禁用 algsimp 的 generic 事件均为 3，与固定源码的 filter 前
@@ -93,8 +94,12 @@ overlap、编译和设备事件仍需 U03。
 另已保存 199 个缓存 repository 的 451 份描述文件，核对配置的 Python 3.12.13
 归档及解释器/共享库/头文件，467 个产物通过语义与反例验证，见 [构建输入记录](build-inputs.md)。
 该记录不把缓存条目当作实际目标依赖，不把构建后本机探测当作构建期进程采样。
-下一步围绕已捕获的源码 matmul 逐个解释关键 pass 的实际变化，并补齐匹配源码的
-LLVM/object 对应；TPU 与业务实验继续等待 U01–U03。
+匹配源码 matmul 的逐 pass 导读已完成当前样本审计，见 [matmul-pass-walkthrough.md](matmul-pass-walkthrough.md)。
+640 个 pipeline 边界形成 584 组配对；22 组叶子文本变化与 3 组嵌套汇总分开记录。
+59 个派生产物、形状/operand/layout/fusion 语义和六个反例复查通过；匹配源码的
+LLVM/object 审计另有 20 个产物。两个新验证器都实际拒绝了旧 wheel reader。
+下一步继续核对 CPU executable 中 thunk/库分支的可观察证据，分开记录静态序列化内容
+与 runtime dispatch 采样；TPU 与业务实验继续等待 U01–U03。
 
 [独立环境](runtime-environment.md) 的旧 wheel 复验与新增源码 wheel 复验分别保留，
 不改写旧证据。源码基线仍观察到 logical peak 诊断差异，不能据此推导物理内存峰值。

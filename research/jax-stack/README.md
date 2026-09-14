@@ -4,7 +4,7 @@
 新建研究。完整要求和未完成项保留在 [PLAN.md](PLAN.md)，没有沿用已删除的旧进度。
 
 - [软件栈与 API 总览](overview.md)：组件、控制链、普通 CPU/TPU 与 Pallas 两层表示。
-- [源码索引](source-index.json)：122 个入口、39 条带调用位置及分支条件的关系，含锁定的 XProf tooling 源码。
+- [源码索引](source-index.json)：134 个入口、40 条带调用位置及分支条件的关系，含锁定的 XProf tooling 源码。
 - [Pallas 对照](pallas-comparison.md)：相同输入的普通 JAX、generic 与 TPU interpret。
 - [三类 profiling 区间](profiling.md)：host、编译 pass、设备标记的实验证据与验收边界。
 - [扩展实验结果](extension-results.json)：四组 capture、62 个产物的独立复查。
@@ -13,6 +13,7 @@
 - [匹配源码的 CPU 基线](source-runtime-baseline.md)：003 wheel 的 Git/native 身份、18 组数值和 3,898 个产物已验证。
 - [匹配源码的 metadata 基线](source-metadata-baseline.md)：14 组标签、2 组 HLO 改写及 117 个产物，采集与复查进程分别绑定 native 身份。
 - [独立运行环境](runtime-environment.md)：依赖文件复制、导入/native 身份检查及成功 wheel 的安装入口。
+- [matmul 逐 pass 导读](matmul-pass-walkthrough.md)：640 个边界、22 组叶子改写，区分库 fusion、普通 fusion 与剩余 dot。
 - [LLVM、对象与 ORC](llvm-and-objects.md)：三个 ELF 对象与 HLO/LLVM 函数、序列化字节的对应。
 - [自定义 pass 事件补丁](pass-event-patch.md)：25 个 C++ 测试，真实编译、加载和源码恢复，含导出字段修正。
 - [Pass 事件验收](pass-event-acceptance.md)：源码基线/补丁/回滚、cold/warm/filter 和 wheel/native 身份；[结果](pass-hack-results.json)。
@@ -30,7 +31,7 @@
 - [Fusion/memory Notebook](fusion-memory.ipynb) 与 [结果](fusion-memory-results.json)：2028 个产物的独立复查。
 - [CPU 实验结果](cpu-results.json)：数值、pass 边界、静态 cost/memory、ELF 目标文件及 capture 指纹。
 - [生产脚本](matmul_probe.py)：生成四组样本、原始 IR/日志、二进制和来源记录。
-- [交互 Notebook](matmul-lowering.ipynb)：八个代码单元已在真实 Jupyter 内核中执行通过，含对象与补丁审计。
+- [交互 Notebook](matmul-lowering.ipynb)：十个代码单元已在真实 Jupyter 内核中执行通过，含旧 CPU 实算、源码 pass/对象归档复查。
 - [当前研究状态](status.json)：逐项记录 R01–R12 的证据、缺口和下一步。
 
 ## 实验与数值对照

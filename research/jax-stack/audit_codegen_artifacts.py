@@ -11,6 +11,7 @@ import re
 import shutil
 import struct
 import subprocess
+import sys
 
 from matmul_probe import ROOT, fingerprint, write_json
 from verify_research import verify as verify_cpu
@@ -34,10 +35,13 @@ def functions(text):
     return result
 
 
-def collect(output):
+def collect(output, source):
     from jaxlib import _hlo
-    source = ROOT / "artifacts/jax-stack/cpu-matmul-003"
     checked = verify_cpu(source)
+    from capture_runtime import verify_current_reader
+    reader = verify_current_reader(checked.get("build_binding"))
+    if reader is not None:
+        write_json(output / "reader-identity.json", reader)
     tools = {}
     for tool in ["readelf", "objdump"]:
         path = Path(shutil.which(tool)).resolve()
@@ -92,12 +96,13 @@ def collect(output):
         cases.append({"case": case["name"], "native_module_prefix": prefix, "object_count": len(case_objects)})
     write_json(output / "input-records.json", list(input_records.values()))
     summary = {"outcome": "pass", "evidence_level": "REPLAY-OFFLINE", "qualifiers": checked["qualifiers"],
-               "source_capture": "artifacts/jax-stack/cpu-matmul-003", "source_manifest_sha256": checked["manifest_sha256"],
+               "source_capture": str(source.relative_to(ROOT)), "source_manifest_sha256": checked["manifest_sha256"],
+               "build_binding": checked.get("build_binding"), "reader_identity": reader,
                "source_runtime_evidence_level": "RUN-CPU", "cases": cases, "objects": objects,
                "limits": ["This audit reads existing compiler products; it does not compile or execute code.",
                           "Exact object bytes occur in the captured serialized package; no pickle or executable was loaded by this audit.",
                           "The original producer verified in-process executable reload. This does not measure individual kernel invocation or performance.",
-                          "Native products belong to the captured VERSION-SKEW wheel; indexed source APIs are separate source-only evidence.",
+                          "Native product provenance and qualifiers come from the source capture; this audit does not add a runtime load.",
                           "No object for a case does not mean no machine code ran: prebuilt library/runtime paths need separate attribution."]}
     write_json(output / "summary.json", summary)
     return summary
@@ -106,16 +111,18 @@ def collect(output):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, required=True)
-    output = parser.parse_args().output.resolve()
+    parser.add_argument("--source-capture", type=Path, default=ROOT / "artifacts/jax-stack/cpu-matmul-003")
+    args = parser.parse_args()
+    output = args.output.resolve()
     if not output.is_relative_to(ROOT / "artifacts/jax-stack"):
         parser.error("Use a new artifacts/jax-stack directory")
     output.mkdir(parents=True, exist_ok=False)
     shutil.copy2(__file__, output / "producer.py")
     started = datetime.now(timezone.utc).isoformat()
-    summary = collect(output)
+    summary = collect(output, args.source_capture.resolve())
     write_json(output / "manifest.json", {"capture_id": output.name, "outcome": "pass", "evidence_level": "REPLAY-OFFLINE",
         "qualifiers": summary["qualifiers"], "started_at": started, "finished_at": datetime.now(timezone.utc).isoformat(),
-        "producer": {"source": str((output / "producer.py").relative_to(ROOT)), **fingerprint(output / "producer.py")},
+        "producer": {"argv": [sys.executable, "-B", *sys.argv], "source": str((output / "producer.py").relative_to(ROOT)), **fingerprint(output / "producer.py")},
         "artifacts": [{"path": str(p.relative_to(ROOT)), **fingerprint(p)} for p in sorted(output.rglob("*")) if p.is_file()]})
     print(json.dumps({"capture": output.name, "objects": len(summary["objects"]), "cases": summary["cases"]}))
 

@@ -9,6 +9,7 @@ import json
 import re
 import subprocess
 import tempfile
+from pathlib import Path
 
 from verify_research import ROOT, HERE, check, local_path, read_json, sha256, verify as verify_cpu
 from verify_extensions import events, verify_compiler
@@ -40,6 +41,19 @@ def verify_codegen(capture):
     result = inventory(capture, "REPLAY-OFFLINE")
     summary = read_json(capture / "summary.json")
     original = verify_cpu(local_path(summary["source_capture"]))
+    from capture_runtime import verify_current_reader
+    reader = verify_current_reader(original.get("build_binding"))
+    check(summary.get("build_binding") == original.get("build_binding"), "codegen source build binding differs")
+    if reader is not None:
+        import hashlib
+        import zipfile
+        recorded = read_json(capture / "reader-identity.json")
+        check(recorded == summary["reader_identity"] and recorded["source_build_verified"] and
+              recorded["build_id"] == reader["build_id"] and
+              recorded["native_payloads"] == reader["native_payloads"], "producer native reader identity differs")
+        with zipfile.ZipFile(ROOT / original["build_binding"]["wheel"]["path"]) as wheel:
+            for name, digest in recorded["native_payloads"].items():
+                check(hashlib.sha256(wheel.read(name)).hexdigest() == digest, "producer reader payload differs from source wheel")
     check(original["manifest_sha256"] == summary["source_manifest_sha256"], "source capture changed")
     check(summary["qualifiers"] == original["qualifiers"] == read_json(capture / "manifest.json")["qualifiers"], "lost runtime qualifier")
     for item in read_json(capture / "input-records.json"):
@@ -85,6 +99,7 @@ def verify_codegen(capture):
             check("; ModuleID = '" + record["llvm_module_id"] + "'" in paths[key].read_text(), "LLVM module identity differs")
         check(record["llvm_module_id"] in actual_symbols, "ELF source module identity differs")
     result.update(qualifiers=summary["qualifiers"], source_capture=summary["source_capture"],
+                  build_binding=original.get("build_binding"), verification_runtime=reader,
                   cases=summary["cases"], objects=summary["objects"], limits=summary["limits"])
     return result
 
@@ -138,6 +153,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--write", action="store_true")
     parser.add_argument("--selftest", action="store_true")
+    parser.add_argument("--codegen-capture", type=Path, default=ROOT / "artifacts/jax-stack/codegen-artifacts-001")
+    parser.add_argument("--codegen-result", type=Path)
+    parser.add_argument("--codegen-only", action="store_true", help="Do not replay the separate historical patch preparation")
     args = parser.parse_args()
     codegen = ROOT / "artifacts/jax-stack/codegen-artifacts-001"
     patch = ROOT / "artifacts/jax-stack/compiler-event-patch-002"
@@ -160,11 +178,15 @@ def main():
         except ValueError: pass
         else: raise AssertionError("ambiguous duplicate object accepted")
         print("selftest: 6 invalid manifests, uncompiled-as-compiled and duplicate object rejected")
-    a, b = verify_codegen(codegen), verify_patch(patch)
+    a = verify_codegen(args.codegen_capture.resolve())
+    b = None if args.codegen_only else verify_patch(patch)
+    if args.codegen_result:
+        args.codegen_result.write_text(json.dumps(a, ensure_ascii=False, indent=2) + "\n")
     if args.write:
         for name, value in [("codegen-results.json", a), ("pass-event-patch-results.json", b)]:
-            (HERE / name).write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n")
-    print(json.dumps({"objects": len(a["objects"]), "offline_artifacts": a["artifact_count"], "patch_artifacts": b["artifact_count"], "patch_native_compiled": False}))
+            if value is not None:
+                (HERE / name).write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n")
+    print(json.dumps({"objects": len(a["objects"]), "offline_artifacts": a["artifact_count"], "patch_artifacts": b["artifact_count"] if b else None}))
 
 
 if __name__ == "__main__":
