@@ -12,6 +12,7 @@
 - [源码构建](source-build.md)：固定镜像、隔离克隆与实际构建状态。
 - [LLVM、对象与 ORC](llvm-and-objects.md)：三个 ELF 对象与 HLO/LLVM 函数、序列化字节的对应。
 - [自定义 pass 事件补丁](pass-event-patch.md)：规范补丁已验证应用和回滚，尚未编译加载。
+- [Pass 事件验收](pass-event-acceptance.md)：cold/warm/filter 负对照、构建状态拒绝与 wheel/native 身份核对。
 - [构建依赖审计](build-dependency-results.json)：三份归档、43 个补丁目标与已缓存 payload 的校验边界。
 - [通信与调度](overlap-and-scheduling.md)：CPU async→sync、控制依赖和四个实验性 API 失败。
 - [调度 Notebook](overlap-scheduling.ipynb) 与 [结果](overlap-results.json)：双 CPU 数值、IR、593 个产物的独立复查。

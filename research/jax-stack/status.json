@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "updated_at": "2026-09-14T17:05:12.540658+00:00",
+  "updated_at": "2026-09-14T17:44:32.727342+00:00",
   "goal_state": "active",
   "objective": "按 Outline kickoff revision 51 完成软件栈总览、源码/API 索引和实际推理场景 Hack 实验。",
   "kickoff_source": "research/jax-stack/kickoff-source.json",
@@ -42,7 +42,7 @@
     },
     {
       "id": "pallas-profiling-notebook",
-      "result": "真实 Jupyter kernel 执行 5 个代码单元通过，包括新 CPU 数值对照和捕获复查。",
+      "result": "真实 Jupyter 内核执行 7 个代码单元通过，包括新 CPU 对照、不可变 capture 复查及新进程 pass 默认/过滤负对照。",
       "evidence": "research/jax-stack/pallas-profiling.ipynb"
     },
     {
@@ -118,6 +118,11 @@
       "id": "compiler-event-patch-prepared",
       "result": "准备 enabled leaf RunHelper 的 TraceMe 补丁，生成规范 full-index Git diff；8 个产物、实际应用/反向应用/恢复字节通过。尚未编译、加载或观测新事件。",
       "evidence": "research/jax-stack/pass-event-patch-results.json"
+    },
+    {
+      "id": "compiler-pass-runtime-controls",
+      "result": "默认/过滤两组旧 wheel CPU 负对照及 running 构建拒绝通过；原始 trace、数值、native 身份、反例和 Notebook 新进程重跑已核对。自定义补丁尚未编译加载。",
+      "evidence": "research/jax-stack/pass-events-results.json"
     }
   ],
   "requirements": [
@@ -161,7 +166,9 @@
         "research/jax-stack/source-build.md",
         "research/jax-stack/build-dependency-results.json",
         "research/jax-stack/pass-event-patch.md",
-        "research/jax-stack/pass-event-patch-results.json"
+        "research/jax-stack/pass-event-patch-results.json",
+        "research/jax-stack/pass-event-acceptance.md",
+        "research/jax-stack/pass-events-results.json"
       ],
       "remaining": "当前 002 容器仍运行；规范事件补丁仅在独立副本完成应用/回滚。先验收无补丁 wheel/加载，再应用并重编译、验证事件/数值及回滚；完整依赖闭包仍需补齐。"
     },
@@ -242,9 +249,11 @@
         "research/jax-stack/profiling.md",
         "research/jax-stack/extension-results.json",
         "research/jax-stack/pallas-profiling.ipynb",
-        "research/jax-stack/pass-event-patch.md"
+        "research/jax-stack/pass-event-patch.md",
+        "research/jax-stack/pass-event-acceptance.md",
+        "research/jax-stack/pass-events-results.json"
       ],
-      "remaining": "自定义 leaf pass 事件补丁已准备但尚未编译加载；需完成 baseline/patched/filter/warm/rollback 事件对照。设备侧仍需 U03 的 TPU/libtpu、LLO 与真实设备 trace。"
+      "remaining": "已完成旧 wheel 的 cold/warm/filter 负对照与验收脚本；仍需匹配源码 baseline、指定补丁 wheel/native 字节绑定及实际事件、回滚对照。设备侧仍需 U03 的 TPU/libtpu、LLO 和真实设备 trace。"
     }
   ],
   "pending_user_inputs": [
@@ -271,9 +280,12 @@
       "action": "检查当前容器 82c9bf9dfe02ba334964a856a5b41c652e83ade2af2ffdb4ce6b950fb4acc077 的真实状态，并读取 kickoff-cpu-source-002/attempts/0001/build.log；001 已有意中断以增加并发，不应恢复旧容器。"
     },
     {
-      "id": "prepare-pass-event-runtime-probe",
-      "ready": true,
-      "action": "准备可绑定 actual native identity 的 custom pass cold/warm/filter 验收脚本，先在当前 wheel 验证 absent 负对照与反例；保留匹配源码 baseline 和 patched 实际执行门槛，不把 fixture 算作 patched runtime。"
+      "id": "source-built-wheel-validation",
+      "ready": false,
+      "depends_on": [
+        "source-build-terminal-success"
+      ],
+      "action": "当前 002 构建成功后，验证真实 wheel/构建清单，在独立环境安装并核对已加载 native payload；运行 absent 默认/过滤对照及 matmul，保留宿主机 .venv。"
     },
     {
       "id": "async-control-matching-wheel",
@@ -337,10 +349,10 @@
       "VERSION-SKEW"
     ],
     "negative_inputs": "passed: forged artifact hash, missing case, missing VERSION-SKEW were rejected without modifying capture files",
-    "documentation": "Python syntax, JSON, 5 executed Notebook schemas, 181 local Markdown links, fences and state invariants passed",
+    "documentation": "Python syntax, JSON, 5 executed Notebook schemas, 190 local Markdown links, fences, 57 state fingerprints and recovery invariants passed",
     "extensions": "62 artifacts across 4 captures; hashes, inventory, references, trace containment/counts/statistics, parsed Mosaic marker pairing verified",
     "extension_selftest": "3 corrupted manifest variants rejected",
-    "notebook_extensions": "5 code cells executed using nbclient and real Jupyter kernel",
+    "notebook_extensions": "7 code cells executed using nbclient and real Jupyter kernel; includes fresh subprocess default/filtered negative controls",
     "legacy_state_check": "tools/project-status.py --check and summary both report missing manifests/status.json; this file was intentionally removed by authorized cleanup. Active recovery state is research/jax-stack/status.json.",
     "project_status_selftest": "PASS: positive summary and 20 negative contracts",
     "attributes": "60 artifact inventories/hashes, six NumPy cases, native HLO metadata/opcode parsing, cost reads, semantic edit outputs verified",
@@ -359,17 +371,19 @@
     "latency_metadata_selftest": "3 invalid manifests, latency-as-FLOPs and source-only-test-as-executed rejected",
     "codegen": "19 offline artifacts; 3 ELF64 x86-64 relocatable objects, exact HLO/LLVM/symbol matches and unique bytes in serialized packages verified",
     "pass_event_patch": "8 preparation artifacts, canonical Git diff, apply/reverse and byte restoration checked; native compilation/loading/events remain false",
-    "codegen_patch_selftest": "6 invalid manifests, uncompiled-as-compiled claim and duplicate object binding rejected"
+    "codegen_patch_selftest": "6 invalid manifests, uncompiled-as-compiled claim and duplicate object binding rejected",
+    "pass_events": "28 paired-capture artifacts and 6 running-gate rejection artifacts verified; raw cold/warm/filter rules, native identities, independent NumPy outputs passed; positive patched runtime remains false",
+    "pass_events_selftest": "3 invalid manifests, missing build identity, generic-as-custom claim and 8 invalid synthetic variants rejected; worker-thread containment and nested interval union passed"
   },
   "completion_claim": "本状态未宣称 kickoff 的任一完整交付组已经验收。",
   "artifact_fingerprints": {
     "PLAN.md": {
-      "sha256": "1efb6297104397d1ed438463414c8a311c42c97e9bbe5b7f9e7d06bb7c1680c6",
-      "size_bytes": 8686
+      "sha256": "682d76dd833a7c36317c7306c8b33541840c4d00b9488aeafe6662b4b359be49",
+      "size_bytes": 9054
     },
     "README.md": {
-      "sha256": "576033bc68417f42fabff0b58785c4a77b85db5643642d6a29f1bd103ebf8938",
-      "size_bytes": 8461
+      "sha256": "4190de67d4e87db5a30d3f6a0dfd95e3932ecb235a17e9ee29672702ef2ac26f",
+      "size_bytes": 8591
     },
     "attributes-and-cost.md": {
       "sha256": "974465ff934b069b0302dd9e9b8202ec8ed7f33906682923745e7a662bc95025",
@@ -496,20 +510,36 @@
       "size_bytes": 2805
     },
     "pallas-profiling.ipynb": {
-      "sha256": "f8f5e947924e130773f2e181f57572c53c6f7218593ae21c7dcd49128d9c337c",
-      "size_bytes": 10517
+      "sha256": "9dae7ebf4d1587583706008874a92e2b7d188365eb91c2d348baba51dc4394b1",
+      "size_bytes": 15376
     },
     "pallas_probe.py": {
       "sha256": "5f90cbe6a514609b7b9d2873464a4072f0e422291c845553acb84355a1609299",
       "size_bytes": 9111
+    },
+    "pass-event-acceptance.md": {
+      "sha256": "5995740d73308ade3739269a0ee6f479f4b5ee94af284a804739fb3abd918305",
+      "size_bytes": 6582
     },
     "pass-event-patch-results.json": {
       "sha256": "5ec51068526e9a0e7930590031d9582c86b430dbc2a0d3644cf748714cd89418",
       "size_bytes": 2560
     },
     "pass-event-patch.md": {
-      "sha256": "e92076317eef7dc76828dbadf3ba5c8b39beccf8bdc97083c0bd17046965e652",
-      "size_bytes": 5187
+      "sha256": "ab58a8c1d5fef8ce8504833322d5a729174fbe496b0375de7504d28af24598b3",
+      "size_bytes": 5377
+    },
+    "pass-events-results.json": {
+      "sha256": "1a775b69225ea68ed745e70f55e97f56efd127e3c9888c6053dc1691bb9727fc",
+      "size_bytes": 4618
+    },
+    "pass_event_checks.py": {
+      "sha256": "e48f7dbedc5c09223ee30b97d239a98b7211cc23bb1d01df416eec0cec4cb8c3",
+      "size_bytes": 5740
+    },
+    "pass_events_probe.py": {
+      "sha256": "757295a6dd08482155f2119cad3e9d41e886e2312fc9b99728fa863c3391d397",
+      "size_bytes": 12169
     },
     "prepare_pass_event_patch.py": {
       "sha256": "b945b200037bcf7f612303994e33525ddde718a000a5304b9bc93596486aad1b",
@@ -563,6 +593,10 @@
       "sha256": "4bdd3363e7f04cd26519fc6df655137178416fe3a94e603fe065deaf21f1a34a",
       "size_bytes": 9605
     },
+    "verify_pass_events.py": {
+      "sha256": "bec1c5833dbc7b88c6f84e2ea3d49b3a48133baac6a7d5a50a2cdc57e50ec76f",
+      "size_bytes": 11186
+    },
     "verify_research.py": {
       "sha256": "00686b56facc06456ccc278ee5e7073b21512cb2f3a9c55b04c80f97d4185b93",
       "size_bytes": 9410
@@ -596,12 +630,12 @@
     "cache_reused_from": "kickoff-cpu-source-001",
     "source_clones": "artifacts/jax-stack/source-build-001/clones",
     "pid_namespace_warning": "Inspect this Docker container; wrapper PIDs are container-local.",
-    "inspected_at": "2026-09-14T17:05:12.540658+00:00",
+    "inspected_at": "2026-09-14T17:44:32.265517+00:00",
     "last_observed_phase": "C++ compilation",
     "state_record": "artifacts/jax-stack/source-build-002/container-state.json"
   },
   "publication": {
-    "local_commit": "0ad3ec8d43a7de89ce4f6a56f4948c411100a591",
+    "local_commit": "d3fcc3388d1aeab5bfb25544bb8672c2df74d9be",
     "original_staged_diff_preserved": true,
     "push_attempt": {
       "command": "git push origin main",
@@ -612,9 +646,9 @@
     },
     "remaining": "Root worktree retains its local research history and staged cleanup; remote merge integration is performed only in the isolated publication worktree.",
     "state": "pushed",
-    "integration_commit": "ed30236bd20288c91116935ce449a48c07692f89",
-    "push_result": "a481574..ed30236 HEAD -> main; normal fast-forward push",
-    "latest_milestone": "latency-metadata-model-consumers"
+    "integration_commit": "e6f49bf9eb4a1bd0a4ff5af56136c9bb8b2bb334",
+    "push_result": "ed30236..e6f49bf HEAD -> main; normal fast-forward push",
+    "latest_milestone": "llvm-objects-and-pass-event-patch-preparation"
   },
   "additional_sources": [
     {
