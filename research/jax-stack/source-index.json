@@ -981,14 +981,16 @@
       "source_sha256": "686619cff6b7c0b9150b0a618b52b2627df152a177de8c1e03bdf798645a069f",
       "inputs": "TraceEvent 的 ps 时间、device/resource ID、名称和 args",
       "outputs": "Chrome Trace Event JSON 的 X 事件",
-      "constraint": "ts/dur 转成微秒；displayTimeUnit=ns 不改变这些数值的单位。嵌套时长不可直接求和当作 wall time。",
+      "constraint": "ts/dur 转成微秒，raw duration=0 时先夹到 1 ps；displayTimeUnit=ns 不改变数值单位。嵌套时长不可直接当 wall time。",
       "evidence_level": "SOURCE-ONLY",
-      "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
+      "runtime_boundary": "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here.",
       "callers": [],
       "callees": [],
       "related_experiments": [
         "research/jax-stack/pass-event-patch.md",
-        "research/jax-stack/pass-hack-results.json"
+        "research/jax-stack/pass-hack-results.json",
+        "research/jax-stack/xspace-contexts.md",
+        "research/jax-stack/xspace-context-results.json"
       ]
     },
     {
@@ -1005,16 +1007,18 @@
       "source_sha256": "7b4d7c9088c5982b1ec66986c5d30b6cff8c35251d24bf2d73afafca39b29326",
       "inputs": "XPlaneVisitor 的事件、共享 metadata 与 occurrence stats",
       "outputs": "TraceContainer 中的 TraceEvent 及可见 args",
-      "constraint": "跳过 IsInternalStat 命中的字段；原始 XSpace 有 program_id 不保证 Chrome trace JSON 保留它。",
+      "constraint": "过滤 internal context/program 字段；同名 stat 后值覆盖前值。raw XLine 的完整 ID 在这里转成 uint32 viewer resource ID。",
       "evidence_level": "SOURCE-ONLY",
-      "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
+      "runtime_boundary": "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here.",
       "callers": [],
       "callees": [
         "xla.internal-trace-stat"
       ],
       "related_experiments": [
         "research/jax-stack/pass-event-patch.md",
-        "research/jax-stack/pass-hack-results.json"
+        "research/jax-stack/pass-hack-results.json",
+        "research/jax-stack/xspace-contexts.md",
+        "research/jax-stack/xspace-context-results.json"
       ]
     },
     {
@@ -1031,16 +1035,18 @@
       "source_sha256": "cfa9c3cef4d5a2b17e7dfd3727ed0db6a950dd6e4da3a4ae32b1feba4f93443a",
       "inputs": "可选 StatType",
       "outputs": "该字段是否属于不向 trace viewer 导出的内部 stat",
-      "constraint": "kProgramId 返回 true，未知的自定义字段返回 false；本次 Hack 使用 research_program_id 副本供导出分组。",
+      "constraint": "_pt/_p/_ct/_c 与 program_id 均为 internal；未知自定义字段可保留。编译 Hack 另使用 research_program_id 供导出分组。",
       "evidence_level": "SOURCE-ONLY",
-      "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
+      "runtime_boundary": "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here.",
       "callers": [
         "xla.xplane-trace-events"
       ],
       "callees": [],
       "related_experiments": [
         "research/jax-stack/pass-event-patch.md",
-        "research/jax-stack/pass-hack-results.json"
+        "research/jax-stack/pass-hack-results.json",
+        "research/jax-stack/xspace-contexts.md",
+        "research/jax-stack/xspace-context-results.json"
       ]
     },
     {
@@ -3291,9 +3297,520 @@
         "research/jax-stack/cpu-executable-and-trace.md",
         "research/jax-stack/cpu-thunk-results.json"
       ]
+    },
+    {
+      "id": "xla.trace-context-producer",
+      "component": "xla",
+      "layer": "XSpace contexts and export",
+      "symbol": "TraceMeProducer : public TraceMe {",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/third_party/tsl/tsl/profiler/lib/connected_traceme.h",
+      "line": 76,
+      "end_line": null,
+      "anchor": "class TraceMeProducer : public TraceMe {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/third_party/tsl/tsl/profiler/lib/connected_traceme.h#L76",
+      "source_sha256": "ff3f27fd5213612cf1168d765c36e16164e3ca768d2eb51cae1399e2d813c704",
+      "inputs": "事件名、context type 与可选 ID",
+      "outputs": "_pt/_p metadata 与 context id",
+      "constraint": "未提供 ID 时调用 NewActivityId；context type=0 是有效 Generic 值。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here.",
+      "callers": [
+        "xla.profiled-future"
+      ],
+      "callees": [
+        "xla.trace-new-activity"
+      ],
+      "related_experiments": [
+        "research/jax-stack/xspace-contexts.md",
+        "research/jax-stack/xspace-context-results.json"
+      ]
+    },
+    {
+      "id": "xla.trace-context-consumer",
+      "component": "xla",
+      "layer": "XSpace contexts and export",
+      "symbol": "TraceMeConsumer : public TraceMe {",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/third_party/tsl/tsl/profiler/lib/connected_traceme.h",
+      "line": 99,
+      "end_line": null,
+      "anchor": "class TraceMeConsumer : public TraceMe {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/third_party/tsl/tsl/profiler/lib/connected_traceme.h#L99",
+      "source_sha256": "ff3f27fd5213612cf1168d765c36e16164e3ca768d2eb51cae1399e2d813c704",
+      "inputs": "事件名、与 producer 相同的 type/id",
+      "outputs": "_ct/_c metadata",
+      "constraint": "在本线程创建独立 consumer 事件；对应关系不依赖相同事件名。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here.",
+      "callers": [
+        "xla.profiled-future"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/xspace-contexts.md",
+        "research/jax-stack/xspace-context-results.json"
+      ]
+    },
+    {
+      "id": "xla.trace-context-types",
+      "component": "xla",
+      "layer": "XSpace contexts and export",
+      "symbol": "{",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/third_party/tsl/tsl/profiler/lib/context_types.h",
+      "line": 24,
+      "end_line": null,
+      "anchor": "enum class ContextType : int {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/third_party/tsl/tsl/profiler/lib/context_types.h#L24",
+      "source_sha256": "f8fe36f70e573ae37789c9c7645c6f618f2033e68e9dd6df6d7385424a868dac",
+      "inputs": "context type 枚举",
+      "outputs": "Generic=0、ThreadpoolEvent=15 等",
+      "constraint": "本轮 matcher 只覆盖 Generic 与 ThreadpoolEvent；TPU launch 的特殊 PID 处理未外推。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/xspace-contexts.md",
+        "research/jax-stack/xspace-context-results.json"
+      ]
+    },
+    {
+      "id": "xla.trace-new-activity",
+      "component": "xla",
+      "layer": "XSpace contexts and export",
+      "symbol": "NewActivityId",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/third_party/tsl/tsl/profiler/lib/traceme.h",
+      "line": 337,
+      "end_line": null,
+      "anchor": "  static int64_t NewActivityId() {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/third_party/tsl/tsl/profiler/lib/traceme.h#L337",
+      "source_sha256": "30eade4154bd28dd2c900c8eabec258212ef4f810bac8a1b48c046a0f3744206",
+      "inputs": "新的 trace activity 请求",
+      "outputs": "recorder 提供的 int64 activity id",
+      "constraint": "转发到 recorder，不是跨进程/跨文件的永久唯一标识。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here.",
+      "callers": [
+        "xla.trace-context-producer"
+      ],
+      "callees": [
+        "xla.trace-activity-id"
+      ],
+      "related_experiments": [
+        "research/jax-stack/xspace-contexts.md",
+        "research/jax-stack/xspace-context-results.json"
+      ]
+    },
+    {
+      "id": "xla.trace-activity-id",
+      "component": "xla",
+      "layer": "XSpace contexts and export",
+      "symbol": "TraceMeRecorder::NewActivityId",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/tsl/profiler/backends/cpu/traceme_recorder.cc",
+      "line": 259,
+      "end_line": null,
+      "anchor": "/*static*/ int64_t TraceMeRecorder::NewActivityId() {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/tsl/profiler/backends/cpu/traceme_recorder.cc#L259",
+      "source_sha256": "403b66d0ea6b322c9d5c26b9e3ee01fccf3d1e4a5295a0e2886a2ee6bce1b4ac",
+      "inputs": "线程局部和进程内计数器",
+      "outputs": "高 32 位线程、低 32 位事件的 ID",
+      "constraint": "计数器存在复用边界；审计另以 XSpace scope 和 process/type 作为命名空间。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here.",
+      "callers": [
+        "xla.trace-new-activity"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/xspace-contexts.md",
+        "research/jax-stack/xspace-context-results.json"
+      ]
+    },
+    {
+      "id": "xla.context-group-stats",
+      "component": "xla",
+      "layer": "XSpace contexts and export",
+      "symbol": "GroupingEventStats::GroupingEventStats",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/tsl/profiler/utils/group_events.cc",
+      "line": 103,
+      "end_line": null,
+      "anchor": "GroupingEventStats::GroupingEventStats(const XEventVisitor& event) {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/tsl/profiler/utils/group_events.cc#L103",
+      "source_sha256": "63dfd560b76eb90344e2779651ef87aa8529baa8ee447a4862f23c5ce60e8f3d",
+      "inputs": "单个事件的 occurrence stats",
+      "outputs": "producer/consumer type/id 与有效 PID",
+      "constraint": "consumer 可通过 _pid 指定 PID；普通 producer 取 plane.process_id；平台 launch 还有特殊处理。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/xspace-contexts.md",
+        "research/jax-stack/xspace-context-results.json"
+      ]
+    },
+    {
+      "id": "xla.context-group-set",
+      "component": "xla",
+      "layer": "XSpace contexts and export",
+      "symbol": "SetContextGroup",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/tsl/profiler/utils/group_events.cc",
+      "line": 176,
+      "end_line": null,
+      "anchor": "void SetContextGroup(const GroupingEventStats& stats, EventNode* event,",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/tsl/profiler/utils/group_events.cc#L176",
+      "source_sha256": "63dfd560b76eb90344e2779651ef87aa8529baa8ee447a4862f23c5ce60e8f3d",
+      "inputs": "GroupingEventStats 与 EventNode",
+      "outputs": "按 type/id/PID 分组的两类节点",
+      "constraint": "使用 optional.has_value，不能因 ID 或 type 为零而丢弃。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/xspace-contexts.md",
+        "research/jax-stack/xspace-context-results.json"
+      ]
+    },
+    {
+      "id": "xla.context-group-connect",
+      "component": "xla",
+      "layer": "XSpace contexts and export",
+      "symbol": "ConnectContextGroups",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/tsl/profiler/utils/group_events.cc",
+      "line": 200,
+      "end_line": null,
+      "anchor": "void ConnectContextGroups(const ContextGroupMap& context_groups) {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/tsl/profiler/utils/group_events.cc#L200",
+      "source_sha256": "63dfd560b76eb90344e2779651ef87aa8529baa8ee447a4862f23c5ce60e8f3d",
+      "inputs": "ContextGroupMap",
+      "outputs": "producer 到 consumer 的有向关联",
+      "constraint": "原生实现支持组内多对多；本轮应用合同只接受一对一且不猜测歧义。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/xspace-contexts.md",
+        "research/jax-stack/xspace-context-results.json"
+      ]
+    },
+    {
+      "id": "xla.context-add-flows",
+      "component": "xla",
+      "layer": "XSpace contexts and export",
+      "symbol": "AddFlowsToXplane",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/tsl/profiler/utils/xplane_utils.cc",
+      "line": 497,
+      "end_line": null,
+      "anchor": "void AddFlowsToXplane(int32_t host_id, bool is_host_plane, bool connect_traceme,",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/tsl/profiler/utils/xplane_utils.cc#L497",
+      "source_sha256": "0fccd808625a0a2a1982ecde42c560fe9349207066e36400b47a23bb768fc113",
+      "inputs": "host_id、connect_traceme 与 XPlane",
+      "outputs": "由 context/correlation 生成的 flow stats",
+      "constraint": "需要显式开启 connect_traceme；本轮自定义 JSON overlay 没有调用此原生方法。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here.",
+      "callers": [
+        "xprof.context-preprocess"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/xspace-contexts.md",
+        "research/jax-stack/xspace-context-results.json"
+      ]
+    },
+    {
+      "id": "xprof.flow-arguments",
+      "component": "xprof",
+      "layer": "XSpace contexts and export",
+      "symbol": "ConvertXStatsToTraceEventArguments",
+      "revision": "68dba1826c37986af41f6119930ec315592a51f6",
+      "path": "upstream/tooling/xprof/xprof/convert/xplane_to_trace_container.cc",
+      "line": 98,
+      "end_line": null,
+      "anchor": "SpecialArguments ConvertXStatsToTraceEventArguments(",
+      "source_url": "https://github.com/openxla/xprof/blob/68dba1826c37986af41f6119930ec315592a51f6/xprof/convert/xplane_to_trace_container.cc#L98",
+      "source_sha256": "7e354bd2be91206cbabd09f777fd92a1a9c2e8c7d096272a941cb85c5c9afdf0",
+      "inputs": "XEvent stats 与 raw arguments",
+      "outputs": "flow/group/is_async 等特殊字段",
+      "constraint": "由预处理后的 kFlow 创建 flow/async event；未实际运行此 converter。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/xspace-contexts.md",
+        "research/jax-stack/xspace-context-results.json"
+      ]
+    },
+    {
+      "id": "xprof.flow-json",
+      "component": "xprof",
+      "layer": "XSpace contexts and export",
+      "symbol": "WriteEvent",
+      "revision": "68dba1826c37986af41f6119930ec315592a51f6",
+      "path": "upstream/tooling/xprof/xprof/convert/trace_viewer/trace_events_to_json.h",
+      "line": 317,
+      "end_line": null,
+      "anchor": "  void WriteEvent(const TraceEvent& event) const {",
+      "source_url": "https://github.com/openxla/xprof/blob/68dba1826c37986af41f6119930ec315592a51f6/xprof/convert/trace_viewer/trace_events_to_json.h#L317",
+      "source_sha256": "06b20d0d1f42d2f3e8d93345c2680dfa2f621fe2c5ae42f7f00bad04a7a94fdf",
+      "inputs": "TraceEvent 与 flow 方向",
+      "outputs": "FlowV2 bind_id/flow_in/flow_out 或 async JSON",
+      "constraint": "与本轮派生的 legacy s/f overlay 是不同导出路径；仅 SOURCE-ONLY。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/xspace-contexts.md",
+        "research/jax-stack/xspace-context-results.json"
+      ]
+    },
+    {
+      "id": "xprof.context-preprocess",
+      "component": "xprof",
+      "layer": "XSpace contexts and export",
+      "symbol": "PreprocessSingleHostXSpace",
+      "revision": "68dba1826c37986af41f6119930ec315592a51f6",
+      "path": "upstream/tooling/xprof/xprof/convert/preprocess_single_host_xplane.cc",
+      "line": 34,
+      "end_line": null,
+      "anchor": "void PreprocessSingleHostXSpace(",
+      "source_url": "https://github.com/openxla/xprof/blob/68dba1826c37986af41f6119930ec315592a51f6/xprof/convert/preprocess_single_host_xplane.cc#L34",
+      "source_sha256": "fd7278fce8932565fb8155ed36b2ccd663938aa6c7f86afd4c6d20877ca69b35",
+      "inputs": "XSpace 与 step_grouping 等选项",
+      "outputs": "预处理、flow 和分组后的 XSpace",
+      "constraint": "仅 SOURCE-ONLY；有 step_grouping 且未分组时调用 AddFlowsToXplane，本轮没有构建/执行此 XProf 管线。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here.",
+      "callers": [],
+      "callees": [
+        "xla.context-add-flows"
+      ],
+      "related_experiments": [
+        "research/jax-stack/xspace-contexts.md",
+        "research/jax-stack/xspace-context-results.json"
+      ]
+    },
+    {
+      "id": "xla.threadpool-record",
+      "component": "xla",
+      "layer": "XSpace contexts and export",
+      "symbol": "ThreadpoolEventCollector::RecordEvent",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/tsl/profiler/backends/cpu/threadpool_listener.cc",
+      "line": 56,
+      "end_line": null,
+      "anchor": "void ThreadpoolEventCollector::RecordEvent(uint64_t arg) const {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/tsl/profiler/backends/cpu/threadpool_listener.cc#L56",
+      "source_sha256": "b59b71d90d24b0782a09cc1c88ef6ebefd1857a2b628dc5e507f95341e6f9b8d",
+      "inputs": "调度事件 ID",
+      "outputs": "ThreadpoolListener::Record 瞬时 producer",
+      "constraint": "context type 为 ThreadpoolEvent；它不是任务执行区间。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/xspace-contexts.md",
+        "research/jax-stack/xspace-context-results.json"
+      ]
+    },
+    {
+      "id": "xla.threadpool-start",
+      "component": "xla",
+      "layer": "XSpace contexts and export",
+      "symbol": "ThreadpoolEventCollector::StartRegion",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/tsl/profiler/backends/cpu/threadpool_listener.cc",
+      "line": 63,
+      "end_line": null,
+      "anchor": "void ThreadpoolEventCollector::StartRegion(uint64_t arg) const {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/tsl/profiler/backends/cpu/threadpool_listener.cc#L63",
+      "source_sha256": "b59b71d90d24b0782a09cc1c88ef6ebefd1857a2b628dc5e507f95341e6f9b8d",
+      "inputs": "与调度相同的 ID",
+      "outputs": "StartRegion 瞬时 consumer",
+      "constraint": "本例九条关联跨线程；StopRegion 没有这个 context ID，不能混作同一终点。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/xspace-contexts.md",
+        "research/jax-stack/xspace-context-results.json"
+      ]
+    },
+    {
+      "id": "xla.profiled-future",
+      "component": "xla",
+      "layer": "XSpace contexts and export",
+      "symbol": "CommonPjRtClient::CreateProfiledFuture",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/pjrt/common_pjrt_client.cc",
+      "line": 817,
+      "end_line": null,
+      "anchor": "Future<> CommonPjRtClient::CreateProfiledFuture(PjRtMemorySpace* memory_space,",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/pjrt/common_pjrt_client.cc#L817",
+      "source_sha256": "f336667b5453e0f33c0c152cb76083cdfb852eca8770b08c5f58ea10ba93384d",
+      "inputs": "Future 与 callee 名称",
+      "outputs": "带 block start/end profiling 的 Future",
+      "constraint": "两个短 TraceMe 事件可同名，关联 ID 经 ProfilingKeys 传递；producer dur 不等于整个等待时间。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here.",
+      "callers": [],
+      "callees": [
+        "xla.trace-context-consumer",
+        "xla.trace-context-producer"
+      ],
+      "related_experiments": [
+        "research/jax-stack/xspace-contexts.md",
+        "research/jax-stack/xspace-context-results.json"
+      ]
+    },
+    {
+      "id": "xla.xstat-wire-format",
+      "component": "xla",
+      "layer": "XSpace contexts and export",
+      "symbol": "{",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/third_party/tsl/tsl/profiler/protobuf/xplane.proto",
+      "line": 118,
+      "end_line": null,
+      "anchor": "message XStat {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/third_party/tsl/tsl/profiler/protobuf/xplane.proto#L118",
+      "source_sha256": "1491efbb71b645598bda8f7af7d9d1d483eb2be31bdd9465b76ff0ac983c5919",
+      "inputs": "metadata_id 与 oneof value",
+      "outputs": "int64/uint64/ref/string 等值",
+      "constraint": "ref_value 指向同 plane 的 stat metadata；必须保留 uint64 精度。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/xspace-contexts.md",
+        "research/jax-stack/xspace-context-results.json"
+      ]
+    },
+    {
+      "id": "xla.xevent-time",
+      "component": "xla",
+      "layer": "XSpace contexts and export",
+      "symbol": "TimestampPs",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/tsl/profiler/utils/xplane_visitor.h",
+      "line": 199,
+      "end_line": null,
+      "anchor": "  int64_t TimestampPs() const {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/tsl/profiler/utils/xplane_visitor.h#L199",
+      "source_sha256": "a38d2d3ba6557944ba2388b3b3c964b817c546905781ea53bea0c69d591061d0",
+      "inputs": "XLine timestamp_ns 与 event offset_ps",
+      "outputs": "同一坐标系的 timestamp_ps",
+      "constraint": "以整数计算 ns*1000+offset_ps，不把 line-relative offset 单独当全局时间。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/xspace-contexts.md",
+        "research/jax-stack/xspace-context-results.json"
+      ]
+    },
+    {
+      "id": "xla.xline-display-id",
+      "component": "xla",
+      "layer": "XSpace contexts and export",
+      "symbol": "DisplayId",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/tsl/profiler/utils/xplane_visitor.h",
+      "line": 332,
+      "end_line": null,
+      "anchor": "  int64_t DisplayId() const {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/tsl/profiler/utils/xplane_visitor.h#L332",
+      "source_sha256": "a38d2d3ba6557944ba2388b3b3c964b817c546905781ea53bea0c69d591061d0",
+      "inputs": "line display_id / id",
+      "outputs": "显示资源 ID",
+      "constraint": "display_id 非零时优先，否则回退完整 line id；JSON converter 再转为 uint32。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/xspace-contexts.md",
+        "research/jax-stack/xspace-context-results.json"
+      ]
     }
   ],
   "edges": [
+    {
+      "caller": "xla.trace-context-producer",
+      "callee": "xla.trace-new-activity",
+      "kind": "direct",
+      "condition": "调用者未提供 context_id 时。",
+      "path": "upstream/xla/third_party/tsl/tsl/profiler/lib/connected_traceme.h",
+      "line": 86,
+      "anchor": "                                           : TraceMe::NewActivityId()) {",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.trace-new-activity",
+      "callee": "xla.trace-activity-id",
+      "kind": "direct",
+      "condition": "",
+      "path": "upstream/xla/third_party/tsl/tsl/profiler/lib/traceme.h",
+      "line": 339,
+      "anchor": "    return TraceMeRecorder::NewActivityId();",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.profiled-future",
+      "callee": "xla.trace-context-producer",
+      "kind": "direct",
+      "condition": "on_block_start 回调。",
+      "path": "upstream/xla/xla/pjrt/common_pjrt_client.cc",
+      "line": 825,
+      "anchor": "        tsl::profiler::TraceMeProducer traceme(",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.profiled-future",
+      "callee": "xla.trace-context-consumer",
+      "kind": "direct",
+      "condition": "on_block_end 回调。",
+      "path": "upstream/xla/xla/pjrt/common_pjrt_client.cc",
+      "line": 834,
+      "anchor": "        tsl::profiler::TraceMeConsumer traceme(",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xprof.context-preprocess",
+      "callee": "xla.context-add-flows",
+      "kind": "interface",
+      "condition": "step_grouping 且尚未分组；仅索引源码 API 关系，未验证匹配 XProf 构建。",
+      "path": "upstream/tooling/xprof/xprof/convert/preprocess_single_host_xplane.cc",
+      "line": 59,
+      "anchor": "      tsl::profiler::AddFlowsToXplane(host_id, /*is_host_plane=*/!is_device,",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.xplane-trace-events",
+      "callee": "xla.internal-trace-stat",
+      "kind": "direct",
+      "condition": "metadata stats 和 occurrence stats 都经过此过滤。",
+      "path": "upstream/xla/xla/tsl/profiler/convert/xplane_to_trace_events.cc",
+      "line": 94,
+      "anchor": "            if (IsInternalStat(stat.Type())) return;",
+      "evidence_level": "SOURCE-ONLY"
+    },
     {
       "caller": "ifrt.executable-serialize",
       "callee": "xla.cpu-executable-serialize",

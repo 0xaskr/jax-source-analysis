@@ -101,7 +101,8 @@ TraceMeConsumer。[TraceMeEncode](../../upstream/xla/xla/backends/cpu/runtime/th
 
 因此，当前对应关系依赖 **三次互不重叠的阻塞调用窗口**，逐窗口检查每个起点和完成事件
 恰好出现一次。不能把同名 end 事件任意接到并发起点上，也不能把 producer 的 `dur`
-一般化为异步操作完整时长。原始 XSpace 的关联字段值得继续核对；本次不报告 kernel timing。
+一般化为异步操作完整时长。后续 [原始 XSpace 审计](xspace-contexts.md) 已用 context 字段复查 33 对 thunk
+起止，并另确认 9 条跨线程 handoff；本次仍不报告 kernel timing。
 
 ## 真实失败与验证
 

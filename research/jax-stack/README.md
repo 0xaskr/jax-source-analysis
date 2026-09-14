@@ -4,7 +4,7 @@
 新建研究。完整要求和未完成项保留在 [PLAN.md](PLAN.md)，没有沿用已删除的旧进度。
 
 - [软件栈与 API 总览](overview.md)：组件、控制链、普通 CPU/TPU 与 Pallas 两层表示。
-- [源码索引](source-index.json)：148 个入口、47 条带调用位置及分支条件的关系，含锁定的 XProf tooling 源码。
+- [源码索引](source-index.json)：166 个入口、53 条带调用位置及分支条件的关系，含锁定的 XProf tooling 源码。
 - [Pallas 对照](pallas-comparison.md)：相同输入的普通 JAX、generic 与 TPU interpret。
 - [三类 profiling 区间](profiling.md)：host、编译 pass、设备标记的实验证据与验收边界。
 - [扩展实验结果](extension-results.json)：四组 capture、62 个产物的独立复查。
@@ -14,6 +14,8 @@
 - [匹配源码的 metadata 基线](source-metadata-baseline.md)：14 组标签、2 组 HLO 改写及 117 个产物，采集与复查进程分别绑定 native 身份。
 - [独立运行环境](runtime-environment.md)：依赖文件复制、导入/native 身份检查及成功 wheel 的安装入口。
 - [CPU executable 与 trace](cpu-executable-and-trace.md)：11 个 thunk 与 33 个起点/完成事件对应；确认剩余 dot 的 Eigen 路径。
+- [原始 XSpace 关联](xspace-contexts.md)：49 组关联、13 组跨线程，区分本地范围、逻辑完成与 JSON 导出边界。
+- [XSpace Notebook](xspace-contexts.ipynb)：原始 protobuf、uint64 ID、逆序完成、数值与反例的归档复查。
 - [CPU thunk Notebook](cpu-thunk-execution.ipynb)：5 个代码单元已执行，含包装解析、trace/NumPy 复查及 19 个反例。
 - [matmul 逐 pass 导读](matmul-pass-walkthrough.md)：640 个边界、22 组叶子改写，区分库 fusion、普通 fusion 与剩余 dot。
 - [LLVM、对象与 ORC](llvm-and-objects.md)：三个 ELF 对象与 HLO/LLVM 函数、序列化字节的对应。

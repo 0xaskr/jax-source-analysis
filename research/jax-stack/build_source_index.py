@@ -150,13 +150,13 @@ SITES = [
      "TraceMe 在过滤 gate 前创建，范围也包含 metadata/invariant/dump 开销；事件名称出现不单独证明 pass 改变了 IR。"),
     ("xla.trace-json", "xla", "Trace export", "xla/tsl/profiler/convert/trace_events_to_json.cc", "inline void AddTraceEvent(", 87,
      "TraceEvent 的 ps 时间、device/resource ID、名称和 args", "Chrome Trace Event JSON 的 X 事件",
-     "ts/dur 转成微秒；displayTimeUnit=ns 不改变这些数值的单位。嵌套时长不可直接求和当作 wall time。"),
+     "ts/dur 转成微秒，raw duration=0 时先夹到 1 ps；displayTimeUnit=ns 不改变数值单位。嵌套时长不可直接当 wall time。"),
     ("xla.xplane-trace-events", "xla", "Trace export", "xla/tsl/profiler/convert/xplane_to_trace_events.cc", "void ConvertXPlaneToTraceEvents(", 62,
      "XPlaneVisitor 的事件、共享 metadata 与 occurrence stats", "TraceContainer 中的 TraceEvent 及可见 args",
-     "跳过 IsInternalStat 命中的字段；原始 XSpace 有 program_id 不保证 Chrome trace JSON 保留它。"),
+     "过滤 internal context/program 字段；同名 stat 后值覆盖前值。raw XLine 的完整 ID 在这里转成 uint32 viewer resource ID。"),
     ("xla.internal-trace-stat", "xla", "Profiler schema", "xla/tsl/profiler/utils/xplane_schema.cc", "bool IsInternalStat(", 615,
      "可选 StatType", "该字段是否属于不向 trace viewer 导出的内部 stat",
-     "kProgramId 返回 true，未知的自定义字段返回 false；本次 Hack 使用 research_program_id 副本供导出分组。"),
+     "_pt/_p/_ct/_c 与 program_id 均为 internal；未知自定义字段可保留。编译 Hack 另使用 research_program_id 供导出分组。"),
     ("jax.metadata-api", "jax", "Metadata API", "jax/_src/xla_metadata.py", "def set_xla_metadata(", 109,
      "可选数组值或 kwargs metadata", "标记 producer op 的 identity primitive 或 metadata context",
      "Python 值转成字符串（布尔小写）；属性能被传递不代表 backend 有消费逻辑。"),
@@ -422,7 +422,37 @@ SITES.extend([
     ('xla.cpu-eigen-contract', 'xla', 'CPU executable and runtime', 'xla/backends/cpu/runtime/dot_lib.h', '          Eigen::AlignmentType alignment>', 53, '矩阵维度、transpose 与回调', 'Eigen contraction 赋值', '线程池路径与同步无 device 路径不同；不能推导目标 TPU 实现。'),
 ])
 
+
+# Raw XSpace contexts and host start/completion correlation.
+SITES.extend([
+    ('xla.trace-context-producer', 'xla', 'XSpace contexts and export', 'third_party/tsl/tsl/profiler/lib/connected_traceme.h', 'class TraceMeProducer : public TraceMe {', 76, '事件名、context type 与可选 ID', '_pt/_p metadata 与 context id', '未提供 ID 时调用 NewActivityId；context type=0 是有效 Generic 值。'),
+    ('xla.trace-context-consumer', 'xla', 'XSpace contexts and export', 'third_party/tsl/tsl/profiler/lib/connected_traceme.h', 'class TraceMeConsumer : public TraceMe {', 99, '事件名、与 producer 相同的 type/id', '_ct/_c metadata', '在本线程创建独立 consumer 事件；对应关系不依赖相同事件名。'),
+    ('xla.trace-context-types', 'xla', 'XSpace contexts and export', 'third_party/tsl/tsl/profiler/lib/context_types.h', 'enum class ContextType : int {', 24, 'context type 枚举', 'Generic=0、ThreadpoolEvent=15 等', '本轮 matcher 只覆盖 Generic 与 ThreadpoolEvent；TPU launch 的特殊 PID 处理未外推。'),
+    ('xla.trace-new-activity', 'xla', 'XSpace contexts and export', 'third_party/tsl/tsl/profiler/lib/traceme.h', '  static int64_t NewActivityId() {', 337, '新的 trace activity 请求', 'recorder 提供的 int64 activity id', '转发到 recorder，不是跨进程/跨文件的永久唯一标识。'),
+    ('xla.trace-activity-id', 'xla', 'XSpace contexts and export', 'xla/tsl/profiler/backends/cpu/traceme_recorder.cc', '/*static*/ int64_t TraceMeRecorder::NewActivityId() {', 259, '线程局部和进程内计数器', '高 32 位线程、低 32 位事件的 ID', '计数器存在复用边界；审计另以 XSpace scope 和 process/type 作为命名空间。'),
+    ('xla.context-group-stats', 'xla', 'XSpace contexts and export', 'xla/tsl/profiler/utils/group_events.cc', 'GroupingEventStats::GroupingEventStats(const XEventVisitor& event) {', 103, '单个事件的 occurrence stats', 'producer/consumer type/id 与有效 PID', 'consumer 可通过 _pid 指定 PID；普通 producer 取 plane.process_id；平台 launch 还有特殊处理。'),
+    ('xla.context-group-set', 'xla', 'XSpace contexts and export', 'xla/tsl/profiler/utils/group_events.cc', 'void SetContextGroup(const GroupingEventStats& stats, EventNode* event,', 176, 'GroupingEventStats 与 EventNode', '按 type/id/PID 分组的两类节点', '使用 optional.has_value，不能因 ID 或 type 为零而丢弃。'),
+    ('xla.context-group-connect', 'xla', 'XSpace contexts and export', 'xla/tsl/profiler/utils/group_events.cc', 'void ConnectContextGroups(const ContextGroupMap& context_groups) {', 200, 'ContextGroupMap', 'producer 到 consumer 的有向关联', '原生实现支持组内多对多；本轮应用合同只接受一对一且不猜测歧义。'),
+    ('xla.context-add-flows', 'xla', 'XSpace contexts and export', 'xla/tsl/profiler/utils/xplane_utils.cc', 'void AddFlowsToXplane(int32_t host_id, bool is_host_plane, bool connect_traceme,', 497, 'host_id、connect_traceme 与 XPlane', '由 context/correlation 生成的 flow stats', '需要显式开启 connect_traceme；本轮自定义 JSON overlay 没有调用此原生方法。'),
+    ('xprof.flow-arguments', 'xprof', 'XSpace contexts and export', 'xprof/convert/xplane_to_trace_container.cc', 'SpecialArguments ConvertXStatsToTraceEventArguments(', 98, 'XEvent stats 与 raw arguments', 'flow/group/is_async 等特殊字段', '由预处理后的 kFlow 创建 flow/async event；未实际运行此 converter。'),
+    ('xprof.flow-json', 'xprof', 'XSpace contexts and export', 'xprof/convert/trace_viewer/trace_events_to_json.h', '  void WriteEvent(const TraceEvent& event) const {', 317, 'TraceEvent 与 flow 方向', 'FlowV2 bind_id/flow_in/flow_out 或 async JSON', '与本轮派生的 legacy s/f overlay 是不同导出路径；仅 SOURCE-ONLY。'),
+    ('xprof.context-preprocess', 'xprof', 'XSpace contexts and export', 'xprof/convert/preprocess_single_host_xplane.cc', 'void PreprocessSingleHostXSpace(', 34, 'XSpace 与 step_grouping 等选项', '预处理、flow 和分组后的 XSpace', '仅 SOURCE-ONLY；有 step_grouping 且未分组时调用 AddFlowsToXplane，本轮没有构建/执行此 XProf 管线。'),
+    ('xla.threadpool-record', 'xla', 'XSpace contexts and export', 'xla/tsl/profiler/backends/cpu/threadpool_listener.cc', 'void ThreadpoolEventCollector::RecordEvent(uint64_t arg) const {', 56, '调度事件 ID', 'ThreadpoolListener::Record 瞬时 producer', 'context type 为 ThreadpoolEvent；它不是任务执行区间。'),
+    ('xla.threadpool-start', 'xla', 'XSpace contexts and export', 'xla/tsl/profiler/backends/cpu/threadpool_listener.cc', 'void ThreadpoolEventCollector::StartRegion(uint64_t arg) const {', 63, '与调度相同的 ID', 'StartRegion 瞬时 consumer', '本例九条关联跨线程；StopRegion 没有这个 context ID，不能混作同一终点。'),
+    ('xla.profiled-future', 'xla', 'XSpace contexts and export', 'xla/pjrt/common_pjrt_client.cc', 'Future<> CommonPjRtClient::CreateProfiledFuture(PjRtMemorySpace* memory_space,', 817, 'Future 与 callee 名称', '带 block start/end profiling 的 Future', '两个短 TraceMe 事件可同名，关联 ID 经 ProfilingKeys 传递；producer dur 不等于整个等待时间。'),
+    ('xla.xstat-wire-format', 'xla', 'XSpace contexts and export', 'third_party/tsl/tsl/profiler/protobuf/xplane.proto', 'message XStat {', 118, 'metadata_id 与 oneof value', 'int64/uint64/ref/string 等值', 'ref_value 指向同 plane 的 stat metadata；必须保留 uint64 精度。'),
+    ('xla.xevent-time', 'xla', 'XSpace contexts and export', 'xla/tsl/profiler/utils/xplane_visitor.h', '  int64_t TimestampPs() const {', 199, 'XLine timestamp_ns 与 event offset_ps', '同一坐标系的 timestamp_ps', '以整数计算 ns*1000+offset_ps，不把 line-relative offset 单独当全局时间。'),
+    ('xla.xline-display-id', 'xla', 'XSpace contexts and export', 'xla/tsl/profiler/utils/xplane_visitor.h', '  int64_t DisplayId() const {', 332, 'line display_id / id', '显示资源 ID', 'display_id 非零时优先，否则回退完整 line id；JSON converter 再转为 uint32。'),
+])
+
 EDGES = [
+    ('xla.trace-context-producer', 'xla.trace-new-activity', '                                           : TraceMe::NewActivityId()) {', 'direct', '调用者未提供 context_id 时。'),
+    ('xla.trace-new-activity', 'xla.trace-activity-id', '    return TraceMeRecorder::NewActivityId();', 'direct', ''),
+    ('xla.profiled-future', 'xla.trace-context-producer', '        tsl::profiler::TraceMeProducer traceme(', 'direct', 'on_block_start 回调。'),
+    ('xla.profiled-future', 'xla.trace-context-consumer', '        tsl::profiler::TraceMeConsumer traceme(', 'direct', 'on_block_end 回调。'),
+    ('xprof.context-preprocess', 'xla.context-add-flows', '      tsl::profiler::AddFlowsToXplane(host_id, /*is_host_plane=*/!is_device,', 'interface', 'step_grouping 且尚未分组；仅索引源码 API 关系，未验证匹配 XProf 构建。'),
+    ('xla.xplane-trace-events', 'xla.internal-trace-stat', '            if (IsInternalStat(stat.Type())) return;', 'direct', 'metadata stats 和 occurrence stats 都经过此过滤。'),
+
     ('ifrt.executable-serialize', 'xla.cpu-executable-serialize', '                   pjrt_executable->SerializeExecutable());', 'interface', '底层 executable 为 PjRtCpuExecutable 时。'),
     ('xla.cpu-aot-create', 'xla.cpu-thunk-sequence-proto', '                   thunk_sequence_serdes.ToProto(thunks));', 'direct', ''),
     ('xla.cpu-thunk-traced-execute', 'xla.cpu-thunk-trace-fields', '      [&] { return thunk.TraceMeEncode(params.run_id, params.device_ordinal); },', 'direct', 'profiler active 分支。'),
@@ -561,6 +591,9 @@ def main():
         if entry["id"] in {'xla.cpu-compilation-proto', 'xla.cpu-eigen-typed', 'jax.pickle-exec', 'xla.cpu-executable-serialize', 'xla.cpu-thunk-sequence-proto', 'xla.cpu-thunk-traced-execute', 'xla.cpu-dot-serdes', 'xla.cpu-thunk-trace-fields', 'xla.cpu-dot-execute', 'xla.cpu-ynn-serdes', 'xla.cpu-aot-create', 'ifrt.executable-serialize', 'xla.cpu-eigen-contract', 'xla.cpu-thunk-proto'}:
             entry["related_experiments"] = ["research/jax-stack/cpu-executable-and-trace.md", "research/jax-stack/cpu-thunk-results.json"]
             entry["runtime_boundary"] = "Source-bound CPU serialized thunks and fresh CPU traces are verified separately; no TPU or internal microkernel claim."
+        if entry["id"] in {'xprof.flow-arguments', 'xprof.flow-json', 'xla.xline-display-id', 'xla.internal-trace-stat', 'xla.threadpool-record', 'xla.xplane-trace-events', 'xla.profiled-future', 'xla.trace-new-activity', 'xla.context-group-connect', 'xla.context-group-set', 'xla.threadpool-start', 'xla.context-group-stats', 'xla.trace-context-producer', 'xprof.context-preprocess', 'xla.xevent-time', 'xla.context-add-flows', 'xla.trace-context-consumer', 'xla.xstat-wire-format', 'xla.trace-json', 'xla.trace-context-types', 'xla.trace-activity-id'}:
+            entry.setdefault("related_experiments", []).extend(["research/jax-stack/xspace-contexts.md", "research/jax-stack/xspace-context-results.json"])
+            entry["runtime_boundary"] = "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here."
     index = {
         "schema_version": "1.0", "kickoff_revision": 51,
         "source_roots": {name: {"path": s["path"], "revision": s["git_commit"]} for name, s in sources.items()},
