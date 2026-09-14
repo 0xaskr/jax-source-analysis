@@ -1,0 +1,66 @@
+struct ResearchMetadataCase {
+  std::string name;
+  std::optional<std::string> text;
+  int cycles_per_microsecond;
+  std::optional<LatencyEstimator::TimeCost> expected_cycles;
+};
+
+class ResearchMetadataLatencyEstimator : public TestLatencyEstimator {
+ public:
+  explicit ResearchMetadataLatencyEstimator(int cycles_per_microsecond)
+      : cycles_per_microsecond_(cycles_per_microsecond) {}
+  int CyclesPerMicrosecond() const override { return cycles_per_microsecond_; }
+
+ private:
+  int cycles_per_microsecond_;
+};
+
+class ResearchMetadataParserTest
+    : public ::testing::TestWithParam<ResearchMetadataCase> {};
+
+TEST_P(ResearchMetadataParserTest, ParsesAndScalesMetadata) {
+  const ResearchMetadataCase& sample = GetParam();
+  ResearchMetadataLatencyEstimator estimator(sample.cycles_per_microsecond);
+  std::unique_ptr<HloInstruction> instruction = HloInstruction::CreateCustomCall(
+      ShapeUtil::MakeShape(F32, {1}), {}, "research_target", "");
+  if (sample.text.has_value()) {
+    FrontendAttributes attributes;
+    (*attributes.mutable_map())["latency_metadata"] = *sample.text;
+    instruction->set_frontend_attributes(attributes);
+  }
+  std::optional<LatencyEstimator::TimeCost> actual =
+      estimator.GetLatencyFromMetadata(*instruction);
+  RecordProperty("input_label", sample.name);
+  RecordProperty("metadata_present", sample.text.has_value() ? "true" : "false");
+  RecordProperty("metadata_text", sample.text.value_or("<missing>"));
+  RecordProperty("cycles_per_microsecond", sample.cycles_per_microsecond);
+  RecordProperty("has_value", actual.has_value() ? "true" : "false");
+  RecordProperty("parsed_cycles",
+                 actual.has_value() ? std::to_string(*actual) : "nullopt");
+  ASSERT_EQ(actual.has_value(), sample.expected_cycles.has_value());
+  if (actual.has_value()) {
+    EXPECT_DOUBLE_EQ(*actual, *sample.expected_cycles);
+  }
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    ResearchMetadataCases, ResearchMetadataParserTest,
+    ::testing::ValuesIn(std::vector<ResearchMetadataCase>{
+        {"Missing", std::nullopt, 1, std::nullopt},
+        {"Positive", "30000", 1, 30.0},
+        {"Zero", "0", 1, 0.0},
+        {"Negative", "-1000", 1, -1.0},
+        {"IntegerMaximum", "9223372036854775807", 1, 9.223372036854776e15},
+        {"IntegerMinimum", "-9223372036854775808", 1, -9.223372036854776e15},
+        {"PositiveOverflow", "9223372036854775808", 1, std::nullopt},
+        {"NegativeOverflow", "-9223372036854775809", 1, std::nullopt},
+        {"Fractional", "30000.5", 1, std::nullopt},
+        {"Empty", "", 1, std::nullopt},
+        {"Invalid", "slow", 1, std::nullopt},
+        {"Scientific", "3e4", 1, std::nullopt},
+        {"ClockScale", "30000", 2, 60.0},
+        {"SubMicrosecond", "1", 1, 0.001},
+    }),
+    [](const ::testing::TestParamInfo<ResearchMetadataCase>& info) {
+      return info.param.name;
+    });

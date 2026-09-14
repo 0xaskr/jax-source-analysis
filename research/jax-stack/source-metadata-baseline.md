@@ -7,8 +7,9 @@
 
 这是对 [属性/cost](attributes-and-cost.md) 和 [latency metadata](latency-model.md) 历史
 实验的独立源码复验；旧 capture、旧结果与宿主机 wheel 均保留。
-[属性 Notebook](attributes-cost.ipynb) 的 7 个代码单元已执行：前六个保留旧 CPU 路径，
-最后一个复查这里的源码 capture 指纹、已保存身份及全部 16 组数值结果。
+[属性 Notebook](attributes-cost.ipynb) 的 8 个代码单元已执行：前六个保留旧 CPU 路径，
+第七个复查这里的源码 capture 指纹、已保存身份及全部 16 组数值结果，最后一个复查
+独立的 [原生 latency parser](latency-parser-native.md) 结果。
 
 ## 本例确认的机制
 

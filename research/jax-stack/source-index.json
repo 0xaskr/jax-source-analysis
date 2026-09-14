@@ -1978,14 +1978,18 @@
       "source_sha256": "8c50e046027c8ea961782d81687621854bb3e4e4f8ffce315246aaf1ac640671",
       "inputs": "HLO frontend_attributes[latency_metadata]",
       "outputs": "optional TimeCost：int64 ns × CyclesPerMicrosecond / 1000",
-      "constraint": "缺失或 SimpleAtoi 失败返回 nullopt；函数没有额外正值检查。本轮未执行此 C++ parser。",
+      "constraint": "缺失或 SimpleAtoi 失败返回 nullopt；原生 CPU 单元测试已确认零/负数接受、int64 越界拒绝和配置的单位缩放，目标 GPU/TPU 消费另行取证。",
       "evidence_level": "SOURCE-ONLY",
       "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
       "callers": [
         "xla.gpu-node-cost",
         "xla.sol-node-cost"
       ],
-      "callees": []
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/latency-parser-native.md",
+        "research/jax-stack/latency-parser-results.json"
+      ]
     },
     {
       "id": "xla.gpu-node-cost",
@@ -2210,11 +2214,15 @@
       "source_sha256": "7ecb22110fc5b7e674df795ba54c7dd840cb37995e526eee6dd4e9649160e439",
       "inputs": "上游构造的 custom call：1000、invalid、missing",
       "outputs": "测试规范中的 optional time 断言",
-      "constraint": "这是阅读过的固定测试源码，尚未构建执行；不能记为本轮 native 测试通过。",
+      "constraint": "该固定测试已在 CPU 原生目标运行通过；独立测试补丁另补 14 个边界样本。测试配置的 cycles/us 不等于硬件频率。",
       "evidence_level": "SOURCE-ONLY",
       "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
       "callers": [],
-      "callees": []
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/latency-parser-native.md",
+        "research/jax-stack/latency-parser-results.json"
+      ]
     },
     {
       "id": "xla.llvm-dump-hooks",
