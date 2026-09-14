@@ -1,0 +1,329 @@
+{
+  "capture_id": "codegen",
+  "manifest_path": "artifacts/jax-stack/source-lowering-audit-001/codegen/manifest.json",
+  "manifest_sha256": "d61b3b5054f467e1490eeab0938825ae5c6173731faf4ab22004b769626e7625",
+  "artifact_count": 20,
+  "evidence_level": "REPLAY-OFFLINE",
+  "qualifiers": [],
+  "source_capture": "artifacts/jax-stack/source-runtime-002/suite/matmul",
+  "build_binding": {
+    "kind": "source-build-native-payload-bound",
+    "source_build_verified": true,
+    "build_manifest_path": "manifests/build-fingerprints/kickoff-cpu-source-003.json",
+    "build_manifest": {
+      "sha256": "e71c74f91c88d7a3273f8753b0e45bf7ef23435ffb86f9af6158845b258fe622",
+      "size_bytes": 13406
+    },
+    "build_id": "kickoff-cpu-source-003",
+    "input_fingerprint_sha256": "e37cb5059351a11dc611845e1b0b1bdcc69910d6eda680f66192e26963dab494",
+    "source_patches": [],
+    "wheel": {
+      "path": "artifacts/builds/kickoff-cpu-source-003/attempts/0001/wheels/jaxlib-0.11.2.dev0+selfbuilt-cp312-cp312-manylinux_2_27_x86_64.whl",
+      "sha256": "8e0e4f9c87de126cd1316e46897b53368744056a1f14c7208c6061773b9b1cef",
+      "size_bytes": 88323271
+    },
+    "matched_loaded_payloads": [
+      {
+        "wheel_member": "jaxlib/_hlo.so",
+        "package_path": "_hlo.so",
+        "sha256": "d2f2c148131b479eae0da7740b590805c9dc1eb723251c9a056580c7da4e001e",
+        "size_bytes": 7464,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/_hlo.so"
+      },
+      {
+        "wheel_member": "jaxlib/_ifrt_proxy.so",
+        "package_path": "_ifrt_proxy.so",
+        "sha256": "3e96209e5ce27f642c322e21f279e5c1508cf2fb35dc888463108f511298ed45",
+        "size_bytes": 7480,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/_ifrt_proxy.so"
+      },
+      {
+        "wheel_member": "jaxlib/_jax.so",
+        "package_path": "_jax.so",
+        "sha256": "f66ad0e3c36d2173a9a1deaa111fb90bbbf6d790998ade2c90c4e572b154b2f5",
+        "size_bytes": 7464,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/_jax.so"
+      },
+      {
+        "wheel_member": "jaxlib/_pretty_printer.so",
+        "package_path": "_pretty_printer.so",
+        "sha256": "cfde380183392bea2c685119d79d22fd890cd5f927f51eacb3c56c21d25450df",
+        "size_bytes": 7496,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/_pretty_printer.so"
+      },
+      {
+        "wheel_member": "jaxlib/_profile_data.so",
+        "package_path": "_profile_data.so",
+        "sha256": "f72deb0247d091fcfbc6cb759207e029f0b0c006979386787b47dd43d5826053",
+        "size_bytes": 7488,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/_profile_data.so"
+      },
+      {
+        "wheel_member": "jaxlib/_profiler.so",
+        "package_path": "_profiler.so",
+        "sha256": "7299aa3f77374bdb56bf639837b66c64d78582e63df50a1c018d251caefbe5bf",
+        "size_bytes": 7472,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/_profiler.so"
+      },
+      {
+        "wheel_member": "jaxlib/_xla.so",
+        "package_path": "_xla.so",
+        "sha256": "54b91a1c9ddf91cddf75adae9cc8d2e4592762ce5eb2779e4ef85461fd327b25",
+        "size_bytes": 7464,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/_xla.so"
+      },
+      {
+        "wheel_member": "jaxlib/cpu/_lapack.so",
+        "package_path": "cpu/_lapack.so",
+        "sha256": "e4bbd519222b9260afdb326472bdcca2ad194c020e40cfcc81e35d80ac3a8f3b",
+        "size_bytes": 1896736,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/cpu/_lapack.so"
+      },
+      {
+        "wheel_member": "jaxlib/cpu/_sparse.so",
+        "package_path": "cpu/_sparse.so",
+        "sha256": "81daf38d50091286eb0f4a94c31e47096115ab604d90cfbda159bbf28342fa15",
+        "size_bytes": 252840,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/cpu/_sparse.so"
+      },
+      {
+        "wheel_member": "jaxlib/cpu_feature_guard.so",
+        "package_path": "cpu_feature_guard.so",
+        "sha256": "c0ff24e36a27006c3c63ff883885c0f4e8d162db5a9b93ba19bbc3d7e746774f",
+        "size_bytes": 7968,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/cpu_feature_guard.so"
+      },
+      {
+        "wheel_member": "jaxlib/libjax_common.so",
+        "package_path": "libjax_common.so",
+        "sha256": "ad1714b81f1a22fa1195df0522c64f3133a9063d2715bd37983771d1418ac6e9",
+        "size_bytes": 349198048,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/libjax_common.so"
+      },
+      {
+        "wheel_member": "jaxlib/mlir/_mlir_libs/_chlo.so",
+        "package_path": "mlir/_mlir_libs/_chlo.so",
+        "sha256": "dac89f7413d9a0f5873262f1e4f51b03385455b447663899da940ce7a1158893",
+        "size_bytes": 7464,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_chlo.so"
+      },
+      {
+        "wheel_member": "jaxlib/mlir/_mlir_libs/_jax_mlir_ext.so",
+        "package_path": "mlir/_mlir_libs/_jax_mlir_ext.so",
+        "sha256": "da27306f772b5169b2b7e7f380956052fcfa3c7e181a2dcc666ae976a0542131",
+        "size_bytes": 7488,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_jax_mlir_ext.so"
+      },
+      {
+        "wheel_member": "jaxlib/mlir/_mlir_libs/_mlir.so",
+        "package_path": "mlir/_mlir_libs/_mlir.so",
+        "sha256": "9aeaea0612ca59b2150304faa806c8fe5bf6be40ddc9f45538425b00a0583d7a",
+        "size_bytes": 7464,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_mlir.so"
+      },
+      {
+        "wheel_member": "jaxlib/mlir/_mlir_libs/_mlirHlo.so",
+        "package_path": "mlir/_mlir_libs/_mlirHlo.so",
+        "sha256": "325b180ce737ccb848d9e71e39cdd898ce0d3ff25ccb1438cfc31160cccc5dae",
+        "size_bytes": 7472,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_mlirHlo.so"
+      },
+      {
+        "wheel_member": "jaxlib/mlir/_mlir_libs/_mosaic_gpu_ext.so",
+        "package_path": "mlir/_mlir_libs/_mosaic_gpu_ext.so",
+        "sha256": "8e140d05dfc539020ac578b056d05addafcc633b1f1f0bebf010f6b60aee5fdb",
+        "size_bytes": 7496,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_mosaic_gpu_ext.so"
+      },
+      {
+        "wheel_member": "jaxlib/mlir/_mlir_libs/_sdy.so",
+        "package_path": "mlir/_mlir_libs/_sdy.so",
+        "sha256": "1f2d0c9addce813dddf5cc8a71af01abfbea5a5d06fa9b0a26c82ec230ecbf3c",
+        "size_bytes": 7464,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_sdy.so"
+      },
+      {
+        "wheel_member": "jaxlib/mlir/_mlir_libs/_sdyMpmd.so",
+        "package_path": "mlir/_mlir_libs/_sdyMpmd.so",
+        "sha256": "77eb5f69f222efa5919c457618a92250fe82d081369dff6b8f9e89d15cad066d",
+        "size_bytes": 7472,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_sdyMpmd.so"
+      },
+      {
+        "wheel_member": "jaxlib/mlir/_mlir_libs/_stablehlo.so",
+        "package_path": "mlir/_mlir_libs/_stablehlo.so",
+        "sha256": "9f171cf2de4713f0d9c1bd30a431052d4fa5aa18e07a40c98348773ee7d514c3",
+        "size_bytes": 7480,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_stablehlo.so"
+      },
+      {
+        "wheel_member": "jaxlib/mlir/_mlir_libs/_tpu_ext.so",
+        "package_path": "mlir/_mlir_libs/_tpu_ext.so",
+        "sha256": "6ec6f806446841349662e15dedde194e01da201a5dd2f8e351ee840be00f9f56",
+        "size_bytes": 7472,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/mlir/_mlir_libs/_tpu_ext.so"
+      },
+      {
+        "wheel_member": "jaxlib/utils.so",
+        "package_path": "utils.so",
+        "sha256": "271bfc22d4f630e9292d6d485e118d12ab3501b99eb2ee4e8d841b02212c1bca",
+        "size_bytes": 7464,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/utils.so"
+      },
+      {
+        "wheel_member": "jaxlib/weakref_lru_cache.so",
+        "package_path": "weakref_lru_cache.so",
+        "sha256": "0ea3970d6694b2a11a74c4554a8caf5552d7f4221306655f33d24c50b056f08f",
+        "size_bytes": 7496,
+        "artifact_path": "artifacts/jax-stack/source-runtime-002/baseline-env/venv/lib/python3.12/site-packages/jaxlib/weakref_lru_cache.so"
+      }
+    ],
+    "scope": "Loaded jaxlib payloads match the recorded wheel. This does not add GPU/TPU evidence or prove a complete offline dependency closure."
+  },
+  "verification_runtime": {
+    "source_build_verified": true,
+    "build_id": "kickoff-cpu-source-003",
+    "native_payloads": {
+      "jaxlib/_hlo.so": "d2f2c148131b479eae0da7740b590805c9dc1eb723251c9a056580c7da4e001e",
+      "jaxlib/_ifrt_proxy.so": "3e96209e5ce27f642c322e21f279e5c1508cf2fb35dc888463108f511298ed45",
+      "jaxlib/_jax.so": "f66ad0e3c36d2173a9a1deaa111fb90bbbf6d790998ade2c90c4e572b154b2f5",
+      "jaxlib/_pretty_printer.so": "cfde380183392bea2c685119d79d22fd890cd5f927f51eacb3c56c21d25450df",
+      "jaxlib/_profile_data.so": "f72deb0247d091fcfbc6cb759207e029f0b0c006979386787b47dd43d5826053",
+      "jaxlib/_profiler.so": "7299aa3f77374bdb56bf639837b66c64d78582e63df50a1c018d251caefbe5bf",
+      "jaxlib/_xla.so": "54b91a1c9ddf91cddf75adae9cc8d2e4592762ce5eb2779e4ef85461fd327b25",
+      "jaxlib/cpu/_lapack.so": "e4bbd519222b9260afdb326472bdcca2ad194c020e40cfcc81e35d80ac3a8f3b",
+      "jaxlib/cpu/_sparse.so": "81daf38d50091286eb0f4a94c31e47096115ab604d90cfbda159bbf28342fa15",
+      "jaxlib/cpu_feature_guard.so": "c0ff24e36a27006c3c63ff883885c0f4e8d162db5a9b93ba19bbc3d7e746774f",
+      "jaxlib/libjax_common.so": "ad1714b81f1a22fa1195df0522c64f3133a9063d2715bd37983771d1418ac6e9",
+      "jaxlib/mlir/_mlir_libs/_chlo.so": "dac89f7413d9a0f5873262f1e4f51b03385455b447663899da940ce7a1158893",
+      "jaxlib/mlir/_mlir_libs/_jax_mlir_ext.so": "da27306f772b5169b2b7e7f380956052fcfa3c7e181a2dcc666ae976a0542131",
+      "jaxlib/mlir/_mlir_libs/_mlir.so": "9aeaea0612ca59b2150304faa806c8fe5bf6be40ddc9f45538425b00a0583d7a",
+      "jaxlib/mlir/_mlir_libs/_mosaic_gpu_ext.so": "8e140d05dfc539020ac578b056d05addafcc633b1f1f0bebf010f6b60aee5fdb",
+      "jaxlib/mlir/_mlir_libs/_sdy.so": "1f2d0c9addce813dddf5cc8a71af01abfbea5a5d06fa9b0a26c82ec230ecbf3c",
+      "jaxlib/mlir/_mlir_libs/_sdyMpmd.so": "77eb5f69f222efa5919c457618a92250fe82d081369dff6b8f9e89d15cad066d",
+      "jaxlib/mlir/_mlir_libs/_stablehlo.so": "9f171cf2de4713f0d9c1bd30a431052d4fa5aa18e07a40c98348773ee7d514c3",
+      "jaxlib/mlir/_mlir_libs/_tpu_ext.so": "6ec6f806446841349662e15dedde194e01da201a5dd2f8e351ee840be00f9f56",
+      "jaxlib/utils.so": "271bfc22d4f630e9292d6d485e118d12ab3501b99eb2ee4e8d841b02212c1bca",
+      "jaxlib/weakref_lru_cache.so": "0ea3970d6694b2a11a74c4554a8caf5552d7f4221306655f33d24c50b056f08f"
+    },
+    "scope": "Current verifier process imports and loaded native payloads match the capture's source-built wheel."
+  },
+  "cases": [
+    {
+      "case": "matmul",
+      "native_module_prefix": "module_0004.jit_matmul",
+      "object_count": 0
+    },
+    {
+      "case": "vmap_matmul",
+      "native_module_prefix": "module_0014.jit_matmul",
+      "object_count": 0
+    },
+    {
+      "case": "grad_matmul",
+      "native_module_prefix": "module_0024.jit_loss",
+      "object_count": 1
+    },
+    {
+      "case": "jit_grad_vmap_matmul",
+      "native_module_prefix": "module_0034.jit_batched_loss",
+      "object_count": 2
+    }
+  ],
+  "objects": [
+    {
+      "case": "grad_matmul",
+      "native_module_prefix": "module_0024.jit_loss",
+      "llvm_module_id": "__compute_module_broadcast_multiply_fusion_kernel_module",
+      "inputs": {
+        "hlo": "artifacts/jax-stack/source-runtime-002/suite/matmul/grad_matmul/optimized-hlo.txt",
+        "ir_before": "artifacts/jax-stack/source-runtime-002/suite/matmul/xla-dump/module_0024.jit_loss.broadcast_multiply_fusion_kernel_module.ir-no-opt.ll",
+        "ir_after": "artifacts/jax-stack/source-runtime-002/suite/matmul/xla-dump/module_0024.jit_loss.broadcast_multiply_fusion_kernel_module.ir-with-opt.ll",
+        "object": "artifacts/jax-stack/source-runtime-002/suite/matmul/xla-dump/module_0024.jit_loss.obj-file.broadcast_multiply_fusion_kernel_module.o",
+        "serialized_executable": "artifacts/jax-stack/source-runtime-002/suite/matmul/grad_matmul/executable.bin"
+      },
+      "elf": {
+        "class": "ELF64",
+        "endianness": "little",
+        "e_type": 1,
+        "e_machine": 62
+      },
+      "defined_functions": [
+        {
+          "name": "broadcast_multiply_fusion",
+          "size_bytes": 62,
+          "section_index": "3"
+        }
+      ],
+      "hlo_opcode": "kFusion",
+      "object_occurrences_in_serialized_package": 1,
+      "serialized_package_byte_offset": 5162,
+      "inspection_directory": "artifacts/jax-stack/source-lowering-audit-001/codegen/module_0024.jit_loss.broadcast_multiply_fusion_kernel_module"
+    },
+    {
+      "case": "jit_grad_vmap_matmul",
+      "native_module_prefix": "module_0034.jit_batched_loss",
+      "llvm_module_id": "__compute_module_broadcast_multiply_fusion_kernel_module",
+      "inputs": {
+        "hlo": "artifacts/jax-stack/source-runtime-002/suite/matmul/jit_grad_vmap_matmul/optimized-hlo.txt",
+        "ir_before": "artifacts/jax-stack/source-runtime-002/suite/matmul/xla-dump/module_0034.jit_batched_loss.broadcast_multiply_fusion_kernel_module.ir-no-opt.ll",
+        "ir_after": "artifacts/jax-stack/source-runtime-002/suite/matmul/xla-dump/module_0034.jit_batched_loss.broadcast_multiply_fusion_kernel_module.ir-with-opt.ll",
+        "object": "artifacts/jax-stack/source-runtime-002/suite/matmul/xla-dump/module_0034.jit_batched_loss.obj-file.broadcast_multiply_fusion_kernel_module.o",
+        "serialized_executable": "artifacts/jax-stack/source-runtime-002/suite/matmul/jit_grad_vmap_matmul/executable.bin"
+      },
+      "elf": {
+        "class": "ELF64",
+        "endianness": "little",
+        "e_type": 1,
+        "e_machine": 62
+      },
+      "defined_functions": [
+        {
+          "name": "broadcast_multiply_fusion",
+          "size_bytes": 143,
+          "section_index": "3"
+        }
+      ],
+      "hlo_opcode": "kFusion",
+      "object_occurrences_in_serialized_package": 1,
+      "serialized_package_byte_offset": 6718,
+      "inspection_directory": "artifacts/jax-stack/source-lowering-audit-001/codegen/module_0034.jit_batched_loss.broadcast_multiply_fusion_kernel_module"
+    },
+    {
+      "case": "jit_grad_vmap_matmul",
+      "native_module_prefix": "module_0034.jit_batched_loss",
+      "llvm_module_id": "__compute_module_copy_bitcast_fusion_kernel_module",
+      "inputs": {
+        "hlo": "artifacts/jax-stack/source-runtime-002/suite/matmul/jit_grad_vmap_matmul/optimized-hlo.txt",
+        "ir_before": "artifacts/jax-stack/source-runtime-002/suite/matmul/xla-dump/module_0034.jit_batched_loss.copy_bitcast_fusion_kernel_module.ir-no-opt.ll",
+        "ir_after": "artifacts/jax-stack/source-runtime-002/suite/matmul/xla-dump/module_0034.jit_batched_loss.copy_bitcast_fusion_kernel_module.ir-with-opt.ll",
+        "object": "artifacts/jax-stack/source-runtime-002/suite/matmul/xla-dump/module_0034.jit_batched_loss.obj-file.copy_bitcast_fusion_kernel_module.o",
+        "serialized_executable": "artifacts/jax-stack/source-runtime-002/suite/matmul/jit_grad_vmap_matmul/executable.bin"
+      },
+      "elf": {
+        "class": "ELF64",
+        "endianness": "little",
+        "e_type": 1,
+        "e_machine": 62
+      },
+      "defined_functions": [
+        {
+          "name": "copy_bitcast_fusion",
+          "size_bytes": 250,
+          "section_index": "3"
+        }
+      ],
+      "hlo_opcode": "kFusion",
+      "object_occurrences_in_serialized_package": 1,
+      "serialized_package_byte_offset": 7837,
+      "inspection_directory": "artifacts/jax-stack/source-lowering-audit-001/codegen/module_0034.jit_batched_loss.copy_bitcast_fusion_kernel_module"
+    }
+  ],
+  "limits": [
+    "This audit reads existing compiler products; it does not compile or execute code.",
+    "Exact object bytes occur in the captured serialized package; no pickle or executable was loaded by this audit.",
+    "The original producer verified in-process executable reload. This does not measure individual kernel invocation or performance.",
+    "Native product provenance and qualifiers come from the source capture; this audit does not add a runtime load.",
+    "No object for a case does not mean no machine code ran: prebuilt library/runtime paths need separate attribution."
+  ]
+}

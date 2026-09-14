@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "updated_at": "2026-09-14T21:27:49.412271+00:00",
+  "updated_at": "2026-09-14T22:01:58.933047+00:00",
   "goal_state": "active",
   "objective": "按 Outline kickoff revision 51 完成软件栈总览、源码/API 索引和实际推理场景 Hack 实验。",
   "kickoff_source": "research/jax-stack/kickoff-source.json",
@@ -178,6 +178,11 @@
       "id": "native-latency-parser-boundaries",
       "result": "固定源码原测试及增加14个边界样本后的15项C++测试通过；观察零/负数、int64边界与溢出、非法格式、缺失/空值及单位缩放。测试源文件已回滚，二进制/XML/补丁复放通过独立验证。",
       "evidence": "research/jax-stack/latency-parser-results.json"
+    },
+    {
+      "id": "source-matmul-pass-walkthrough",
+      "result": "源码 003 CPU matmul 的 640 个 pipeline 边界/584 组配对已复查；22 组叶子变化与 3 组嵌套汇总分开，59 个派生产物及 6 个反例通过。三个对象的 20 个产物匹配源码 reader；两次旧 reader 拒绝、10 个真实 Jupyter 单元通过。",
+      "evidence": "research/jax-stack/matmul-pass-walkthrough.md"
     }
   ],
   "requirements": [
@@ -187,7 +192,8 @@
       "evidence": [
         "research/jax-stack/overview.md",
         "research/jax-stack/source-index.json",
-        "research/jax-stack/llvm-and-objects.md"
+        "research/jax-stack/llvm-and-objects.md",
+        "research/jax-stack/matmul-pass-walkthrough.md"
       ],
       "remaining": "已补齐选定 LLVM/MC/ORC 与 CPU kernel 接口；完整组件/内部 pass graph、普通 TPU 调用细节和 libtpu 私有边界仍需后续取证。"
     },
@@ -201,9 +207,12 @@
         "research/jax-stack/llvm-and-objects.md",
         "research/jax-stack/codegen-results.json",
         "research/jax-stack/cpu-revalidation-results.json",
-        "research/jax-stack/source-runtime-results.json"
+        "research/jax-stack/source-runtime-results.json",
+        "research/jax-stack/matmul-pass-walkthrough.md",
+        "research/jax-stack/pass-transition-results.json",
+        "research/jax-stack/source-codegen-results.json"
       ],
-      "remaining": "匹配源码的 CPU 数值/IR 基线已通过；继续补齐关键中间阶段语义解释，TPU lowering/后端产物按目标环境取证。"
+      "remaining": "匹配源码 CPU 关键中间 pass、布局/fusion 与 LLVM/object 对应已补齐；CPU thunk/库分支的静态可观察性与 runtime sampling 继续分层取证。TPU lowering/后端产物仍需目标环境。"
     },
     {
       "id": "R03",
@@ -352,12 +361,12 @@
   ],
   "next_actions": [
     {
-      "id": "source-matmul-pass-walkthrough",
+      "id": "source-cpu-thunk-dispatch-evidence",
       "ready": true,
       "depends_on": [
-        "source-built-cpu-baseline-003"
+        "source-matmul-pass-walkthrough"
       ],
-      "action": "基于 source-runtime-002/suite/matmul 的源码 CPU capture，逐个解释关键 pass 的实际前后变化、源码入口和 IR 打印位置；将已有 LLVM/object 对应复查扩展到该匹配源码 capture。"
+      "action": "核对源码 CPU executable 中 thunk/库分支的可观察内容，先阅读固定序列化/反序列化格式，使用安全只读 parser 或新生成的小探针定位剩余 dot 的实际选择；静态记录与 runtime dispatch sampling 分开，不加载不可信 pickle。"
     },
     {
       "id": "tpu-device-profile",
@@ -433,7 +442,7 @@
     "pass_hack_selftest": "Three invalid C++ outcomes and real 127-event metadata-loss capture rejected.",
     "pass_hack_rollback": "Three source files restored byte-for-byte, clone clean, retained unpatched 003 wheel reinstalled in fresh copied environment and new processes.",
     "terminal_dependencies": "50 artifacts, 3 archives, 43 patch targets and 1093 cached payloads / 734532494 bytes verified; 6 negative cases passed; no complete offline closure claim.",
-    "project_state": "Project-status selftest positive summary and 20 negative contracts passed; intentionally deleted root state remains absent.",
+    "project_state": "Project-status positive summary and 20 negative contracts passed; root status commands report intentionally deleted manifests/status.json.",
     "compiler_hack_notebook": "5 code cells executed in a real Jupyter kernel; saved artifact hashes, six raw traces, independent NumPy, C++ XML and real metadata-loss regression passed. This Notebook run is archive revalidation, not a new native compile.",
     "patch_whitespace": "Canonical patch context is preserved via directory-scoped Git attributes; all added C++ lines checked separately for trailing whitespace.",
     "source_metadata": "14 metadata cases + 2 HLO edit executions, 117 artifacts; source 003 producer and current native reader bound; matching-source CLI/selftests passed.",
@@ -444,7 +453,11 @@
     "native_latency_parser": "Unmodified pinned upstream test passed; test-only patch adds 14 parameters; all 15 tests passed. XML properties, binaries, 27 artifacts, source pin/rollback and independent apply/reverse verified.",
     "native_latency_parser_selftest": "Five invalid native outcomes and a corrupted artifact rejected; no GPU/TPU/model-clock measurement claim.",
     "attributes_notebook": "8 actual Jupyter cells passed; original native CPU work plus archived source metadata and C++ parser audits.",
-    "latency_parser_post_run_sources": "Clean isolated clone at fixed revision and four post-run source files match original snapshot."
+    "latency_parser_post_run_sources": "Clean isolated clone at fixed revision and four post-run source files match original snapshot.",
+    "source_pass_transitions": "59 artifacts; 640 parsed pipeline snapshots / 584 scoped pairs; 22 changed leaf boundaries and 3 nested aggregates; final graphs, shape/layout/operand semantics and 6 negative cases passed.",
+    "source_codegen": "20 artifacts and 3 objects bound to source build 003 producer/current native reader; HLO/LLVM/ELF/package correspondence and historical CLI/selftests passed.",
+    "source_lowering_old_reader": "Both codegen and pass verifier rejected actual old-wheel processes with BaselineError: jaxlib runtime revision disagrees with build manifest JAX commit.",
+    "matmul_notebook": "10 code cells executed in a real Jupyter kernel; legacy CPU runtime plus archived source pass/object bytes and independent NumPy audit."
   },
   "completion_claim": "本状态未宣称 kickoff 的任一完整交付组已经验收。",
   "artifact_fingerprints": {
@@ -453,12 +466,12 @@
       "size_bytes": 114
     },
     "PLAN.md": {
-      "sha256": "72a173173baa098a9fdaef15c4b82494bb60e04b738473f944e79426bd2b257d",
-      "size_bytes": 11413
+      "sha256": "6795f8a81a8f3dd4e8bf4dbbb1cdc04a007d0e53800be3c843ab9273729568a6",
+      "size_bytes": 11982
     },
     "README.md": {
-      "sha256": "da11fc134b3a972f70ff5041ca962be4b693de56720b7a7cac8be4f47e644fa7",
-      "size_bytes": 9563
+      "sha256": "470a665fb98d7a17e9e9f18d0fe950f9166eaec9b02faad8bb2f3479f9c56999",
+      "size_bytes": 9733
     },
     "attributes-and-cost.md": {
       "sha256": "026265fc41df52be91ccdee9d462dcaf36f132b3af4f0bdc69a6a361522052ee",
@@ -481,12 +494,16 @@
       "size_bytes": 10096
     },
     "audit_codegen_artifacts.py": {
-      "sha256": "d94fcf20831b06150e5e6210a7a5c941a277785b7af3fb7c40c9ceb01a6f6793",
-      "size_bytes": 7165
+      "sha256": "fa98d0d30b4e9795db29f758cb5c787abf6f5b2e9248a632dc7db40b498e93df",
+      "size_bytes": 7610
     },
     "audit_external_descriptors.py": {
       "sha256": "f9d3253fbda6443ba103f47f79d44c3f03e2e7181a1d52bce5ab2b4b1e9d5dc7",
       "size_bytes": 7716
+    },
+    "audit_pass_transitions.py": {
+      "sha256": "a1064d03551dd1e20b848657fcc4a3900be503b860964d800f261d996db2452d",
+      "size_bytes": 12122
     },
     "build-dependency-results.json": {
       "sha256": "a71afa62eaede16df2a5977347fea076cffa59b497794e9aa0f2966a6dd5f5b3",
@@ -497,8 +514,8 @@
       "size_bytes": 3471
     },
     "build_source_index.py": {
-      "sha256": "61e91c7578a45fc927786d5007a29d7dcba0dbc5115b6eedd2b001d532ed9b42",
-      "size_bytes": 54288
+      "sha256": "e15d1d2926ea40e7333a097c7877b10d40134d6ee61c498c28c1538de116c133",
+      "size_bytes": 59129
     },
     "capture_runtime.py": {
       "sha256": "7f040f7a36aea060ed57c217d109dc498cfe96082a81a0fe297ede87d540b025",
@@ -581,12 +598,16 @@
       "size_bytes": 2851
     },
     "llvm-and-objects.md": {
-      "sha256": "f9be580debf147be32996c40df03b62d852de3c586446c89a9e13fbf5e7a8f14",
-      "size_bytes": 6497
+      "sha256": "51b67e362b0167291ba7c541cac2c19e89386006566d5a4dc4e0d1bba9442d82",
+      "size_bytes": 7929
     },
     "matmul-lowering.ipynb": {
-      "sha256": "a89772991881bff713a998c144c1bb96da03e6a948963ac3974a3d5def0fc954",
-      "size_bytes": 25119
+      "sha256": "2a6426211d9af925a8c450e2aadcd5acdb1e01f59def2852aac5cec4a1b703ce",
+      "size_bytes": 32379
+    },
+    "matmul-pass-walkthrough.md": {
+      "sha256": "d8c94ef70038fe259eebac34a7002faa7c63cf64f893a4c5c84ecde0957a6ec1",
+      "size_bytes": 9874
     },
     "matmul_probe.py": {
       "sha256": "0a0892a74c2d2d786eef13b33ef82066461870f08b9b84ceb69fc0aee9ee8e46",
@@ -613,7 +634,7 @@
       "size_bytes": 13399
     },
     "overview.md": {
-      "sha256": "58c49845996c70e7bf5e79e34e86035a40e605e9b4b977cfd830a50407bea441",
+      "sha256": "d562e597533952ab102a138d24445e4984afab3242b0e303023b12e1051603c9",
       "size_bytes": 8400
     },
     "pallas-comparison.md": {
@@ -651,6 +672,10 @@
     "pass-hack-results.json": {
       "sha256": "bf888c67e312e5a124b796b556752a56998fce13a50bd396a70e306139697d60",
       "size_bytes": 135681
+    },
+    "pass-transition-results.json": {
+      "sha256": "bd05570abce578afae0e2f59f4179b754bb41e79dc2cbe5e3eb04b09fd730d60",
+      "size_bytes": 15089
     },
     "pass_event_checks.py": {
       "sha256": "bd427b1ff5867aefe55519a459228f7051791291cd81d0e2cbaffb31db7499df",
@@ -704,9 +729,13 @@
       "sha256": "b39e884edc85cc6b7859f84c43bf0ea939296f77d54fe0f788052cf6a4776769",
       "size_bytes": 8668
     },
+    "source-codegen-results.json": {
+      "sha256": "2a98271c91ded57020638afc6055c8b30979bf67b5e36da93fae4e7ef2f61b9b",
+      "size_bytes": 17589
+    },
     "source-index.json": {
-      "sha256": "84d36eea35d05a7bb4db7b6962e6a66c5c67985fae2d83fb5268bd9ea6ad122e",
-      "size_bytes": 147451
+      "sha256": "ef0772d1e84c8b890990874947217bc7dbfbae3165667ca069b47598dfadc4de",
+      "size_bytes": 162981
     },
     "source-metadata-baseline.md": {
       "sha256": "325c1e550d94f56d36a4cb6954dda2ce9b4a44fe3dad80103895a5b646634ed6",
@@ -737,8 +766,8 @@
       "size_bytes": 9146
     },
     "verify_codegen_and_patch.py": {
-      "sha256": "80b4c5932e59b5a78416e5b89cea8cd007bbe1794f6a40943a6573ead93d9d67",
-      "size_bytes": 11777
+      "sha256": "5d65ef9b500e52a18b865b3e89f93c8aafe837093a86009d2d64fa966060f6bb",
+      "size_bytes": 13320
     },
     "verify_extensions.py": {
       "sha256": "d4343988e980e21f5669dc73e186a8414b64524adff8e87d1f0f33806afa4267",
@@ -771,6 +800,10 @@
     "verify_pass_hack.py": {
       "sha256": "0d810ab6538ede6662d00eea4babee182790251cc4ea331b56a91804a5d937e9",
       "size_bytes": 8949
+    },
+    "verify_pass_transitions.py": {
+      "sha256": "3afc0997b88b0563fea31d19a4f2555467287bf75e0a5f1bd419e8eaf2c19499",
+      "size_bytes": 6180
     },
     "verify_research.py": {
       "sha256": "50afb8244927e97ba9b3e3a0f613b5997ee67c8488546e29f88a7060e8e8d4fe",
@@ -821,7 +854,7 @@
     "log": "artifacts/builds/kickoff-cpu-pass-events-002/attempts/0001/build.log"
   },
   "publication": {
-    "local_commit": "fee0ef684ed8c12f0ed2bb035dd051229ec72c18",
+    "local_commit": "8940923b4e66b5cdec62f2420bec384c73eca04a",
     "original_staged_diff_preserved": true,
     "push_attempt": {
       "command": "git push origin main",
@@ -831,10 +864,10 @@
       "observed_divergence": "local: 5ef5920, c3c17cc; origin/main: 519c3e5, cc9972f; common ancestor 9af7706"
     },
     "remaining": "Root worktree retains its local research history and staged cleanup; remote merge integration is performed only in the isolated publication worktree.",
-    "state": "pushed",
-    "integration_commit": "0a813347ea3135c7902b139bb617e6c868ec7fa2",
+    "state": "local-milestone-ready-for-commit",
+    "integration_commit": "ecf0c0ece980f947d7970a61310c80861eaa1fad",
     "push_result": "normal push origin HEAD:main",
-    "latest_milestone": "source-metadata-native-reader-and-build-provenance"
+    "latest_milestone": "source-matmul-pass-walkthrough"
   },
   "additional_sources": [
     {
@@ -1058,5 +1091,39 @@
       "exit_code": 0,
       "tests_passed": 1
     }
-  ]
+  ],
+  "source_lowering_audit": {
+    "scope": "REPLAY-OFFLINE of source-bound RUN-CPU capture; no new TPU or runtime dispatch sampling",
+    "raw_directory": "artifacts/jax-stack/source-lowering-audit-001",
+    "source_build": "kickoff-cpu-source-003",
+    "source_index_entries": 134,
+    "source_index_edges": 40,
+    "evidence_records": [
+      {
+        "path": "artifacts/jax-stack/source-lowering-audit-001/codegen-verification-002.json",
+        "sha256": "5a8e992ee4d79a9507a96fa899d74a332798859461586096f5350f6d89c4d382",
+        "size_bytes": 1958
+      },
+      {
+        "path": "artifacts/jax-stack/source-lowering-audit-001/pass-verification.json",
+        "sha256": "24d6cd719f8568d797f4e23475999ad3b0d1c4e6a054f64620d0b45dc584d2a2",
+        "size_bytes": 1658
+      },
+      {
+        "path": "artifacts/jax-stack/source-lowering-audit-001/old-reader-verification.json",
+        "sha256": "a47fb20e672fdc1974119b56f965e528208e466a22acf6ccab4f6a001fe36f96",
+        "size_bytes": 1889
+      },
+      {
+        "path": "artifacts/jax-stack/source-lowering-audit-001/old-reader-rejections.json",
+        "sha256": "ca32de7f167795e54377cfc3a15cd12943815fd2c6aae39c5884e3174721009f",
+        "size_bytes": 358
+      },
+      {
+        "path": "artifacts/jax-stack/source-lowering-notebook-001/execution.json",
+        "sha256": "2e0d7b2f4de3af3200847d38fc638a2ad9fa5b41fdec45f0accb8c9ed4a4ce16",
+        "size_bytes": 218
+      }
+    ]
+  }
 }
