@@ -1,0 +1,63 @@
+{
+  "capture_id": "compiler-event-patch-002",
+  "manifest_path": "artifacts/jax-stack/compiler-event-patch-002/manifest.json",
+  "manifest_sha256": "d8b45d188dbe95c9d527462363b15afb4d0f8e7dacffee174c2b3e0724ce2065",
+  "artifact_count": 8,
+  "evidence_level": "SOURCE-ONLY",
+  "summary": {
+    "outcome": "patch-prepared-and-reversed",
+    "evidence_level": "SOURCE-ONLY",
+    "source_revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+    "source_path": "upstream/xla/xla/hlo/pass/hlo_pass_pipeline.cc",
+    "source": {
+      "sha256": "82bb36b51a0cdf76a37d8d4ed7203da7e869d0b991e827b839cf82dae7a1c5df",
+      "size_bytes": 13901
+    },
+    "patch_path": "artifacts/jax-stack/compiler-event-patch-002/xla-hlo-pass-events.patch",
+    "patch": {
+      "sha256": "a50b0900fb9fad50be420e4079f7ccae1b5311afd237271bea5b45dfce550ac3",
+      "size_bytes": 1569
+    },
+    "patch_format": "canonical git diff --binary --full-index --no-color --no-ext-diff --no-textconv at pinned HEAD; only target file changed",
+    "patched_source": {
+      "sha256": "c214df96e602d30e6c0ab07c03b3fe3d5cb3e3f4885787362cda2ade0136c17d",
+      "size_bytes": 14692
+    },
+    "event_name": "research_hlo_pass_run",
+    "event_metadata": [
+      "pass",
+      "pipeline",
+      "module",
+      "program_id",
+      "status",
+      "changed"
+    ],
+    "scope": "Only enabled leaf pass RunHelper calls plus metadata append; RAII ends before pipeline dump/invariant/error accounting.",
+    "checks": {
+      "context_apply": true,
+      "exact_candidate_bytes": true,
+      "reverse_apply": true,
+      "original_bytes_restored": true,
+      "original_source_tree_clean": true
+    },
+    "native_compiled": false,
+    "patched_binary_loaded": false,
+    "custom_event_observed": false,
+    "limits": [
+      "This is patch preparation, not C++ compilation, binary loading or runtime proof.",
+      "The running source-build clone/config was not modified.",
+      "Host compiler event timing includes instrumentation overhead; it is not device execution time.",
+      "The baseline matching-source wheel must be verified before applying this patch to a build clone."
+    ]
+  },
+  "negative_control": {
+    "capture_id": "compiler-events-001",
+    "manifest_sha256": "1ae198b4805c90397a0246df25d4d977cf86a8b256dab188f0bd0cf7ac01a8b9",
+    "evidence_level": "RUN-CPU",
+    "qualifiers": [
+      "VERSION-SKEW"
+    ],
+    "custom_event_count": 0,
+    "scope": "Historical unpatched, version-skew wheel; does not replace the matching-source baseline required before patch application."
+  }
+}

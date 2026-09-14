@@ -4,12 +4,14 @@
 新建研究。完整要求和未完成项保留在 [PLAN.md](PLAN.md)，没有沿用已删除的旧进度。
 
 - [软件栈与 API 总览](overview.md)：组件、控制链、普通 CPU/TPU 与 Pallas 两层表示。
-- [源码索引](source-index.json)：101 个入口、28 条带调用位置及分支条件的关系，含锁定的 XProf tooling 源码。
+- [源码索引](source-index.json)：120 个入口、38 条带调用位置及分支条件的关系，含锁定的 XProf tooling 源码。
 - [Pallas 对照](pallas-comparison.md)：相同输入的普通 JAX、generic 与 TPU interpret。
 - [三类 profiling 区间](profiling.md)：host、编译 pass、设备标记的实验证据与验收边界。
 - [扩展实验结果](extension-results.json)：四组 capture、62 个产物的独立复查。
 - [Pallas/profiling Notebook](pallas-profiling.ipynb)：实算对照、trace 统计与 Mosaic 标记检查。
 - [源码构建](source-build.md)：固定镜像、隔离克隆与实际构建状态。
+- [LLVM、对象与 ORC](llvm-and-objects.md)：三个 ELF 对象与 HLO/LLVM 函数、序列化字节的对应。
+- [自定义 pass 事件补丁](pass-event-patch.md)：规范补丁已验证应用和回滚，尚未编译加载。
 - [构建依赖审计](build-dependency-results.json)：三份归档、43 个补丁目标与已缓存 payload 的校验边界。
 - [通信与调度](overlap-and-scheduling.md)：CPU async→sync、控制依赖和四个实验性 API 失败。
 - [调度 Notebook](overlap-scheduling.ipynb) 与 [结果](overlap-results.json)：双 CPU 数值、IR、593 个产物的独立复查。
@@ -21,7 +23,7 @@
 - [Fusion/memory Notebook](fusion-memory.ipynb) 与 [结果](fusion-memory-results.json)：2028 个产物的独立复查。
 - [CPU 实验结果](cpu-results.json)：数值、pass 边界、静态 cost/memory、ELF 目标文件及 capture 指纹。
 - [生产脚本](matmul_probe.py)：生成四组样本、原始 IR/日志、二进制和来源记录。
-- [交互 Notebook](matmul-lowering.ipynb)：六个代码单元已在真实 Jupyter 内核中执行通过。
+- [交互 Notebook](matmul-lowering.ipynb)：八个代码单元已在真实 Jupyter 内核中执行通过，含对象与补丁审计。
 - [当前研究状态](status.json)：逐项记录 R01–R12 的证据、缺口和下一步。
 
 ## 实验与数值对照

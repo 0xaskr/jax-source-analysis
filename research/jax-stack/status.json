@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "updated_at": "2026-09-14T16:34:54.736107+00:00",
+  "updated_at": "2026-09-14T17:05:12.540658+00:00",
   "goal_state": "active",
   "objective": "按 Outline kickoff revision 51 完成软件栈总览、源码/API 索引和实际推理场景 Hack 实验。",
   "kickoff_source": "research/jax-stack/kickoff-source.json",
@@ -17,12 +17,12 @@
     },
     {
       "id": "source-entry-index",
-      "result": "已核对 101 个源码入口、28 条调用/接口关系；新增 latency metadata 的消费者与调度调用链。完整调用图仍在补充。",
+      "result": "已核对 120 个源码入口、38 条调用/接口关系；补齐选定 LLVM optimization/MC/ORC 与 CPU kernel 调用接口。",
       "evidence": "research/jax-stack/source-index.json"
     },
     {
       "id": "notebook-foundation",
-      "result": "真实 Jupyter kernel 已执行全部六个代码单元，无错误。",
+      "result": "matmul Notebook 扩展为 8 个代码单元，真实 Jupyter 执行通过，含新一轮对象字节审计和只读补丁验证。",
       "evidence": "research/jax-stack/matmul-lowering.ipynb"
     },
     {
@@ -108,6 +108,16 @@
       "id": "latency-metadata-cpu-reference",
       "result": "8 组 CPU 字符串传递与成本对照，45 个产物独立复查；包括负数、非整数、非法文本与溢出字符串，FLOPs/bytes 均不受标签替换。",
       "evidence": "research/jax-stack/latency-metadata-results.json"
+    },
+    {
+      "id": "llvm-object-executable-binding",
+      "result": "三个 ELF 对象与 HLO fusion/LLVM 函数对应，并在各自序列化包中恰好找到一次完整字节；19 个派生产物独立复查，没有加载历史文件。",
+      "evidence": "research/jax-stack/codegen-results.json"
+    },
+    {
+      "id": "compiler-event-patch-prepared",
+      "result": "准备 enabled leaf RunHelper 的 TraceMe 补丁，生成规范 full-index Git diff；8 个产物、实际应用/反向应用/恢复字节通过。尚未编译、加载或观测新事件。",
+      "evidence": "research/jax-stack/pass-event-patch-results.json"
     }
   ],
   "requirements": [
@@ -116,9 +126,10 @@
       "state": "partial",
       "evidence": [
         "research/jax-stack/overview.md",
-        "research/jax-stack/source-index.json"
+        "research/jax-stack/source-index.json",
+        "research/jax-stack/llvm-and-objects.md"
       ],
-      "remaining": "完整组件/API 调用图、LLVM 内部接口以及 libtpu 私有实现边界的后续取证。"
+      "remaining": "已补齐选定 LLVM/MC/ORC 与 CPU kernel 接口；完整组件/内部 pass graph、普通 TPU 调用细节和 libtpu 私有边界仍需后续取证。"
     },
     {
       "id": "R02",
@@ -126,7 +137,9 @@
       "evidence": [
         "research/jax-stack/cpu-results.json",
         "research/jax-stack/matmul-lowering.ipynb",
-        "research/jax-stack/fusion-memory-results.json"
+        "research/jax-stack/fusion-memory-results.json",
+        "research/jax-stack/llvm-and-objects.md",
+        "research/jax-stack/codegen-results.json"
       ],
       "remaining": "消除 native VERSION-SKEW，补齐转换中间阶段的语义与关键 pass 解释；TPU 部分按实际条件继续。"
     },
@@ -146,9 +159,11 @@
       "state": "build-running",
       "evidence": [
         "research/jax-stack/source-build.md",
-        "research/jax-stack/build-dependency-results.json"
+        "research/jax-stack/build-dependency-results.json",
+        "research/jax-stack/pass-event-patch.md",
+        "research/jax-stack/pass-event-patch-results.json"
       ],
-      "remaining": "当前 002 容器运行中；核心归档与补丁审计已完成。仍需完整构建/wheel/加载验收、闭包补齐、诊断补丁、重编译与回滚。"
+      "remaining": "当前 002 容器仍运行；规范事件补丁仅在独立副本完成应用/回滚。先验收无补丁 wheel/加载，再应用并重编译、验证事件/数值及回滚；完整依赖闭包仍需补齐。"
     },
     {
       "id": "R05",
@@ -226,9 +241,10 @@
       "evidence": [
         "research/jax-stack/profiling.md",
         "research/jax-stack/extension-results.json",
-        "research/jax-stack/pallas-profiling.ipynb"
+        "research/jax-stack/pallas-profiling.ipynb",
+        "research/jax-stack/pass-event-patch.md"
       ],
-      "remaining": "U04 已确认 host/编译 pass/设备执行三类；仍需自建编译器定制事件、普通 JAX TPU 与 Pallas 真机事件、LLO/设备归因及开销验证。"
+      "remaining": "自定义 leaf pass 事件补丁已准备但尚未编译加载；需完成 baseline/patched/filter/warm/rollback 事件对照。设备侧仍需 U03 的 TPU/libtpu、LLO 与真实设备 trace。"
     }
   ],
   "pending_user_inputs": [
@@ -255,14 +271,9 @@
       "action": "检查当前容器 82c9bf9dfe02ba334964a856a5b41c652e83ade2af2ffdb4ce6b950fb4acc077 的真实状态，并读取 kickoff-cpu-source-002/attempts/0001/build.log；001 已有意中断以增加并发，不应恢复旧容器。"
     },
     {
-      "id": "llvm-codegen-and-orc-reference",
+      "id": "prepare-pass-event-runtime-probe",
       "ready": true,
-      "action": "沿固定 xla/backends/cpu/codegen/ir_compiler.cc、jit_compiler.cc 与 cpu_compiler.cc 追踪 LLVM pass/object/ORC 接口，将其与已有 .ll/.o 捕获绑定；保留 VERSION-SKEW 和 patched LLVM 源码身份边界。"
-    },
-    {
-      "id": "prepare-compiler-event-patch",
-      "ready": true,
-      "action": "在独立文件副本准备可逆自定义 pass TraceMe 补丁与验证命令，记录上下文和原始指纹；不修改当前运行构建的 JAX/XLA clone/config。构建加载验收后才应用并重编译。"
+      "action": "准备可绑定 actual native identity 的 custom pass cold/warm/filter 验收脚本，先在当前 wheel 验证 absent 负对照与反例；保留匹配源码 baseline 和 patched 实际执行门槛，不把 fixture 算作 patched runtime。"
     },
     {
       "id": "async-control-matching-wheel",
@@ -316,17 +327,17 @@
     }
   ],
   "validation": {
-    "source_index": "101 entries / 28 edges verified",
+    "source_index": "120 entries / 38 edges verified",
     "capture": "1062 artifact sizes and SHA-256 verified",
     "numerics": "4 cases; NumPy float64 forward/analytic gradients",
     "serialized_executable": "4 in-process reloads, bit-for-bit comparison passed",
-    "notebook": "6 code cells executed using nbclient and real Jupyter kernel",
+    "notebook": "8 real Jupyter code cells executed; includes fresh codegen audit and read-only patch verification",
     "environment": "passed: sync-environment.py check; baseline and retained CPU probe",
     "qualifiers": [
       "VERSION-SKEW"
     ],
     "negative_inputs": "passed: forged artifact hash, missing case, missing VERSION-SKEW were rejected without modifying capture files",
-    "documentation": "Python syntax, JSON, five executed Notebook schemas, 153 local Markdown links, fences, state invariants and all 44 artifact fingerprints passed",
+    "documentation": "Python syntax, JSON, 5 executed Notebook schemas, 181 local Markdown links, fences and state invariants passed",
     "extensions": "62 artifacts across 4 captures; hashes, inventory, references, trace containment/counts/statistics, parsed Mosaic marker pairing verified",
     "extension_selftest": "3 corrupted manifest variants rejected",
     "notebook_extensions": "5 code cells executed using nbclient and real Jupyter kernel",
@@ -345,17 +356,20 @@
     "notebook_overlap": "4 code cells executed in a real Jupyter kernel; includes new two-CPU capture and independent audit",
     "latency_metadata": "45 artifacts and 8 independent numerical comparisons; parsed MLIR/HLO labels, owners and recomputed CPU costs verified",
     "latency_metadata_source": "12 source entry references and 2 non-test direct reader files checked against pinned source hashes",
-    "latency_metadata_selftest": "3 invalid manifests, latency-as-FLOPs and source-only-test-as-executed rejected"
+    "latency_metadata_selftest": "3 invalid manifests, latency-as-FLOPs and source-only-test-as-executed rejected",
+    "codegen": "19 offline artifacts; 3 ELF64 x86-64 relocatable objects, exact HLO/LLVM/symbol matches and unique bytes in serialized packages verified",
+    "pass_event_patch": "8 preparation artifacts, canonical Git diff, apply/reverse and byte restoration checked; native compilation/loading/events remain false",
+    "codegen_patch_selftest": "6 invalid manifests, uncompiled-as-compiled claim and duplicate object binding rejected"
   },
   "completion_claim": "本状态未宣称 kickoff 的任一完整交付组已经验收。",
   "artifact_fingerprints": {
     "PLAN.md": {
-      "sha256": "e19f3c604e0a79b4dfcc5d20697810f39494adafe2d3e01656c8511765d736a9",
-      "size_bytes": 8310
+      "sha256": "1efb6297104397d1ed438463414c8a311c42c97e9bbe5b7f9e7d06bb7c1680c6",
+      "size_bytes": 8686
     },
     "README.md": {
-      "sha256": "351598ce07c066b0a6f46599cb7f23442f530577ef3bbb574ec6425e403ecea9",
-      "size_bytes": 8203
+      "sha256": "576033bc68417f42fabff0b58785c4a77b85db5643642d6a29f1bd103ebf8938",
+      "size_bytes": 8461
     },
     "attributes-and-cost.md": {
       "sha256": "974465ff934b069b0302dd9e9b8202ec8ed7f33906682923745e7a662bc95025",
@@ -377,20 +391,28 @@
       "sha256": "e04a1abeb0905432fe8ad212703efa70b455d0b3c25e5ecb938aee8255571e84",
       "size_bytes": 10096
     },
+    "audit_codegen_artifacts.py": {
+      "sha256": "d94fcf20831b06150e5e6210a7a5c941a277785b7af3fb7c40c9ceb01a6f6793",
+      "size_bytes": 7165
+    },
     "build-dependency-results.json": {
       "sha256": "7b6691f2e14a0cb2e405bf08c42d9167282be9e233a95ae2b3199f7ff1a784e6",
       "size_bytes": 3769
     },
     "build_source_index.py": {
-      "sha256": "583d6e8255509d3f855d8b5adeb6fd22d82a7a32bdf4561cf40cc515ca692313",
-      "size_bytes": 44255
+      "sha256": "cfbe2c58cd6363e2e77fe47631de4c4718c0b362d5ef2fc414943e2080cce818",
+      "size_bytes": 52685
+    },
+    "codegen-results.json": {
+      "sha256": "78ec98b44139dc0d01be4ab688f08a8627a15b30febeed7be5be2023a9189cb9",
+      "size_bytes": 5702
     },
     "compiler_events_probe.py": {
       "sha256": "98659bc1df7d2c0afb830e6ac01dc9b3bf845003b53e37e3b02f080b69d7eadc",
       "size_bytes": 7467
     },
     "cpu-results.json": {
-      "sha256": "057a84ee51a88bc8e89abf5e8480ba78b76738cc4aca794f6ddf441fc3d44470",
+      "sha256": "9803cc103caa1dcfd3ab5719a173531ce78a15673cc079b3d2fb8653443a3726",
       "size_bytes": 91476
     },
     "extension-results.json": {
@@ -433,9 +455,13 @@
       "sha256": "5d864e787f93dd0832c027ddb13f22aadfafe0889ee55bbcba13111ed6e95f0e",
       "size_bytes": 6133
     },
+    "llvm-and-objects.md": {
+      "sha256": "f9be580debf147be32996c40df03b62d852de3c586446c89a9e13fbf5e7a8f14",
+      "size_bytes": 6497
+    },
     "matmul-lowering.ipynb": {
-      "sha256": "736997d2ba49283eb7768b3ed8f8164256aa1a0a3c191759a77d03cbd21374a8",
-      "size_bytes": 18603
+      "sha256": "a89772991881bff713a998c144c1bb96da03e6a948963ac3974a3d5def0fc954",
+      "size_bytes": 25119
     },
     "matmul_probe.py": {
       "sha256": "b514352ff9b2d156a864a182b63ddaaf4b2da399b25510f2e94c0771e5d56c6a",
@@ -462,7 +488,7 @@
       "size_bytes": 10679
     },
     "overview.md": {
-      "sha256": "f8f0987ae21b4432e9f10bd5d84aedeb1d94d99a15ce752fa277bc4b25a69e48",
+      "sha256": "24928155b22d2cb2c646aabc066277e2f72593b771a8a283fcb2830f05ab7f93",
       "size_bytes": 8400
     },
     "pallas-comparison.md": {
@@ -476,6 +502,18 @@
     "pallas_probe.py": {
       "sha256": "5f90cbe6a514609b7b9d2873464a4072f0e422291c845553acb84355a1609299",
       "size_bytes": 9111
+    },
+    "pass-event-patch-results.json": {
+      "sha256": "5ec51068526e9a0e7930590031d9582c86b430dbc2a0d3644cf748714cd89418",
+      "size_bytes": 2560
+    },
+    "pass-event-patch.md": {
+      "sha256": "e92076317eef7dc76828dbadf3ba5c8b39beccf8bdc97083c0bd17046965e652",
+      "size_bytes": 5187
+    },
+    "prepare_pass_event_patch.py": {
+      "sha256": "b945b200037bcf7f612303994e33525ddde718a000a5304b9bc93596486aad1b",
+      "size_bytes": 6864
     },
     "profile_events_probe.py": {
       "sha256": "9cf90d98bf27414142301acf5efb8764ddaa390ef90849bec25a6e135a9003a8",
@@ -494,8 +532,8 @@
       "size_bytes": 6153
     },
     "source-index.json": {
-      "sha256": "fd921241d75406d74092b5d8508bcb6af97d566eda453633a1176bfda1bb4980",
-      "size_bytes": 118865
+      "sha256": "aa9d9e47ab18bcf2bc0ff3f33f4dc35505f28d27aab7b204f84c961d4659bdae",
+      "size_bytes": 143802
     },
     "verify_attributes.py": {
       "sha256": "cb58cee7f4e3b5b553dc00c77a907e20b4ae2c57af4c52d7e0005ffac00a6e60",
@@ -504,6 +542,10 @@
     "verify_build_dependencies.py": {
       "sha256": "a59261dc92f4c1a035486c72df595fd5adc3348fb432d107552d2609a35d9ca5",
       "size_bytes": 9022
+    },
+    "verify_codegen_and_patch.py": {
+      "sha256": "80b4c5932e59b5a78416e5b89cea8cd007bbe1794f6a40943a6573ead93d9d67",
+      "size_bytes": 11777
     },
     "verify_extensions.py": {
       "sha256": "d4343988e980e21f5669dc73e186a8414b64524adff8e87d1f0f33806afa4267",
@@ -524,6 +566,10 @@
     "verify_research.py": {
       "sha256": "00686b56facc06456ccc278ee5e7073b21512cb2f3a9c55b04c80f97d4185b93",
       "size_bytes": 9410
+    },
+    "xla-hlo-pass-events.patch": {
+      "sha256": "a50b0900fb9fad50be420e4079f7ccae1b5311afd237271bea5b45dfce550ac3",
+      "size_bytes": 1569
     }
   },
   "confirmed_user_inputs": [
@@ -550,12 +596,12 @@
     "cache_reused_from": "kickoff-cpu-source-001",
     "source_clones": "artifacts/jax-stack/source-build-001/clones",
     "pid_namespace_warning": "Inspect this Docker container; wrapper PIDs are container-local.",
-    "inspected_at": "2026-09-14T16:34:54.736107+00:00",
+    "inspected_at": "2026-09-14T17:05:12.540658+00:00",
     "last_observed_phase": "C++ compilation",
     "state_record": "artifacts/jax-stack/source-build-002/container-state.json"
   },
   "publication": {
-    "local_commit": "dc1a4133751d55f0d0cac3a9eb146b4a70077a3d",
+    "local_commit": "0ad3ec8d43a7de89ce4f6a56f4948c411100a591",
     "original_staged_diff_preserved": true,
     "push_attempt": {
       "command": "git push origin main",
@@ -566,9 +612,9 @@
     },
     "remaining": "Root worktree retains its local research history and staged cleanup; remote merge integration is performed only in the isolated publication worktree.",
     "state": "pushed",
-    "integration_commit": "a48157412f9f8ed53e035c1412e4e56c256e0efd",
-    "push_result": "c29403a..a481574 HEAD -> main; normal fast-forward push",
-    "latest_milestone": "build-dependencies-and-cpu-collective-scheduling"
+    "integration_commit": "ed30236bd20288c91116935ce449a48c07692f89",
+    "push_result": "a481574..ed30236 HEAD -> main; normal fast-forward push",
+    "latest_milestone": "latency-metadata-model-consumers"
   },
   "additional_sources": [
     {
@@ -604,5 +650,13 @@
     "updated_at": "2026-09-14T11:26:38.696Z",
     "checked_at": "2026-09-14T16:34:54.736107+00:00",
     "source": "Outline fetch; revision and update timestamp unchanged"
+  },
+  "prepared_compiler_patch": {
+    "path": "research/jax-stack/xla-hlo-pass-events.patch",
+    "capture": "artifacts/jax-stack/compiler-event-patch-002",
+    "sha256": "a50b0900fb9fad50be420e4079f7ccae1b5311afd237271bea5b45dfce550ac3",
+    "native_compiled": false,
+    "applied_to_running_build": false,
+    "next_gate": "unpatched source-built wheel and load validation"
   }
 }

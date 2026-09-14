@@ -1,0 +1,33 @@
+diff --git a/xla/hlo/pass/hlo_pass_pipeline.cc b/xla/hlo/pass/hlo_pass_pipeline.cc
+index f493932b44acbd73da73dfacebeb383bd06490fe..ebb7f3b2ba51888cbc7b3a2e5c2b25caa0d55ad5 100644
+--- a/xla/hlo/pass/hlo_pass_pipeline.cc
++++ b/xla/hlo/pass/hlo_pass_pipeline.cc
+@@ -245,7 +245,27 @@ absl::StatusOr<bool> HloPassPipeline::RunPassesInternal(
+     if (!pass->IsPassPipeline()) {
+       compilation_stats_->StartPass(pass_name);
+     }
+-    auto status_or_changed = RunHelper<HloT>(pass, hlo, execution_threads);
++    auto status_or_changed = [&]() {
++      std::optional<tsl::profiler::TraceMe> research_trace;
++      if (!pass->IsPassPipeline()) {
++        research_trace.emplace([&] {
++          return tsl::profiler::TraceMeEncode(
++              "research_hlo_pass_run",
++              {{"pass", pass_name}, {"pipeline", pipeline_name},
++               {"module", hlo->name()}, {"program_id", UniqueId(*hlo)}});
++        });
++      }
++      auto result = RunHelper<HloT>(pass, hlo, execution_threads);
++      if (research_trace.has_value()) {
++        research_trace->AppendMetadata([&] {
++          return tsl::profiler::TraceMeEncode(
++              {{"status", absl::StatusCodeToString(result.status().code())},
++               {"changed", result.ok() ? (*result ? "true" : "false")
++                                       : "unknown"}});
++        });
++      }
++      return result;
++    }();
+     if (auto status = status_or_changed.status(); !status.ok()) {
+       compilation_stats_->RecordPassError(
+           pass_name, absl::StatusCodeToString(status.code()));
