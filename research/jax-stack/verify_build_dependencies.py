@@ -122,6 +122,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--write", action="store_true")
     parser.add_argument("--selftest", action="store_true")
+    parser.add_argument("--capture", type=Path, default=ROOT / "artifacts/jax-stack/build-dependencies-002")
     args = parser.parse_args()
     capture = ROOT / "artifacts/jax-stack/build-dependencies-002"
     if args.selftest:
@@ -143,7 +144,7 @@ def main():
             except ValueError: pass
             else: raise AssertionError(f"Accepted invalid component: {mode}")
         print("selftest: 6 invalid evidence/identity records rejected")
-    result = verify(capture)
+    result = verify(args.capture.resolve())
     if args.write:
         (HERE / "build-dependency-results.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
     print(json.dumps({k: result[k] for k in ("capture_id", "artifact_count", "patched_targets", "repository_cache")}))

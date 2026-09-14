@@ -28,15 +28,14 @@
 ## 本轮进度与恢复入口
 
 CPU matmul、两种 Pallas 解释路径、host/编译事件和开放源码 Mosaic 标记已有可复查材料；
-完整 kickoff 尚未完成。源码索引扩展至 120 个入口、38 条关系，包括固定 XProf 源码；Pallas/profiling
+完整 kickoff 尚未完成。源码索引扩展至 122 个入口、39 条关系，包括固定 XProf 源码；Pallas/profiling
 Notebook 的 7 个代码单元已真实执行。
 原始 capture 继续留在忽略目录；验证器校验清单、哈希与关键语义。
 
-固定源码构建 002 已成功退出并产出 wheel；原始上游树保持干净。首次运行验收发现
-canonical manifest 检查需固定镜像中的 Clang，且 wheel 默认未嵌入 Git hash。固定镜像
-内安装/导入成功，但 Git identity 门槛未通过。下一步按 [source-build.md](source-build.md)
-提交受限的打包参数支持并启动 003，复用原缓存、明确写入锁定 revision；不重启 001/002。
-当前仍未完成源码 wheel 的数值、native 字节绑定和补丁事件验收。
+固定源码构建 003 已完成，独立环境的 Git identity、wheel/native 字节绑定、pass 负对照和
+完整 **18 组 CPU 数值 / 3,898 个产物**均通过，见 [源码运行基线](source-runtime-baseline.md)。
+该组证据没有 `VERSION-SKEW`；旧 wheel 和失败记录单独保留。原始上游树保持干净，
+宿主机环境未覆盖。自定义 pass 补丁已完成 25 个 C++ 测试、实际构建/加载与回滚。
 
 属性/cost 对照已完成 CPU capture：六种 metadata 情形、直接 MLIR 属性丢失边界、native
 HLO 属性 setter、HLO add→subtract 的编译执行、opaque custom-call 未知成本。结果见
@@ -52,7 +51,8 @@ donation 的静态/运行时差异、临时量与存储复用，以及逻辑 pea
 Bazel 源码相等，1,085 个缓存 payload 的哈希通过；这不等于完整离线闭包或 wheel 验收。
 通信/调度 CPU 参考已记录 3 个数值通过样本、4 个可复现失败，见
 [overlap-and-scheduling.md](overlap-and-scheduling.md)。实际 async pair 被 CPU 转回同步，
-同步 `control_dep` 变成 dot→all-reduce 控制边；异步控制路径的失败需匹配 wheel 复验。
+同步 `control_dep` 变成 dot→all-reduce 控制边。匹配源码复验后，显式 layout 的异步控制
+错误变为 Host 未注册 `all-reduce-start`；其余三个 Python/MLIR 失败仍在。
 [调度 Notebook](overlap-scheduling.ipynb) 的 4 个单元已真实执行，包含新的双 CPU capture。
 
 LHS `latency_metadata` 的解析、模型选择与调度调用链已核对，见
@@ -64,18 +64,27 @@ CPU LLVM/对象代码/ORC 的选定接口已对应到运行产物，见 [LLVM �
 三个 ELF 对象与 HLO/LLVM 函数及序列化包中的原始字节唯一对应；这是离线审计，不新增
 runtime load 证据。matmul Notebook 扩展为 8 个单元，已真实执行。
 
-[编译事件补丁](pass-event-patch.md) 已在独立副本应用、反向应用并恢复原始字节；按构建
-wrapper 要求生成规范 Git diff。未修改当前运行中的 clone/config，也未编译加载该补丁。
-构建期间已完成 [cold/warm/filter 验收脚本](pass-event-acceptance.md)：当前 wheel 的两组
-负对照、运行中构建拒绝、事件语义反例和 Notebook 新进程重跑均通过；两组各三次输出
-的最大绝对误差低于 5.56e-9，自定义事件计数均为 0。正对照要求成功的指定补丁构建及
-wheel/native payload 字节绑定，目前仍未执行。完成带 Git identity 的 003 构建后先做无补丁 wheel 加载基线，
-再应用补丁、重编译和回滚。下一步先提交打包参数支持并启动 003，再 inspect 其真实容器。目标 TPU overlap 仍需 U03。
-[独立环境](runtime-environment.md) 已创建并完成真实 CPU 负对照，12,603 个依赖文件的
-字节与独立 inode 已核对；源码构建 wheel 的安装入口已准备，但仍待构建成功后实际执行。
-完整 matmul/fusion/overlap 也已接入显式 build/native 身份，独立旧 wheel 环境重新跑通
-18 组数值对照，复查 3,687 个产物；4 个 overlap 历史失败仍被观察到。源码复验会记录
-这些用例的新结果，而不要求新 wheel 重现旧错误；细节见 [独立运行环境](runtime-environment.md)。
+[编译事件补丁](pass-event-patch.md) 已完成规范 Git diff、应用/反向应用及原始字节恢复。
+无补丁源码基线里，默认和禁用 algsimp 的 generic 事件均为 3，与固定源码的 filter 前
+TraceMe 位置一致；自定义事件为 0，warm 范围没有新编译事件。
+[cold/warm/filter 验收脚本](pass-event-acceptance.md) 要求补丁构建成功、实际 native 字节
+匹配，且过滤后消失的是自定义 leaf 事件，不能用 generic 计数替代。
+
+C++ 测试的 Googletest 宏缺失已通过独立测试依赖副本修复；生产构建没有该 override。
+实际加载首版补丁后发现 `program_id` 被导出器隐藏，最终补丁保留原字段并增加
+`research_program_id`。25 个 C++ 测试再次通过；默认/过滤自定义事件为 127/124，
+其中 algsimp 为 3/0；generic algsimp 仍为 3/3。warm 和数值对照通过。
+三个源文件已反向恢复为原始字节，独立 clone 干净；新环境重新加载无补丁 003 后，
+自定义事件回到 0/0。统一审计与真实失败回归反例通过，见
+[pass-hack-results.json](pass-hack-results.json)。这是 CPU 编译器 Hack 验收，目标 TPU
+overlap、编译和设备事件仍需 U03。
+
+构建终态追加依赖审计：三份归档、43 个补丁目标与 1,093 个缓存 payload 的完整性通过；
+50 个产物及六个反例由验证器复查。它仍不证明完整 action 输入闭包或离线可重放。
+下一步复验匹配源码的属性/cost 与 latency metadata，并补齐可观测的构建输入边界。
+
+[独立环境](runtime-environment.md) 的旧 wheel 复验与新增源码 wheel 复验分别保留，
+不改写旧证据。源码基线仍观察到 logical peak 诊断差异，不能据此推导物理内存峰值。
 完整恢复队列、已确认 U04 和未回答 U01–U03 保存在 [status.json](status.json)。
 
 ## 执行次序
@@ -111,8 +120,8 @@ U04 已确认：“三类都研究：host、编译 pass、设备执行”。当�
 
 证据使用 `SOURCE-ONLY`、`RUN-CPU`、`SIM-TPU`、`COMPILE-TPU`、`RUN-TPU`、
 `REPLAY-OFFLINE`；运行二进制与固定源码不一致时增加 `VERSION-SKEW`。
-Mosaic TPU MLIR 不称为 LLO。自建二进制完成之前，当前 wheel 的 native pass dump
-仅证明该 wheel 的行为，不能证明固定 XLA C++ revision 已被执行。
+Mosaic TPU MLIR 不称为 LLO。历史旧 wheel 的 native pass dump 只证明该 wheel 的行为；
+源码基线 003 的新 capture 另有构建、Git identity 和实际加载 native 字节绑定。
 
 原始 capture 与 Outline 正文放在 Git 忽略的 `artifacts/jax-stack/`；研究文档、
 脚本、Notebook、索引和较小的选定证据放在 `research/jax-stack/`。

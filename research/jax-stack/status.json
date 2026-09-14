@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "updated_at": "2026-09-14T18:59:51.881995+00:00",
+  "updated_at": "2026-09-14T20:29:32.198533+00:00",
   "goal_state": "active",
   "objective": "按 Outline kickoff revision 51 完成软件栈总览、源码/API 索引和实际推理场景 Hack 实验。",
   "kickoff_source": "research/jax-stack/kickoff-source.json",
@@ -17,7 +17,7 @@
     },
     {
       "id": "source-entry-index",
-      "result": "已核对 120 个源码入口、38 条调用/接口关系；补齐选定 LLVM optimization/MC/ORC 与 CPU kernel 调用接口。",
+      "result": "已核对 122 个源码入口、39 条调用/接口关系；新增 XPlane 导出与内部 stat 过滤，并关联实际编译器 Hack 验收。",
       "evidence": "research/jax-stack/source-index.json"
     },
     {
@@ -47,7 +47,7 @@
     },
     {
       "id": "source-build-preflight",
-      "result": "固定 Docker 镜像预检通过；隔离 JAX/XLA 克隆构建已启动并进入 C++ 编译，尚未产出已验证 wheel。",
+      "result": "固定 Docker 镜像预检通过；后续无补丁 003 与最终 pass 补丁构建均成功，并分别完成实际运行验收。",
       "evidence": "research/jax-stack/source-build.md"
     },
     {
@@ -116,7 +116,7 @@
     },
     {
       "id": "compiler-event-patch-prepared",
-      "result": "准备 enabled leaf RunHelper 的 TraceMe 补丁，生成规范 full-index Git diff；8 个产物、实际应用/反向应用/恢复字节通过。尚未编译、加载或观测新事件。",
+      "result": "最初核心补丁完成 8 个 SOURCE-ONLY 产物及可逆性验证；后续带测试/可导出身份版本已另行完成 CPU build/load/rollback，不改写最初准备证据。",
       "evidence": "research/jax-stack/pass-event-patch-results.json"
     },
     {
@@ -126,7 +126,7 @@
     },
     {
       "id": "isolated-runtime-environment",
-      "result": "独立 venv 复制 12,603 个依赖文件，784,588,999 bytes；独立 inode/内容、Python/import/native 路径及默认/过滤 CPU 负对照通过。成功源码 wheel 安装分支仍未运行。",
+      "result": "独立旧 wheel 环境的 12,603 个依赖文件及 784,588,999 bytes 完成复制/inode/运行检查；新增源码环境的实际安装、加载和数值验收另见 source-runtime-results。",
       "evidence": "research/jax-stack/runtime-environment-results.json"
     },
     {
@@ -138,6 +138,26 @@
       "id": "source-build-wheel-002",
       "result": "002 在固定镜像中编译与 wheel/RECORD 校验成功；固定镜像独立环境安装/导入成功，但 wheel 未嵌入 Git hash，运行身份门槛拒绝。已定位上游打包设置并准备 exact-pin 参数支持。",
       "evidence": "research/jax-stack/source-build-results.json"
+    },
+    {
+      "id": "source-built-cpu-baseline-003",
+      "result": "003在固定镜像构建成功，31个native .so与002字节一致并补齐Git hash；固定镜像独立安装、native/wheel绑定、pass默认/过滤和18组完整数值对照通过。logical peak差异仍在；显式async控制错误变为Host未注册all-reduce-start。",
+      "evidence": "research/jax-stack/source-runtime-results.json"
+    },
+    {
+      "id": "compiler-pass-hack-cpu-accepted",
+      "result": "最终补丁 25 个 C++ 测试通过；source-bound wheel 默认/过滤自定义事件 127/124，algsimp 3/0；三次 warm 和数值通过。源码三文件恢复且新环境重载 003 后事件归零。",
+      "evidence": "research/jax-stack/pass-hack-results.json"
+    },
+    {
+      "id": "terminal-core-dependency-audit",
+      "result": "终态构建的三份核心归档、43 个补丁目标、1,093 个缓存对象及 50 个产物校验通过；完整 action 闭包与离线可重放未证明。",
+      "evidence": "research/jax-stack/build-dependency-results.json"
+    },
+    {
+      "id": "compiler-hack-notebook",
+      "result": "5 个真实 Jupyter 单元复查保存的源码/补丁/C++ 证据、六组 trace 与数值，复现导出字段缺失拒绝。",
+      "evidence": "research/jax-stack/compiler-pass-hack.ipynb"
     }
   ],
   "requirements": [
@@ -160,9 +180,10 @@
         "research/jax-stack/fusion-memory-results.json",
         "research/jax-stack/llvm-and-objects.md",
         "research/jax-stack/codegen-results.json",
-        "research/jax-stack/cpu-revalidation-results.json"
+        "research/jax-stack/cpu-revalidation-results.json",
+        "research/jax-stack/source-runtime-results.json"
       ],
-      "remaining": "消除 native VERSION-SKEW，补齐转换中间阶段的语义与关键 pass 解释；TPU 部分按实际条件继续。"
+      "remaining": "匹配源码的 CPU 数值/IR 基线已通过；继续补齐关键中间阶段语义解释，TPU lowering/后端产物按目标环境取证。"
     },
     {
       "id": "R03",
@@ -177,7 +198,7 @@
     },
     {
       "id": "R04",
-      "state": "build-running",
+      "state": "partial",
       "evidence": [
         "research/jax-stack/source-build.md",
         "research/jax-stack/build-dependency-results.json",
@@ -188,9 +209,11 @@
         "research/jax-stack/runtime-environment.md",
         "research/jax-stack/runtime-environment-results.json",
         "research/jax-stack/cpu-revalidation-results.json",
-        "research/jax-stack/source-build-results.json"
+        "research/jax-stack/source-build-results.json",
+        "research/jax-stack/source-runtime-results.json",
+        "research/jax-stack/pass-hack-results.json"
       ],
-      "remaining": "002 完成原生构建，但 Git metadata 为空，尚未通过运行身份验收；需003带固定Git hash构建、独立安装及数值/native验证，再完成自定义pass补丁重编译、实际事件和回滚。"
+      "remaining": "CPU 源码构建、安装/加载、可逆 pass Hack 及三状态回滚已验收；完整 action 输入闭包、目标 TPU 编译/设备环境仍需取证。"
     },
     {
       "id": "R05",
@@ -209,9 +232,10 @@
         "research/jax-stack/cpu-results.json",
         "research/jax-stack/fusion-and-memory.md",
         "research/jax-stack/fusion-memory-results.json",
-        "research/jax-stack/cpu-revalidation-results.json"
+        "research/jax-stack/cpu-revalidation-results.json",
+        "research/jax-stack/source-runtime-results.json"
       ],
-      "remaining": "CPU liveness/allocation/alias/donation 与运行时指针对照已完成；需匹配源码 binary 复验及 U03 的真实 TPU 内存证据，不能以逻辑 peak 或静态 accounted bytes 代替。"
+      "remaining": "匹配源码 CPU liveness/allocation/alias/donation 与数值复验已通过，logical peak 诊断差异仍在；需 U03 的真实 TPU 内存证据。"
     },
     {
       "id": "R07",
@@ -227,9 +251,10 @@
         "research/jax-stack/overlap-results.json",
         "research/jax-stack/overlap-scheduling.ipynb",
         "research/jax-stack/latency-model.md",
-        "research/jax-stack/cpu-revalidation-results.json"
+        "research/jax-stack/cpu-revalidation-results.json",
+        "research/jax-stack/source-runtime-results.json"
       ],
-      "remaining": "CPU API/IR/数值及四个失败边界已取证；需匹配 wheel 复验 async-control，并依据 U03 的目标拓扑、设备 trace 与时间测量验证真正 overlap。"
+      "remaining": "匹配源码 CPU async/control 复验完成，显式 layout 的异步控制仍因 Host 未注册 all-reduce-start 失败；真正 overlap 需 U03 的拓扑、设备 trace 和时间测量。"
     },
     {
       "id": "R09",
@@ -275,9 +300,11 @@
         "research/jax-stack/pass-event-acceptance.md",
         "research/jax-stack/pass-events-results.json",
         "research/jax-stack/runtime-environment.md",
-        "research/jax-stack/runtime-environment-results.json"
+        "research/jax-stack/runtime-environment-results.json",
+        "research/jax-stack/source-runtime-results.json",
+        "research/jax-stack/pass-hack-results.json"
       ],
-      "remaining": "已完成旧 wheel 的 cold/warm/filter 负对照与验收脚本；仍需匹配源码 baseline、指定补丁 wheel/native 字节绑定及实际事件、回滚对照。设备侧仍需 U03 的 TPU/libtpu、LLO 和真实设备 trace。"
+      "remaining": "host 与 CPU 编译 pass 的起止、过滤、warm、错误返回及源码 build/load/rollback 已取证；仍需目标 TPU 编译、设备事件/LLO、开销与跨线程 host 关联。"
     }
   ],
   "pending_user_inputs": [
@@ -299,49 +326,20 @@
   ],
   "next_actions": [
     {
-      "id": "launch-stamped-source-build",
+      "id": "source-attributes-latency-revalidation",
       "ready": true,
-      "action": "构建 wrapper 的 exact-pin Git hash 选项通过自测后，提交 tools/build-jaxlib.py、tools/selftest-build-jaxlib.py 及研究记录，再执行 artifacts/jax-stack/source-build-003/launch.json 的 argv，记录真实 CID。001/002 已终止，不应恢复。"
+      "depends_on": [
+        "source-built-cpu-baseline-003"
+      ],
+      "action": "将 attributes_cost_probe.py 与 latency_metadata_probe.py 接入既有显式 build/native 绑定，在固定镜像的源码基线环境重跑并验证；保留旧 VERSION-SKEW capture。"
     },
     {
-      "id": "source-built-wheel-validation",
-      "ready": false,
+      "id": "final-build-input-boundary",
+      "ready": true,
       "depends_on": [
-        "source-build-terminal-success"
+        "terminal-core-dependency-audit"
       ],
-      "action": "003 构建成功后在同一固定 Docker 镜像中验证 manifest、安装到新的独立环境并运行 prepare_pass_runtime.py --jaxlib-build-manifest manifests/build-fingerprints/kickoff-cpu-source-003.json --expected-events absent。宿主机 canonical validator 依赖当前 Clang，002 wheel 缺 Git hash；保留两次失败。"
-    },
-    {
-      "id": "async-control-matching-wheel",
-      "ready": false,
-      "depends_on": [
-        "source-built-wheel-validation"
-      ],
-      "action": "用匹配源码环境运行 overlap_probe.py --jaxlib-build-manifest manifests/build-fingerprints/kickoff-cpu-source-003.json --observe-prior-failures；记录四个历史用例的本次失败阶段或成功数值，不要求保留旧错误。随后 verify_overlap.py --capture 复查，保留旧 VERSION-SKEW 证据。"
-    },
-    {
-      "id": "final-build-dependency-closure",
-      "ready": false,
-      "depends_on": [
-        "source-built-wheel-validation"
-      ],
-      "action": "在构建终态补记实际 external repositories、hermetic Python 与完整输入边界；不要把当前 cache 快照误称完整离线闭包。"
-    },
-    {
-      "id": "liveness-diagnostic-followup",
-      "ready": false,
-      "depends_on": [
-        "source-built-wheel-validation"
-      ],
-      "action": "用匹配源码环境及显式 build manifest 重跑 fusion_memory_probe.py，再 verify_fusion_memory.py --capture 检查 reduction live-range peak 差异是否仍存在；保留 allocation、事件排序、logical/physical 边界。"
-    },
-    {
-      "id": "compiler-custom-event",
-      "ready": false,
-      "depends_on": [
-        "source-built-wheel-validation"
-      ],
-      "action": "在隔离源码树做可逆 TraceMe 诊断补丁；重编译、加载、核对标记/数值、回滚。"
+      "action": "记录实际 external module/repository 与 hermetic Python 的来源、版本和输入描述；若进一步做 action 输入闭包审计，单独记录证据，不将 cache 校验称为完整离线重放。"
     },
     {
       "id": "tpu-device-profile",
@@ -363,7 +361,7 @@
     }
   ],
   "validation": {
-    "source_index": "120 entries / 38 edges verified",
+    "source_index": "122 fixed-source entries and 39 edges; added XPlane conversion/InternalStat relation and links to native Hack evidence.",
     "capture": "1062 artifact sizes and SHA-256 verified",
     "numerics": "4 cases; NumPy float64 forward/analytic gradients",
     "serialized_executable": "4 in-process reloads, bit-for-bit comparison passed",
@@ -403,20 +401,37 @@
     "bytecode_quarantine": "artifacts/jax-stack/bytecode-quarantine-001/record.json; generated cache only, no source edits; notebooks must inherit PYTHONDONTWRITEBYTECODE=1 in kernel process",
     "cpu_revalidation": "1063 matmul + 2029 fusion/memory + 595 overlap artifacts verified; 18 numerical cases, serialization reloads and 4 observed prior errors checked in the inherited isolated runtime",
     "cpu_revalidation_selftest": "3 CLI running-build rejections before runtime capture; omitted/inconsistent build selections rejected; fusion and overlap semantic selftests and historical capture compatibility passed",
-    "source_runtime_binding": "Successful unpatched build manifest and wheel/native payload binding supported in 3 probes and rechecked by their verifiers; not yet exercised with a completed source build",
+    "source_runtime_binding": "Completed build 003 exercised in fixed image: wheel Git revision, native payload equality and 18-case numerical/IR suite verified.",
     "source_build_002": "container exited 0; canonical wheel/RECORD validation passed in fixed image; 88,323,241-byte wheel preserved",
     "source_runtime_002": "host canonical Clang check rejected before installation; fixed-image install/import succeeded, then missing wheel Git revision rejected before profiler/numerical acceptance",
-    "wheel_git_option": "wrapper selftest passed; only exact pinned JAX hash allowed, empty/other/abbreviated/dirty hashes rejected; historical wrapper contracts retained"
+    "wheel_git_option": "wrapper selftest passed; only exact pinned JAX hash allowed, empty/other/abbreviated/dirty hashes rejected; historical wrapper contracts retained",
+    "source_runtime_003": "fixed image install/import, exact wheel Git revision, loaded native payload equality, default/filtered pass controls and full 18-case CPU suite passed without VERSION-SKEW",
+    "source_suite_003": "1073 matmul + 2043 fusion/memory + 782 overlap artifact inventories and semantics verified; 3898 total",
+    "source_overlap_transition": "three Python/MLIR errors persist; explicit-layout native error is now NOT_FOUND for unregistered all-reduce-start on Host",
+    "source_peak_transition": "printed inclusive logical max remains 8324 bytes at time 3; reported peak location remains time 4 / 4232 value bytes; no physical peak inference",
+    "source_pass_filter": "matching-source default and filtered generic algsimp count both 3; custom marker counts remain zero before patch",
+    "cpp_pass_events": "Final exportable patch: 25 C++ tests passed, including 4 new cases; test-only Googletest override preserved separately.",
+    "pass_hack": "Six source-bound captures verified: baseline 0/0, patched 127/124, rollback 0/0; independent NumPy, warm/filter and native identity checks passed.",
+    "pass_hack_selftest": "Three invalid C++ outcomes and real 127-event metadata-loss capture rejected.",
+    "pass_hack_rollback": "Three source files restored byte-for-byte, clone clean, retained unpatched 003 wheel reinstalled in fresh copied environment and new processes.",
+    "terminal_dependencies": "50 artifacts, 3 archives, 43 patch targets and 1093 cached payloads / 734532494 bytes verified; 6 negative cases passed; no complete offline closure claim.",
+    "project_state": "Project-status selftest passed positive summary plus 20 negative contracts; old root queue remains intentionally absent.",
+    "compiler_hack_notebook": "5 code cells executed in a real Jupyter kernel; saved artifact hashes, six raw traces, independent NumPy, C++ XML and real metadata-loss regression passed. This Notebook run is archive revalidation, not a new native compile.",
+    "patch_whitespace": "Canonical patch context is preserved via directory-scoped Git attributes; all added C++ lines checked separately for trailing whitespace."
   },
   "completion_claim": "本状态未宣称 kickoff 的任一完整交付组已经验收。",
   "artifact_fingerprints": {
+    ".gitattributes": {
+      "sha256": "20b81e5b515354b92e726873eae4a3451f9a965f0527684be73d998b7a5dd6ec",
+      "size_bytes": 114
+    },
     "PLAN.md": {
-      "sha256": "a67fcf08a70766157f3595fed6a8d6b07e2018c852ad1dc58a80e898fd3b84fa",
-      "size_bytes": 9693
+      "sha256": "fc7cb8330add06420aeed31e1d51fcdef15c044fda90bc865ff4a4dadbf4b103",
+      "size_bytes": 10086
     },
     "README.md": {
-      "sha256": "5b9a72abbc7feb2942a1c3ff8f84ac042221dbf0e6ea599b804363cb84406eca",
-      "size_bytes": 8722
+      "sha256": "c61e0cd004bee1904747737be7522aa3c750c55563020bffbc1e784057e88062",
+      "size_bytes": 9061
     },
     "attributes-and-cost.md": {
       "sha256": "974465ff934b069b0302dd9e9b8202ec8ed7f33906682923745e7a662bc95025",
@@ -443,12 +458,12 @@
       "size_bytes": 7165
     },
     "build-dependency-results.json": {
-      "sha256": "7b6691f2e14a0cb2e405bf08c42d9167282be9e233a95ae2b3199f7ff1a784e6",
-      "size_bytes": 3769
+      "sha256": "a71afa62eaede16df2a5977347fea076cffa59b497794e9aa0f2966a6dd5f5b3",
+      "size_bytes": 3774
     },
     "build_source_index.py": {
-      "sha256": "cfbe2c58cd6363e2e77fe47631de4c4718c0b362d5ef2fc414943e2080cce818",
-      "size_bytes": 52685
+      "sha256": "430fbc9a1831db207bab8af8101bf87ca89bb84eb9262538c4c29f8a112541a0",
+      "size_bytes": 53908
     },
     "capture_runtime.py": {
       "sha256": "41eafb5052b3ba0cfaf3c5393feccf02cef7d30ae4cbba7f998ee044d1a00082",
@@ -457,6 +472,10 @@
     "codegen-results.json": {
       "sha256": "78ec98b44139dc0d01be4ab688f08a8627a15b30febeed7be5be2023a9189cb9",
       "size_bytes": 5702
+    },
+    "compiler-pass-hack.ipynb": {
+      "sha256": "7f237ca8bb0228580b56c0cc83173f656e3ea03e95321266805f1b99c9e4f0cf",
+      "size_bytes": 11103
     },
     "compiler_events_probe.py": {
       "sha256": "98659bc1df7d2c0afb830e6ac01dc9b3bf845003b53e37e3b02f080b69d7eadc",
@@ -543,7 +562,7 @@
       "size_bytes": 13399
     },
     "overview.md": {
-      "sha256": "24928155b22d2cb2c646aabc066277e2f72593b771a8a283fcb2830f05ab7f93",
+      "sha256": "58c49845996c70e7bf5e79e34e86035a40e605e9b4b977cfd830a50407bea441",
       "size_bytes": 8400
     },
     "pallas-comparison.md": {
@@ -559,28 +578,44 @@
       "size_bytes": 9111
     },
     "pass-event-acceptance.md": {
-      "sha256": "5995740d73308ade3739269a0ee6f479f4b5ee94af284a804739fb3abd918305",
-      "size_bytes": 6582
+      "sha256": "d2ebf22ceb8b0b371519a44ee1e0d2087de0c1e57b86740eddd96bd59252cb03",
+      "size_bytes": 8400
+    },
+    "pass-event-cpp-results.json": {
+      "sha256": "3c31f757662efbf44a5357d327f54ae3108558759a26996271cc08ca9e3720ac",
+      "size_bytes": 3124
     },
     "pass-event-patch-results.json": {
       "sha256": "5ec51068526e9a0e7930590031d9582c86b430dbc2a0d3644cf748714cd89418",
       "size_bytes": 2560
     },
     "pass-event-patch.md": {
-      "sha256": "ab58a8c1d5fef8ce8504833322d5a729174fbe496b0375de7504d28af24598b3",
-      "size_bytes": 5377
+      "sha256": "e5817496e3f88bece1d28f3c3962bd7269ff80910eaecc1c4ea8bbda7e193839",
+      "size_bytes": 8860
     },
     "pass-events-results.json": {
       "sha256": "1a775b69225ea68ed745e70f55e97f56efd127e3c9888c6053dc1691bb9727fc",
       "size_bytes": 4618
     },
+    "pass-hack-results.json": {
+      "sha256": "bf888c67e312e5a124b796b556752a56998fce13a50bd396a70e306139697d60",
+      "size_bytes": 135681
+    },
     "pass_event_checks.py": {
-      "sha256": "e48f7dbedc5c09223ee30b97d239a98b7211cc23bb1d01df416eec0cec4cb8c3",
-      "size_bytes": 5740
+      "sha256": "bd427b1ff5867aefe55519a459228f7051791291cd81d0e2cbaffb31db7499df",
+      "size_bytes": 5917
+    },
+    "pass_event_cpp_tests.inc": {
+      "sha256": "bb3298c6cb3407be24613f6beb00f71dbec8682af7eba2daa190de65cb824ec3",
+      "size_bytes": 5231
     },
     "pass_events_probe.py": {
-      "sha256": "757295a6dd08482155f2119cad3e9d41e886e2312fc9b99728fa863c3391d397",
-      "size_bytes": 12169
+      "sha256": "6ca40e8d8cd178d43f2837eaee89694e67f5b3cc3021088671f71f478a3903c7",
+      "size_bytes": 12399
+    },
+    "prepare_cpp_test_dependency.py": {
+      "sha256": "e2c4900e6d9cb070461b61929e10471c14020e9bd34dce63deea3db312201a22",
+      "size_bytes": 3433
     },
     "prepare_pass_event_patch.py": {
       "sha256": "b945b200037bcf7f612303994e33525ddde718a000a5304b9bc93596486aad1b",
@@ -595,8 +630,8 @@
       "size_bytes": 10002
     },
     "profiling.md": {
-      "sha256": "ce46b16f95b0d9b0ad1ed1ff3afc9103b0b4475b3b02b3730d82db3eabbe405d",
-      "size_bytes": 7113
+      "sha256": "7a9fd4827214fe815ad6e6b2bde15f5662f7eb797ec407965f54e7203103b5d3",
+      "size_bytes": 7313
     },
     "roofline.md": {
       "sha256": "4a7c4f5e44f316b31820cec469f26e4fa58cbd6702f25644449808ed3c982bce",
@@ -607,28 +642,40 @@
       "size_bytes": 5955
     },
     "runtime-environment.md": {
-      "sha256": "fa25f2f0e924c77494bc35c845115fc8d212c85abbab602bbb8170fd73e16068",
-      "size_bytes": 8356
+      "sha256": "48ff51db4faf26a9bdd25a37afadb8fec3eaaa638e366986019640056ba99606",
+      "size_bytes": 8466
     },
     "source-build-results.json": {
       "sha256": "d346de81789cbd1d6f2e18365dd38380d99a23fff6279c5eca8045fd3dcce4f0",
       "size_bytes": 1904
     },
     "source-build.md": {
-      "sha256": "ade68aba1f054467efda137e5207cebe5d9739efb07d789cbaa2b9160d3bbe44",
-      "size_bytes": 8143
+      "sha256": "a343ea05f722868272bc5929bcc81f0ce199be1778d94be2194cf46b33a78a35",
+      "size_bytes": 8473
     },
     "source-index.json": {
-      "sha256": "aa9d9e47ab18bcf2bc0ff3f33f4dc35505f28d27aab7b204f84c961d4659bdae",
-      "size_bytes": 143802
+      "sha256": "75cbd4124e5ddf9a3f203232d9ae5b7b14d8f7f85975951e260fdab303541531",
+      "size_bytes": 147032
+    },
+    "source-runtime-baseline.md": {
+      "sha256": "1c39e40c6fc98082c412851472ee9cca4a3434f8ca3389ec2cef137454b93cdd",
+      "size_bytes": 5284
+    },
+    "source-runtime-results.json": {
+      "sha256": "2178c022136506fd6d8505e15005eba3cda24eb104697d77d7b9482ef8886e24",
+      "size_bytes": 5156
+    },
+    "source_runtime_suite.py": {
+      "sha256": "f252bfae43d7d258c264b1567854146db6e4f96108a237d7630db6745a4aee7b",
+      "size_bytes": 3448
     },
     "verify_attributes.py": {
       "sha256": "cb58cee7f4e3b5b553dc00c77a907e20b4ae2c57af4c52d7e0005ffac00a6e60",
       "size_bytes": 7224
     },
     "verify_build_dependencies.py": {
-      "sha256": "a59261dc92f4c1a035486c72df595fd5adc3348fb432d107552d2609a35d9ca5",
-      "size_bytes": 9022
+      "sha256": "e8802c9de2daafdabe5fd32302a28a93a907459979c99be128644af90e321baa",
+      "size_bytes": 9146
     },
     "verify_codegen_and_patch.py": {
       "sha256": "80b4c5932e59b5a78416e5b89cea8cd007bbe1794f6a40943a6573ead93d9d67",
@@ -651,8 +698,12 @@
       "size_bytes": 12103
     },
     "verify_pass_events.py": {
-      "sha256": "bec1c5833dbc7b88c6f84e2ea3d49b3a48133baac6a7d5a50a2cdc57e50ec76f",
-      "size_bytes": 11186
+      "sha256": "f1d9630d386f66e1ffdc2ae4d90a17a4188c8f7052c75ccc7ef3872fe3dbc138",
+      "size_bytes": 11213
+    },
+    "verify_pass_hack.py": {
+      "sha256": "0d810ab6538ede6662d00eea4babee182790251cc4ea331b56a91804a5d937e9",
+      "size_bytes": 8949
     },
     "verify_research.py": {
       "sha256": "50afb8244927e97ba9b3e3a0f613b5997ee67c8488546e29f88a7060e8e8d4fe",
@@ -661,6 +712,14 @@
     "verify_runtime_environment.py": {
       "sha256": "f2553087a260fe7c7135d19a6f5838c1a4b37cb0b4cce848b5c4835a11b54444",
       "size_bytes": 7336
+    },
+    "xla-hlo-pass-events-exportable.patch": {
+      "sha256": "2da2f1355a11f0ba82db51ec9c03db698f73cfce9f2a981c8c7eb08660537bc2",
+      "size_bytes": 8956
+    },
+    "xla-hlo-pass-events-with-tests.patch": {
+      "sha256": "c6c17cbd7d3854e88c0a2dbc041f2d1758635b94c18283464698765cd1fd5c36",
+      "size_bytes": 8782
     },
     "xla-hlo-pass-events.patch": {
       "sha256": "a50b0900fb9fad50be420e4079f7ccae1b5311afd237271bea5b45dfce550ac3",
@@ -680,27 +739,18 @@
     }
   ],
   "active_build": {
-    "build_id": "kickoff-cpu-source-002",
-    "attempt": 1,
-    "container_id": "82c9bf9dfe02ba334964a856a5b41c652e83ade2af2ffdb4ce6b950fb4acc077",
+    "build_id": "kickoff-cpu-pass-events-002",
+    "container_id": "bca6b40726761b0747aae18c50a8c22a5c523eb4cffd5bd2f6fb715f2aa4b183",
     "state_at_last_inspection": "exited",
     "state_must_be_refreshed": false,
-    "launch_record": "artifacts/jax-stack/source-build-002/launch.json",
-    "log": "artifacts/builds/kickoff-cpu-source-002/attempts/0001/build.log",
-    "jobs": 4,
-    "cache_reused_from": "kickoff-cpu-source-001",
-    "source_clones": "artifacts/jax-stack/source-build-001/clones",
-    "pid_namespace_warning": "Inspect this Docker container; wrapper PIDs are container-local.",
-    "inspected_at": "2026-09-14T18:19:51.181064+00:00",
-    "last_observed_phase": "C++ compilation",
-    "state_record": "artifacts/jax-stack/source-build-002/container-state.json",
+    "launch_record": "artifacts/jax-stack/pass-event-build-002/wheel-build-launch.json",
+    "runtime_accepted": true,
     "terminal_status": "build-succeeded",
-    "finished_at": "2026-09-14T18:44:25.142521059Z",
-    "wheel_git_hash": null,
-    "runtime_accepted": false
+    "runtime_capture": "artifacts/jax-stack/pass-patch-runtime-002",
+    "log": "artifacts/builds/kickoff-cpu-pass-events-002/attempts/0001/build.log"
   },
   "publication": {
-    "local_commit": "937d44a7633378995c07f2aab8981bb366960aad",
+    "local_commit": "44c076911328a50c1f0dbea12dc6ef9e0328f9ef",
     "original_staged_diff_preserved": true,
     "push_attempt": {
       "command": "git push origin main",
@@ -711,9 +761,9 @@
     },
     "remaining": "Root worktree retains its local research history and staged cleanup; remote merge integration is performed only in the isolated publication worktree.",
     "state": "pushed",
-    "integration_commit": "eb569ff556fd4291ddb88a4895b547aaf164cc59",
-    "push_result": "90b8551..eb569ff HEAD -> main; normal fast-forward push",
-    "latest_milestone": "source-bound-cpu-revalidation-entrypoints"
+    "integration_commit": "f2e95d73bcba84b243aa1e707d94a0e6d9963bf8",
+    "push_result": "eb569ff..f2e95d7 HEAD -> main; normal fast-forward push",
+    "latest_milestone": "pinned-wheel-git-identity-support"
   },
   "additional_sources": [
     {
@@ -727,7 +777,7 @@
       "manifest": "artifacts/jax-stack/xprof-source-001/manifest.json"
     }
   ],
-  "pending_user_inputs_last_requested": "2026-09-14T15:01:12.955105+00:00",
+  "pending_user_inputs_last_requested": "2026-09-14T20:26:54.168277+00:00",
   "previous_builds": [
     {
       "build_id": "kickoff-cpu-source-001",
@@ -742,26 +792,155 @@
       "inspected_at": "2026-09-14T15:31:52.307727+00:00",
       "terminal_status": "interrupted",
       "reason": "Intentional increase from 2 to 4 jobs based on measured spare CPU/RAM; logs and persistent action cache retained."
+    },
+    {
+      "build_id": "kickoff-cpu-source-002",
+      "attempt": 1,
+      "container_id": "82c9bf9dfe02ba334964a856a5b41c652e83ade2af2ffdb4ce6b950fb4acc077",
+      "state_at_last_inspection": "exited",
+      "state_must_be_refreshed": false,
+      "launch_record": "artifacts/jax-stack/source-build-002/launch.json",
+      "log": "artifacts/builds/kickoff-cpu-source-002/attempts/0001/build.log",
+      "jobs": 4,
+      "cache_reused_from": "kickoff-cpu-source-001",
+      "source_clones": "artifacts/jax-stack/source-build-001/clones",
+      "pid_namespace_warning": "Inspect this Docker container; wrapper PIDs are container-local.",
+      "inspected_at": "2026-09-14T18:19:51.181064+00:00",
+      "last_observed_phase": "C++ compilation",
+      "state_record": "artifacts/jax-stack/source-build-002/container-state.json",
+      "terminal_status": "build-succeeded",
+      "finished_at": "2026-09-14T18:44:25.142521059Z",
+      "wheel_git_hash": null,
+      "runtime_accepted": false
+    },
+    {
+      "build_id": "kickoff-cpu-source-003",
+      "container_id": "a09629c33baed277a70bddc5f4b16dd7de352fdd4e231c07b6c52e78ae4e04c2",
+      "state_at_last_inspection": "exited",
+      "terminal_status": "build-succeeded",
+      "state_must_be_refreshed": false,
+      "launch_record": "artifacts/jax-stack/source-build-003/launch.json",
+      "log": "artifacts/builds/kickoff-cpu-source-003/attempts/0001/build.log",
+      "runtime_accepted": true,
+      "runtime_capture": "artifacts/jax-stack/source-runtime-002",
+      "source_clones": "artifacts/jax-stack/source-build-001/clones"
+    },
+    {
+      "build_id": "kickoff-cpu-pass-events-001",
+      "container_id": "1265c4775dd2e3933c1489ea4bdc1af0947eb33017f7aef656895067db3e67a2",
+      "state_at_last_inspection": "exited",
+      "state_must_be_refreshed": false,
+      "launch_record": "artifacts/jax-stack/pass-event-build-001/wheel-build-launch.json",
+      "log": "artifacts/builds/kickoff-cpu-pass-events-001/attempts/0001/build.log",
+      "source_clones": "artifacts/jax-stack/source-build-001/clones",
+      "runtime_accepted": false,
+      "terminal_status": "build-succeeded"
     }
   ],
   "kickoff_last_checked": {
     "revision": 51,
     "updated_at": "2026-09-14T11:26:38.696Z",
-    "checked_at": "2026-09-14T18:19:51.181064+00:00",
-    "source": "Outline fetch; revision and update timestamp unchanged"
+    "checked_at": "2026-09-14T20:29:32.198533+00:00",
+    "source": "Outline fetch; revision and timestamp unchanged"
   },
   "prepared_compiler_patch": {
-    "path": "research/jax-stack/xla-hlo-pass-events.patch",
-    "capture": "artifacts/jax-stack/compiler-event-patch-002",
-    "sha256": "a50b0900fb9fad50be420e4079f7ccae1b5311afd237271bea5b45dfce550ac3",
-    "native_compiled": false,
-    "applied_to_running_build": false,
-    "next_gate": "unpatched source-built wheel and load validation"
+    "path": "research/jax-stack/xla-hlo-pass-events-exportable.patch",
+    "sha256": "2da2f1355a11f0ba82db51ec9c03db698f73cfce9f2a981c8c7eb08660537bc2",
+    "capture": "artifacts/jax-stack/pass-event-build-002",
+    "native_compiled": true,
+    "cpp_test_cases": 25,
+    "new_cpp_test_cases": 4,
+    "cpp_tests_passed": true,
+    "patched_binary_loaded": true,
+    "custom_event_observed": true,
+    "build_load_rollback_accepted": true,
+    "applied_to_isolated_clone": false,
+    "source_restored": true,
+    "initial_source_only_preparation": {
+      "path": "research/jax-stack/xla-hlo-pass-events.patch",
+      "capture": "artifacts/jax-stack/compiler-event-patch-002",
+      "native_compiled": false
+    },
+    "first_tested_patch": {
+      "path": "research/jax-stack/xla-hlo-pass-events-with-tests.patch",
+      "capture": "artifacts/jax-stack/pass-event-build-001",
+      "cpp_tests_passed": true,
+      "runtime_pair_accepted": false,
+      "reason": "program_id is omitted from exported trace JSON"
+    },
+    "next_gate": "CPU Hack accepted; target TPU compiler/device execution remains separate and requires U03."
   },
-  "pending_build": {
-    "build_id": "kickoff-cpu-source-003",
-    "launch_record": "artifacts/jax-stack/source-build-003/launch.json",
-    "state": "prepared",
-    "reason": "Stamp exact pinned JAX Git identity into wheel packaging; previous build 002 succeeded with _git_hash=None."
+  "active_cpp_test": {
+    "container_id": "8c43e63b810e18e22b21268b59bdc6191e2e2d3c457548cbbb5c5a20d7c4c273",
+    "launch_record": "artifacts/jax-stack/pass-event-build-002/test-launch.json",
+    "state_at_last_inspection": "exited",
+    "state_must_be_refreshed": false,
+    "target": "@xla//xla/hlo/pass:hlo_pass_pipeline_test",
+    "exit_code": 0,
+    "result": "passed",
+    "test_xml": "artifacts/jax-stack/pass-event-build-002/unit-test.xml"
+  },
+  "cpp_test_attempts": [
+    {
+      "container_id": "01ee5f6feb81e29a2bd62f245fd90bcf46621a5269e0708fb06d2efab899f0ec",
+      "target": "@xla//xla/hlo/pass:hlo_pass_pipeline_test",
+      "launch_record": "artifacts/jax-stack/pass-event-build-001/test-launch.json",
+      "state_at_last_inspection": "exited",
+      "state_must_be_refreshed": false,
+      "exit_code": 1,
+      "result": "compile-failed-existing-ASSERT_OK_AND_ASSIGN-missing",
+      "log": "artifacts/jax-stack/pass-event-build-001/test-attempt-001.log"
+    },
+    {
+      "container_id": "c20ef4b3382e257288d96c8cc239252967faf6d8c7fc0884522cca52cdd3a9d1",
+      "target": "@xla//xla/hlo/pass:hlo_pass_pipeline_test",
+      "launch_record": "artifacts/jax-stack/pass-event-build-001/test-attempt-002-launch.json",
+      "state_at_last_inspection": "exited",
+      "state_must_be_refreshed": false,
+      "exit_code": 0,
+      "result": "passed",
+      "test_xml": "artifacts/jax-stack/pass-event-build-001/unit-test.xml"
+    }
+  ],
+  "active_patch_runtime": {
+    "image_id": "sha256:abad11bf00a9611382e946ab243d7e3d105a4019ba3cf6bd542223debb18d6e8",
+    "returncode": 0,
+    "stderr": "",
+    "container_id": "fe2d198684890d43ca51056418707742b89746ac2a469b2114d96129287627bd",
+    "launched_at": "2026-09-14T20:14:09.928023+00:00",
+    "scope": "Fresh runtime for exportable marker patch; preserve failed first capture.",
+    "launch_record": "artifacts/jax-stack/pass-patch-runtime-002/launch.json",
+    "state_at_last_inspection": "exited",
+    "exit_code": 0,
+    "patched_runtime_pair_accepted": true,
+    "state_must_be_refreshed": false
+  },
+  "patch_runtime_attempts": [
+    {
+      "image_id": "sha256:abad11bf00a9611382e946ab243d7e3d105a4019ba3cf6bd542223debb18d6e8",
+      "returncode": 0,
+      "stderr": "",
+      "container_id": "6eb660262375f52df546dabc627b3eeefca7c2d418cfd3da1a623bee0208f3b6",
+      "launched_at": "2026-09-14T20:05:20.449350+00:00",
+      "scope": "Fresh isolated runtime, successful patched wheel, explicit native binding, default/filter/warm custom-event validation. Network disabled.",
+      "launch_record": "artifacts/jax-stack/pass-patch-runtime-001/launch.json",
+      "state_at_last_inspection": "exited",
+      "exit_code": 1,
+      "result": "127 custom events observed; reserved program_id absent from exported JSON; runtime pair rejected"
+    }
+  ],
+  "active_rollback": {
+    "image_id": "sha256:abad11bf00a9611382e946ab243d7e3d105a4019ba3cf6bd542223debb18d6e8",
+    "returncode": 0,
+    "stderr": "",
+    "container_id": "46000b1c26eeb40e38be4cbe000143c2d182ec7f14eda5b6359aa1ac4576b8b5",
+    "launched_at": "2026-09-14T20:15:59.876214+00:00",
+    "source_rollback": "artifacts/jax-stack/pass-event-build-002/rollback.json",
+    "scope": "Fresh copied environment and processes, reinstall accepted unpatched 003 wheel; no rebuild and no mutation of host or patched venv.",
+    "state_at_last_inspection": "exited",
+    "exit_code": 0,
+    "runtime_accepted": true,
+    "launch_record": "artifacts/jax-stack/pass-patch-rollback-001/launch.json",
+    "state_must_be_refreshed": false
   }
 }

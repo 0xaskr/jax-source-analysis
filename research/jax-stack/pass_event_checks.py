@@ -7,7 +7,9 @@ from collections import Counter, defaultdict
 import math
 
 EVENT = "research_hlo_pass_run"
-FIELDS = {"pass", "pipeline", "module", "program_id", "status", "changed"}
+# program_id is an internal XSpace stat, omitted by the Chrome trace exporter.
+# The patch emits both it and an explicit non-reserved copy for this interface.
+FIELDS = {"pass", "pipeline", "module", "research_program_id", "status", "changed"}
 KNOWN_PASSES = {"algsimp", "constant_folding", "layout-assignment"}
 
 
@@ -85,7 +87,7 @@ def analyze(events, module_name, expected, disabled_pass=None):
         require(args["pass"] != disabled_pass, "filtered leaf pass emitted a custom event")
         require(args["changed"] in ({"true", "false"} if args["status"] == "OK" else {"unknown"}), "status/changed metadata inconsistent")
         require(any(parent.get("name") == args["pass"] and contains(parent, event, True) for parent in events), "custom event lacks enclosing same-thread native pass scope")
-        key = (args["module"], str(args["program_id"]), args["pipeline"], args["pass"], threads[(event["pid"], event["tid"])])
+        key = (args["module"], str(args["research_program_id"]), args["pipeline"], args["pass"], threads[(event["pid"], event["tid"])])
         groups[key].append(event)
     stats = []
     for key, group in sorted(groups.items()):

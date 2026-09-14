@@ -4,16 +4,18 @@
 新建研究。完整要求和未完成项保留在 [PLAN.md](PLAN.md)，没有沿用已删除的旧进度。
 
 - [软件栈与 API 总览](overview.md)：组件、控制链、普通 CPU/TPU 与 Pallas 两层表示。
-- [源码索引](source-index.json)：120 个入口、38 条带调用位置及分支条件的关系，含锁定的 XProf tooling 源码。
+- [源码索引](source-index.json)：122 个入口、39 条带调用位置及分支条件的关系，含锁定的 XProf tooling 源码。
 - [Pallas 对照](pallas-comparison.md)：相同输入的普通 JAX、generic 与 TPU interpret。
 - [三类 profiling 区间](profiling.md)：host、编译 pass、设备标记的实验证据与验收边界。
 - [扩展实验结果](extension-results.json)：四组 capture、62 个产物的独立复查。
 - [Pallas/profiling Notebook](pallas-profiling.ipynb)：实算对照、trace 统计与 Mosaic 标记检查。
 - [源码构建](source-build.md)：固定镜像、隔离克隆与实际构建状态。
+- [匹配源码的 CPU 基线](source-runtime-baseline.md)：003 wheel 的 Git/native 身份、18 组数值和 3,898 个产物已验证。
 - [独立运行环境](runtime-environment.md)：依赖文件复制、导入/native 身份检查及成功 wheel 的安装入口。
 - [LLVM、对象与 ORC](llvm-and-objects.md)：三个 ELF 对象与 HLO/LLVM 函数、序列化字节的对应。
-- [自定义 pass 事件补丁](pass-event-patch.md)：规范补丁已验证应用和回滚，尚未编译加载。
-- [Pass 事件验收](pass-event-acceptance.md)：cold/warm/filter 负对照、构建状态拒绝与 wheel/native 身份核对。
+- [自定义 pass 事件补丁](pass-event-patch.md)：25 个 C++ 测试，真实编译、加载和源码恢复，含导出字段修正。
+- [Pass 事件验收](pass-event-acceptance.md)：源码基线/补丁/回滚、cold/warm/filter 和 wheel/native 身份；[结果](pass-hack-results.json)。
+- [编译 pass Hack Notebook](compiler-pass-hack.ipynb)：5 个单元已执行，复查三状态 trace、数值、C++ 测试及导出字段丢失。
 - [构建依赖审计](build-dependency-results.json)：三份归档、43 个补丁目标与已缓存 payload 的校验边界。
 - [通信与调度](overlap-and-scheduling.md)：CPU async→sync、控制依赖和四个实验性 API 失败。
 - [调度 Notebook](overlap-scheduling.ipynb) 与 [结果](overlap-results.json)：双 CPU 数值、IR、593 个产物的独立复查。

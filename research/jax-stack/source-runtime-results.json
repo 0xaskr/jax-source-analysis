@@ -1,0 +1,123 @@
+{
+  "build_id": "kickoff-cpu-source-003",
+  "evidence_level": "RUN-CPU",
+  "qualifiers": [],
+  "build_manifest": {
+    "path": "manifests/build-fingerprints/kickoff-cpu-source-003.json",
+    "sha256": "e71c74f91c88d7a3273f8753b0e45bf7ef23435ffb86f9af6158845b258fe622",
+    "size_bytes": 13406
+  },
+  "wheel": {
+    "path": "artifacts/builds/kickoff-cpu-source-003/attempts/0001/wheels/jaxlib-0.11.2.dev0+selfbuilt-cp312-cp312-manylinux_2_27_x86_64.whl",
+    "sha256": "8e0e4f9c87de126cd1316e46897b53368744056a1f14c7208c6061773b9b1cef",
+    "size_bytes": 88323271
+  },
+  "wheel_git_hash": "5832e866449a41c3eea6333416528039119a0fde",
+  "all_31_native_members_equal_to_build_002": true,
+  "runtime_parent": "artifacts/jax-stack/source-runtime-002",
+  "image_id": "sha256:abad11bf00a9611382e946ab243d7e3d105a4019ba3cf6bd542223debb18d6e8",
+  "source_built_runtime_accepted": true,
+  "patched_runtime_accepted": false,
+  "suite": {
+    "matmul": {
+      "manifest_path": "artifacts/jax-stack/source-runtime-002/suite/matmul/manifest.json",
+      "manifest_sha256": "4a99d774f2164eddaaeff6dbc3264055802b8b39a549561040093f3d50c150e0",
+      "artifact_count": 1073,
+      "numerical_cases": 4,
+      "source_build_verified": true,
+      "verified_result": {
+        "path": "artifacts/jax-stack/source-runtime-002/suite/matmul.verified.json",
+        "sha256": "72083adc55a4d6daa43445e10f398871014525d7e4e835b9f04a1af96664fbc3",
+        "size_bytes": 101186
+      }
+    },
+    "fusion-memory": {
+      "manifest_path": "artifacts/jax-stack/source-runtime-002/suite/fusion-memory/manifest.json",
+      "manifest_sha256": "5eb4e032611ac3077773ffcd46489edb64e0109405975fbe313a7487d5bc5a10",
+      "artifact_count": 2043,
+      "numerical_cases": 11,
+      "source_build_verified": true,
+      "verified_result": {
+        "path": "artifacts/jax-stack/source-runtime-002/suite/fusion-memory.verified.json",
+        "sha256": "52f940bfdbf3a1cac7118de38cf5c329719218f6e700add6a5a1af07283eee43",
+        "size_bytes": 118687
+      }
+    },
+    "overlap": {
+      "manifest_path": "artifacts/jax-stack/source-runtime-002/suite/overlap/manifest.json",
+      "manifest_sha256": "174858545648ef62de9fa1ff96e40fcd77cb9335ed57b51acbe4258ef8abfd59",
+      "artifact_count": 782,
+      "numerical_cases": 3,
+      "source_build_verified": true,
+      "verified_result": {
+        "path": "artifacts/jax-stack/source-runtime-002/suite/overlap.verified.json",
+        "sha256": "677db05c1c2316415bff63e6d8224933c01d91691f5bae2a5942a5ff87603c01",
+        "size_bytes": 23329
+      }
+    }
+  },
+  "pass_controls": {
+    "default": {
+      "manifest_path": "artifacts/jax-stack/source-runtime-002/baseline-env/default/manifest.json",
+      "manifest_sha256": "e725bf8c538322e1087d7482ecfd2e832ff0a1a2cad6f27c3908b302783623f0",
+      "generic_known_pass_counts": {
+        "algsimp": 3,
+        "constant_folding": 2,
+        "layout-assignment": 1
+      },
+      "custom_event_count": 0,
+      "warm_scope_count": 3,
+      "binding_kind": "source-build-native-payload-bound"
+    },
+    "filtered": {
+      "manifest_path": "artifacts/jax-stack/source-runtime-002/baseline-env/filtered/manifest.json",
+      "manifest_sha256": "57bf0faa97c5b60032a71b8402751838041cbea5d5d25b149d4a7041dac116a0",
+      "generic_known_pass_counts": {
+        "algsimp": 3,
+        "constant_folding": 2,
+        "layout-assignment": 1
+      },
+      "custom_event_count": 0,
+      "warm_scope_count": 3,
+      "binding_kind": "source-build-native-payload-bound"
+    }
+  },
+  "limits": [
+    "Only CPU backend execution and host compiler events are verified. No TPU, LLO, real inference model or device timing evidence is added.",
+    "Logical live-range diagnostics are distinct from physical memory peaks.",
+    "The canonical historical validator currently requires the matching Clang environment; these checks ran in the fixed image."
+  ],
+  "numerical_cases": 18,
+  "artifact_count": 3898,
+  "logical_peak_diagnostic_difference_persists": true,
+  "prior_overlap_cases": [
+    {
+      "case": "scheduled-varying-checked",
+      "outcome": "error",
+      "phase": "lowering",
+      "type": "ValueError",
+      "message_first_line": "Primitive ffi_call requires varying manual axes to match, but got [frozenset(), frozenset({'d'})]. Please open an issue at https://github.com/jax-ml/jax/issues and as a temporary workaround pass the check_vma=False argument to `jax.shard_map`"
+    },
+    {
+      "case": "scheduled-varying-unchecked",
+      "outcome": "error",
+      "phase": "lowering",
+      "type": "AttributeError",
+      "message_first_line": "DynamicJaxprTracer has no attribute done"
+    },
+    {
+      "case": "scheduled-invariant-default-layout",
+      "outcome": "error",
+      "phase": "lowering",
+      "type": "ValueError",
+      "message_first_line": "Cannot lower jaxpr with verifier errors:"
+    },
+    {
+      "case": "explicit-layout-backend-error",
+      "outcome": "error",
+      "phase": "CPU-native-compilation",
+      "type": "JaxRuntimeError",
+      "message_first_line": "NOT_FOUND: No registered implementation for untyped custom call to all-reduce-start for Host"
+    }
+  ]
+}

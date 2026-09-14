@@ -1,10 +1,10 @@
 {
-  "capture_id": "build-dependencies-002",
-  "manifest_path": "artifacts/jax-stack/build-dependencies-002/manifest.json",
-  "manifest_sha256": "df850f11e0961074c1b0c34d529422088db8c2fc9c990f2194b6fbd8ffb07076",
+  "capture_id": "build-dependencies-003",
+  "manifest_path": "artifacts/jax-stack/build-dependencies-003/manifest.json",
+  "manifest_sha256": "174fbb0034184b0028b90419deff340ae7758a703f4e7e71f00d1b7d05df26fb",
   "artifact_count": 50,
   "evidence_level": "SOURCE-ONLY",
-  "build_id": "kickoff-cpu-source-002",
+  "build_id": "kickoff-cpu-pass-events-002",
   "components": [
     {
       "component": "llvm",
@@ -68,8 +68,8 @@
   ],
   "patched_targets": 43,
   "repository_cache": {
-    "verified_objects": 1085,
-    "verified_bytes": 731484721,
+    "verified_objects": 1093,
+    "verified_bytes": 734532494,
     "incomplete_entries": []
   },
   "compiler_observation": {

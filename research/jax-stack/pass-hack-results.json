@@ -1,0 +1,4070 @@
+{
+  "evidence_level": "RUN-CPU",
+  "scope": "Host compiler-pass diagnostic Hack",
+  "build_load_rollback_accepted": true,
+  "cpp": {
+    "tests": 25,
+    "new_tests": [
+      "ResearchDisabledRecorderPreservesPassResult",
+      "ResearchErrorEventStopsAndPreservesStatus",
+      "ResearchFilteredLeafDoesNotEmitEvent",
+      "ResearchLeafEventsDescribeChangesAndNestedPipeline"
+    ],
+    "failures": 0
+  },
+  "patch": {
+    "path": "research/jax-stack/xla-hlo-pass-events-exportable.patch",
+    "sha256": "2da2f1355a11f0ba82db51ec9c03db698f73cfce9f2a981c8c7eb08660537bc2",
+    "size_bytes": 8956
+  },
+  "states": {
+    "baseline": {
+      "default": {
+        "capture": "artifacts/jax-stack/source-runtime-002/baseline-env/default",
+        "manifest": {
+          "sha256": "e725bf8c538322e1087d7482ecfd2e832ff0a1a2cad6f27c3908b302783623f0",
+          "size_bytes": 4731
+        },
+        "qualifiers": [],
+        "build_id": "kickoff-cpu-source-003",
+        "wheel": {
+          "path": "artifacts/builds/kickoff-cpu-source-003/attempts/0001/wheels/jaxlib-0.11.2.dev0+selfbuilt-cp312-cp312-manylinux_2_27_x86_64.whl",
+          "sha256": "8e0e4f9c87de126cd1316e46897b53368744056a1f14c7208c6061773b9b1cef",
+          "size_bytes": 88323271
+        },
+        "observations": {
+          "expected_custom_events": "absent",
+          "disabled_pass": null,
+          "compiled_module": "jit_pass_event_workload",
+          "custom_event_count": 0,
+          "selected_custom_event_count": 0,
+          "other_module_custom_event_count": 0,
+          "warm_scope_count": 3,
+          "generic_known_pass_counts": {
+            "algsimp": 3,
+            "constant_folding": 2,
+            "layout-assignment": 1
+          },
+          "groups": [],
+          "timing_scope": "Chrome trace ts/dur microseconds; inclusive and per-group interval union are not total CPU work or device time."
+        },
+        "max_absolute_errors": [
+          5.551717559629243e-09,
+          5.551717559629243e-09,
+          5.551717559629243e-09
+        ]
+      },
+      "filtered": {
+        "capture": "artifacts/jax-stack/source-runtime-002/baseline-env/filtered",
+        "manifest": {
+          "sha256": "57bf0faa97c5b60032a71b8402751838041cbea5d5d25b149d4a7041dac116a0",
+          "size_bytes": 4836
+        },
+        "qualifiers": [],
+        "build_id": "kickoff-cpu-source-003",
+        "wheel": {
+          "path": "artifacts/builds/kickoff-cpu-source-003/attempts/0001/wheels/jaxlib-0.11.2.dev0+selfbuilt-cp312-cp312-manylinux_2_27_x86_64.whl",
+          "sha256": "8e0e4f9c87de126cd1316e46897b53368744056a1f14c7208c6061773b9b1cef",
+          "size_bytes": 88323271
+        },
+        "observations": {
+          "expected_custom_events": "absent",
+          "disabled_pass": "algsimp",
+          "compiled_module": "jit_pass_event_workload",
+          "custom_event_count": 0,
+          "selected_custom_event_count": 0,
+          "other_module_custom_event_count": 0,
+          "warm_scope_count": 3,
+          "generic_known_pass_counts": {
+            "algsimp": 3,
+            "constant_folding": 2,
+            "layout-assignment": 1
+          },
+          "groups": [],
+          "timing_scope": "Chrome trace ts/dur microseconds; inclusive and per-group interval union are not total CPU work or device time."
+        },
+        "max_absolute_errors": [
+          5.551717559629243e-09,
+          5.551717559629243e-09,
+          5.551717559629243e-09
+        ]
+      }
+    },
+    "patched": {
+      "default": {
+        "capture": "artifacts/jax-stack/pass-patch-runtime-002/patched-env/default",
+        "manifest": {
+          "sha256": "c3402677c70caa6d14f0b6e0523b578448debdfe12f84e691f454446284fd05d",
+          "size_bytes": 4822
+        },
+        "qualifiers": [
+          "SOURCE-PATCHED"
+        ],
+        "build_id": "kickoff-cpu-pass-events-002",
+        "wheel": {
+          "path": "artifacts/builds/kickoff-cpu-pass-events-002/attempts/0001/wheels/jaxlib-0.11.2.dev0+selfbuilt-cp312-cp312-manylinux_2_27_x86_64.whl",
+          "sha256": "d5ba29cd92549a362c053249a70da3615c5ebbd34521a79c526a542c4a18d3cb",
+          "size_bytes": 88323585
+        },
+        "observations": {
+          "expected_custom_events": "present",
+          "disabled_pass": null,
+          "compiled_module": "jit_pass_event_workload",
+          "custom_event_count": 127,
+          "selected_custom_event_count": 127,
+          "other_module_custom_event_count": 0,
+          "warm_scope_count": 3,
+          "generic_known_pass_counts": {
+            "algsimp": 3,
+            "constant_folding": 2,
+            "layout-assignment": 1
+          },
+          "groups": [
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "apply-xla-transforms-0",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.984,
+              "span_union_us": 0.9839999999967404,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "copy-insertion",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 74.343,
+              "span_union_us": 74.34299999999348,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "true": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "cpu-all-reduce-combiner",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 6.256,
+              "span_union_us": 6.255999999993946,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "cpu-parallel-task-assigner",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 57.09,
+              "span_union_us": 57.08999999999651,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "dce",
+              "thread": "thread-0",
+              "count": 2,
+              "inclusive_total_us": 1.323,
+              "span_union_us": 1.3229999999894062,
+              "status_counts": {
+                "OK": 2
+              },
+              "changed_counts": {
+                "false": 2
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "fusion",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 15.999,
+              "span_union_us": 15.998999999996158,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "fusion-wrapper",
+              "thread": "thread-0",
+              "count": 2,
+              "inclusive_total_us": 8.235999999999999,
+              "span_union_us": 8.236000000004424,
+              "status_counts": {
+                "OK": 2
+              },
+              "changed_counts": {
+                "true": 1,
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "optimize_input_output_buffer_alias",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 2.964,
+              "span_union_us": 2.9640000000072177,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "propagate-call-metadata",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.581,
+              "span_union_us": 0.5810000000055879,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "reshape-decomposer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.116,
+              "span_union_us": 1.1159999999945285,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "small-while-loop-hoisting",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.669,
+              "span_union_us": 0.6689999999944121,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "tuple-simplifier",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.358,
+              "span_union_us": 1.3579999999928987,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after scheduling",
+              "pass": "apply-xla-transforms-1",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.896,
+              "span_union_us": 0.8959999999933643,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after scheduling",
+              "pass": "cse_barrier_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.641,
+              "span_union_us": 0.6410000000032596,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after scheduling",
+              "pass": "tuple-simplifier",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.141,
+              "span_union_us": 1.1410000000032596,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "all-reduce-promotion",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.278,
+              "span_union_us": 1.2780000000057044,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "all_to_all_decomposer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.463,
+              "span_union_us": 0.46300000000337604,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "associative-scan-rewriter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.941,
+              "span_union_us": 1.94100000000617,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "batch-dot-simplification",
+              "thread": "thread-0",
+              "count": 2,
+              "inclusive_total_us": 1.235,
+              "span_union_us": 1.235000000000582,
+              "status_counts": {
+                "OK": 2
+              },
+              "changed_counts": {
+                "false": 2
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "batched_gather_scatter_normalizer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 3.458,
+              "span_union_us": 3.4579999999987194,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "batchnorm_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.005,
+              "span_union_us": 1.0050000000046566,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "bitcast_dtypes_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.566,
+              "span_union_us": 0.56600000000617,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "call-inliner",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 3.357,
+              "span_union_us": 3.357000000003609,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "change-op-data-type",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.403,
+              "span_union_us": 1.4030000000057044,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "cholesky_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.499,
+              "span_union_us": 0.4989999999961583,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "comparison-expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.503,
+              "span_union_us": 0.5029999999969732,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "conditional-canonicalizer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.868,
+              "span_union_us": 0.8680000000022119,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "conditional-to-select",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 6.909,
+              "span_union_us": 6.908999999999651,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "convolution-canonicalization",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.964,
+              "span_union_us": 0.9640000000072177,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "convolution-group-converter",
+              "thread": "thread-0",
+              "count": 2,
+              "inclusive_total_us": 2.033,
+              "span_union_us": 2.033000000010361,
+              "status_counts": {
+                "OK": 2
+              },
+              "changed_counts": {
+                "false": 2
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "cse",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 3.423,
+              "span_union_us": 3.422999999995227,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "dot_decomposer",
+              "thread": "thread-0",
+              "count": 2,
+              "inclusive_total_us": 1.602,
+              "span_union_us": 1.6019999999989523,
+              "status_counts": {
+                "OK": 2
+              },
+              "changed_counts": {
+                "false": 2
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "dynamic-dimension-simplifier",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.74,
+              "span_union_us": 1.7400000000052387,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "dynamic-index-splitter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.736,
+              "span_union_us": 0.7360000000044238,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "dynamic_padder",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.359,
+              "span_union_us": 1.3589999999967404,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "eigh_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.599,
+              "span_union_us": 0.5990000000019791,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "flatten-call-graph",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.303,
+              "span_union_us": 0.3029999999998836,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-bf16",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 18.279,
+              "span_union_us": 18.278999999994994,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-f4e2m1fn",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.132,
+              "span_union_us": 1.131999999997788,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-f8e3m4",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.16,
+              "span_union_us": 1.1600000000034925,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-f8e4m3",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.141,
+              "span_union_us": 1.1410000000032596,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-f8e4m3b11fnuz",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.269,
+              "span_union_us": 1.2690000000002328,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-f8e4m3fn",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.407,
+              "span_union_us": 1.4070000000065193,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-f8e4m3fnuz",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.13,
+              "span_union_us": 1.1300000000046566,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-f8e5m2",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.701,
+              "span_union_us": 1.7010000000009313,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-f8e5m2fnuz",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.255,
+              "span_union_us": 1.2550000000046566,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-f8e8m0fnu",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.172,
+              "span_union_us": 1.1720000000059372,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-s4",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.188,
+              "span_union_us": 1.187999999994645,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-u4",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.095,
+              "span_union_us": 1.0950000000011642,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "gemv-rewriter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.966,
+              "span_union_us": 0.9660000000003492,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "layout-assignment",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 50.148,
+              "span_union_us": 50.14800000000105,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "true": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "literal-canonicalizer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.017,
+              "span_union_us": 1.0170000000071013,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "logistic-expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.634,
+              "span_union_us": 0.6340000000054715,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "map-inline",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.17,
+              "span_union_us": 1.1699999999982538,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "operand_upcaster",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.15,
+              "span_union_us": 1.1499999999941792,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "permutation_sort_simplifier",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.531,
+              "span_union_us": 0.5310000000026776,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "qr_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.503,
+              "span_union_us": 0.5029999999969732,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "reduce-window-resizer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.711,
+              "span_union_us": 0.7109999999956926,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "reduce-window-rewriter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.33,
+              "span_union_us": 1.3300000000017462,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "result_caster",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.208,
+              "span_union_us": 1.2079999999987194,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "rng-bit-generator-expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.724,
+              "span_union_us": 0.7240000000019791,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "rng-expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.633,
+              "span_union_us": 0.6330000000016298,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "scan_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.548,
+              "span_union_us": 0.547999999995227,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "scatter_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.49,
+              "span_union_us": 0.4900000000052387,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "scatter_simplifier",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.578,
+              "span_union_us": 0.5779999999940628,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "select_and_scatter_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.655,
+              "span_union_us": 0.6549999999988358,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "shape-canonicalizer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 3.775,
+              "span_union_us": 3.7749999999941792,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "true": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "stochastic_convert_decomposer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.647,
+              "span_union_us": 0.646999999997206,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "sub-byte-size-setter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.867,
+              "span_union_us": 0.8669999999983702,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "topk-decomposer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.304,
+              "span_union_us": 1.3040000000037253,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "topk-rewriter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.177,
+              "span_union_us": 1.1769999999960419,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "transpose-folding",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.306,
+              "span_union_us": 1.3059999999968568,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "triangular_solve_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.543,
+              "span_union_us": 0.5430000000051223,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "while-loop-trip-count-annotator",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.732,
+              "span_union_us": 0.7320000000036089,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "zero_sized_hlo_elimination",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.964,
+              "span_union_us": 0.9640000000072177,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "SubbytePacker pipeline",
+              "pass": "sub-byte-size-setter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 3.657,
+              "span_union_us": 3.6570000000065193,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "async-collective",
+              "pass": "async-collective-custom-call-rewriter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 2.513,
+              "span_union_us": 2.5130000000062864,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "async-collective",
+              "pass": "async-collective-replacer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.616,
+              "span_union_us": 1.6159999999945285,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "dot-library-passes",
+              "pass": "dot-library-rewriter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 24.688,
+              "span_union_us": 24.687999999994645,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "true": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "dot-library-passes",
+              "pass": "dot_decomposer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.485,
+              "span_union_us": 0.4850000000005821,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "hlo normalization",
+              "pass": "broadcast_canonicalizer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.545,
+              "span_union_us": 0.5449999999982538,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "hlo normalization",
+              "pass": "reduce-decomposer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.043,
+              "span_union_us": 1.0430000000051223,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "hlo normalization",
+              "pass": "reshape-decomposer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.755,
+              "span_union_us": 0.7550000000046566,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "algsimp",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.108,
+              "span_union_us": 1.1079999999928987,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "constant_folding",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 2.524,
+              "span_union_us": 2.5240000000048894,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "dce",
+              "thread": "thread-0",
+              "count": 2,
+              "inclusive_total_us": 0.627,
+              "span_union_us": 0.6270000000076834,
+              "status_counts": {
+                "OK": 2
+              },
+              "changed_counts": {
+                "false": 2
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "gather_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.356,
+              "span_union_us": 0.35599999999976717,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "gather_simplifier",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.311,
+              "span_union_us": 0.3110000000015134,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "reshape-mover",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.35,
+              "span_union_us": 0.35000000000582077,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "simplify-conditional",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.515,
+              "span_union_us": 0.5149999999994179,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "simplify-sorts",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.289,
+              "span_union_us": 0.28900000000430737,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "simplify-while-loops",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.427,
+              "span_union_us": 0.4269999999960419,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "tree_reduction_rewriter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.594,
+              "span_union_us": 0.5939999999973224,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "tuple-simplifier",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.497,
+              "span_union_us": 0.4970000000030268,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "while-loop-constant-sinking",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.34,
+              "span_union_us": 0.33999999999650754,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "while-loop-invariant-code-motion",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.27,
+              "span_union_us": 0.27000000000407454,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "zero_sized_hlo_elimination",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.338,
+              "span_union_us": 0.33800000000337604,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "pre-spmd-partitioner",
+              "pass": "strip-memory-placement-annotations",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.894,
+              "span_union_us": 0.8940000000002328,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "sharding-removal",
+              "pass": "control-dep-rewriter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.542,
+              "span_union_us": 0.5420000000012806,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "sharding-removal",
+              "pass": "dce",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 2.981,
+              "span_union_us": 2.980999999999767,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "sharding-removal",
+              "pass": "flatten-call-graph",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.013,
+              "span_union_us": 1.0130000000062864,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "sharding-removal",
+              "pass": "sharding-remover",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.834,
+              "span_union_us": 1.8340000000025611,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "sharding-removal",
+              "pass": "shardy-xla",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.982,
+              "span_union_us": 0.9820000000036089,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "algsimp",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 9.025,
+              "span_union_us": 9.02499999999418,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "constant_folding",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 49.204,
+              "span_union_us": 49.203999999997905,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "dce",
+              "thread": "thread-0",
+              "count": 2,
+              "inclusive_total_us": 1.168,
+              "span_union_us": 1.1679999999905704,
+              "status_counts": {
+                "OK": 2
+              },
+              "changed_counts": {
+                "false": 2
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "gather_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.511,
+              "span_union_us": 0.510999999998603,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "gather_simplifier",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.591,
+              "span_union_us": 0.5910000000003492,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "reshape-mover",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.94,
+              "span_union_us": 1.9400000000023283,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "simplify-conditional",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.762,
+              "span_union_us": 1.7620000000024447,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "simplify-sorts",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.815,
+              "span_union_us": 0.8150000000023283,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "simplify-while-loops",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.3,
+              "span_union_us": 1.3000000000029104,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "tree_reduction_rewriter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.833,
+              "span_union_us": 0.8329999999987194,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "tuple-simplifier",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.939,
+              "span_union_us": 0.9389999999984866,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "while-loop-constant-sinking",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.973,
+              "span_union_us": 0.9729999999981374,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "while-loop-invariant-code-motion",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 2.084,
+              "span_union_us": 2.084000000002561,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "zero_sized_hlo_elimination",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.426,
+              "span_union_us": 0.4260000000067521,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification after layout assignment",
+              "pass": "algsimp",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.785,
+              "span_union_us": 0.7850000000034925,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification after layout assignment",
+              "pass": "cse",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 2.811,
+              "span_union_us": 2.8110000000015134,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification after layout assignment",
+              "pass": "dce",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.317,
+              "span_union_us": 1.3169999999954598,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            }
+          ],
+          "timing_scope": "Chrome trace ts/dur microseconds; inclusive and per-group interval union are not total CPU work or device time."
+        },
+        "max_absolute_errors": [
+          5.551717559629243e-09,
+          5.551717559629243e-09,
+          5.551717559629243e-09
+        ]
+      },
+      "filtered": {
+        "capture": "artifacts/jax-stack/pass-patch-runtime-002/patched-env/filtered",
+        "manifest": {
+          "sha256": "dc747f5ee8760367e1f3067e7ae7b19fa27f6735c0377d0b9f0a5f51b2a75c7c",
+          "size_bytes": 4927
+        },
+        "qualifiers": [
+          "SOURCE-PATCHED"
+        ],
+        "build_id": "kickoff-cpu-pass-events-002",
+        "wheel": {
+          "path": "artifacts/builds/kickoff-cpu-pass-events-002/attempts/0001/wheels/jaxlib-0.11.2.dev0+selfbuilt-cp312-cp312-manylinux_2_27_x86_64.whl",
+          "sha256": "d5ba29cd92549a362c053249a70da3615c5ebbd34521a79c526a542c4a18d3cb",
+          "size_bytes": 88323585
+        },
+        "observations": {
+          "expected_custom_events": "present",
+          "disabled_pass": "algsimp",
+          "compiled_module": "jit_pass_event_workload",
+          "custom_event_count": 124,
+          "selected_custom_event_count": 124,
+          "other_module_custom_event_count": 0,
+          "warm_scope_count": 3,
+          "generic_known_pass_counts": {
+            "algsimp": 3,
+            "constant_folding": 2,
+            "layout-assignment": 1
+          },
+          "groups": [
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "apply-xla-transforms-0",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.944,
+              "span_union_us": 0.9440000000031432,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "copy-insertion",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 63.081,
+              "span_union_us": 63.08100000000559,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "true": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "cpu-all-reduce-combiner",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 7.147,
+              "span_union_us": 7.146999999997206,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "cpu-parallel-task-assigner",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 56.228,
+              "span_union_us": 56.228000000002794,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "dce",
+              "thread": "thread-0",
+              "count": 2,
+              "inclusive_total_us": 1.346,
+              "span_union_us": 1.3460000000050059,
+              "status_counts": {
+                "OK": 2
+              },
+              "changed_counts": {
+                "false": 2
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "fusion",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 16.599,
+              "span_union_us": 16.59900000000198,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "fusion-wrapper",
+              "thread": "thread-0",
+              "count": 2,
+              "inclusive_total_us": 8.909,
+              "span_union_us": 8.90899999999965,
+              "status_counts": {
+                "OK": 2
+              },
+              "changed_counts": {
+                "true": 1,
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "optimize_input_output_buffer_alias",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 2.898,
+              "span_union_us": 2.8980000000010477,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "propagate-call-metadata",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.612,
+              "span_union_us": 0.6119999999937136,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "reshape-decomposer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.138,
+              "span_union_us": 1.1380000000062864,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "small-while-loop-hoisting",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.876,
+              "span_union_us": 0.8760000000038417,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after layout assignment",
+              "pass": "tuple-simplifier",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.269,
+              "span_union_us": 1.2690000000002328,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after scheduling",
+              "pass": "apply-xla-transforms-1",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.803,
+              "span_union_us": 0.8029999999998836,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after scheduling",
+              "pass": "cse_barrier_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.666,
+              "span_union_us": 0.6659999999974389,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes after scheduling",
+              "pass": "tuple-simplifier",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.044,
+              "span_union_us": 1.043999999994412,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "all-reduce-promotion",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.143,
+              "span_union_us": 1.1429999999963911,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "all_to_all_decomposer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.382,
+              "span_union_us": 0.3819999999977881,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "associative-scan-rewriter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.87,
+              "span_union_us": 1.8699999999953434,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "batch-dot-simplification",
+              "thread": "thread-0",
+              "count": 2,
+              "inclusive_total_us": 1.305,
+              "span_union_us": 1.304999999993015,
+              "status_counts": {
+                "OK": 2
+              },
+              "changed_counts": {
+                "false": 2
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "batched_gather_scatter_normalizer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 3.284,
+              "span_union_us": 3.2839999999996508,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "batchnorm_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.954,
+              "span_union_us": 0.9539999999979045,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "bitcast_dtypes_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.549,
+              "span_union_us": 0.5489999999990687,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "call-inliner",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 3.713,
+              "span_union_us": 3.713000000003376,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "change-op-data-type",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.336,
+              "span_union_us": 1.3359999999956926,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "cholesky_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.645,
+              "span_union_us": 0.6450000000040745,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "comparison-expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.653,
+              "span_union_us": 0.6530000000057044,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "conditional-canonicalizer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.942,
+              "span_union_us": 0.9419999999954598,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "conditional-to-select",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 9.108,
+              "span_union_us": 9.107999999992899,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "convolution-canonicalization",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.555,
+              "span_union_us": 0.5549999999930151,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "convolution-group-converter",
+              "thread": "thread-0",
+              "count": 2,
+              "inclusive_total_us": 2.172,
+              "span_union_us": 2.172000000005937,
+              "status_counts": {
+                "OK": 2
+              },
+              "changed_counts": {
+                "false": 2
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "cse",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 3.928,
+              "span_union_us": 3.9279999999998836,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "dot_decomposer",
+              "thread": "thread-0",
+              "count": 2,
+              "inclusive_total_us": 1.555,
+              "span_union_us": 1.554999999993015,
+              "status_counts": {
+                "OK": 2
+              },
+              "changed_counts": {
+                "false": 2
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "dynamic-dimension-simplifier",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.66,
+              "span_union_us": 1.6600000000034925,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "dynamic-index-splitter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.794,
+              "span_union_us": 0.7939999999944121,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "dynamic_padder",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.351,
+              "span_union_us": 1.3509999999951106,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "eigh_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.553,
+              "span_union_us": 0.5529999999998836,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "flatten-call-graph",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.379,
+              "span_union_us": 0.3790000000008149,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-bf16",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 19.669,
+              "span_union_us": 19.668999999994412,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-f4e2m1fn",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.117,
+              "span_union_us": 1.1169999999983702,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-f8e3m4",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.212,
+              "span_union_us": 1.2119999999995343,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-f8e4m3",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.194,
+              "span_union_us": 1.1940000000031432,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-f8e4m3b11fnuz",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.326,
+              "span_union_us": 1.3260000000009313,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-f8e4m3fn",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.378,
+              "span_union_us": 1.3779999999969732,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-f8e4m3fnuz",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.181,
+              "span_union_us": 1.1809999999968568,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-f8e5m2",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.798,
+              "span_union_us": 1.797999999995227,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-f8e5m2fnuz",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.295,
+              "span_union_us": 1.2949999999982538,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-f8e8m0fnu",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.13,
+              "span_union_us": 1.1300000000046566,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-s4",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.179,
+              "span_union_us": 1.1790000000037253,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "float-normalization-u4",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.157,
+              "span_union_us": 1.1570000000065193,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "gemv-rewriter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.019,
+              "span_union_us": 1.0190000000002328,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "layout-assignment",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 49.696,
+              "span_union_us": 49.695999999996275,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "true": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "literal-canonicalizer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.021,
+              "span_union_us": 1.0209999999933643,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "logistic-expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.56,
+              "span_union_us": 0.5599999999976717,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "map-inline",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.296,
+              "span_union_us": 1.2960000000020955,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "operand_upcaster",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.176,
+              "span_union_us": 1.176000000006752,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "permutation_sort_simplifier",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.662,
+              "span_union_us": 0.661999999996624,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "qr_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.697,
+              "span_union_us": 0.6970000000001164,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "reduce-window-resizer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.744,
+              "span_union_us": 0.7440000000060536,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "reduce-window-rewriter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.394,
+              "span_union_us": 1.3940000000002328,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "result_caster",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.328,
+              "span_union_us": 1.3279999999940628,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "rng-bit-generator-expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.638,
+              "span_union_us": 0.6380000000062864,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "rng-expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.796,
+              "span_union_us": 0.7960000000020955,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "scan_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.532,
+              "span_union_us": 0.5320000000065193,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "scatter_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.485,
+              "span_union_us": 0.4850000000005821,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "scatter_simplifier",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.615,
+              "span_union_us": 0.6150000000052387,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "select_and_scatter_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.523,
+              "span_union_us": 0.5230000000010477,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "shape-canonicalizer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 3.406,
+              "span_union_us": 3.4060000000026776,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "true": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "stochastic_convert_decomposer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.744,
+              "span_union_us": 0.7440000000060536,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "sub-byte-size-setter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.882,
+              "span_union_us": 0.8819999999977881,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "topk-decomposer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.339,
+              "span_union_us": 1.3390000000072177,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "topk-rewriter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.281,
+              "span_union_us": 1.2810000000026776,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "transpose-folding",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.281,
+              "span_union_us": 1.2810000000026776,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "triangular_solve_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.639,
+              "span_union_us": 0.6389999999955762,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "while-loop-trip-count-annotator",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.879,
+              "span_union_us": 0.8790000000008149,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "HLO passes through layout assignment",
+              "pass": "zero_sized_hlo_elimination",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.953,
+              "span_union_us": 0.9529999999940628,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "SubbytePacker pipeline",
+              "pass": "sub-byte-size-setter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 3.354,
+              "span_union_us": 3.3540000000066357,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "async-collective",
+              "pass": "async-collective-custom-call-rewriter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 3.389,
+              "span_union_us": 3.388999999995576,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "async-collective",
+              "pass": "async-collective-replacer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.377,
+              "span_union_us": 1.3769999999931315,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "dot-library-passes",
+              "pass": "dot-library-rewriter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 24.989,
+              "span_union_us": 24.989000000001397,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "true": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "dot-library-passes",
+              "pass": "dot_decomposer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.525,
+              "span_union_us": 0.5249999999941792,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "hlo normalization",
+              "pass": "broadcast_canonicalizer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.653,
+              "span_union_us": 0.6530000000057044,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "hlo normalization",
+              "pass": "reduce-decomposer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.024,
+              "span_union_us": 1.0240000000048894,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "hlo normalization",
+              "pass": "reshape-decomposer",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.007,
+              "span_union_us": 1.006999999997788,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "constant_folding",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 2.451,
+              "span_union_us": 2.4510000000009313,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "dce",
+              "thread": "thread-0",
+              "count": 2,
+              "inclusive_total_us": 0.7,
+              "span_union_us": 0.6999999999970896,
+              "status_counts": {
+                "OK": 2
+              },
+              "changed_counts": {
+                "false": 2
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "gather_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.373,
+              "span_union_us": 0.3730000000068685,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "gather_simplifier",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.719,
+              "span_union_us": 0.7189999999973224,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "reshape-mover",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.361,
+              "span_union_us": 0.3610000000044238,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "simplify-conditional",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.537,
+              "span_union_us": 0.536999999996624,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "simplify-sorts",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.381,
+              "span_union_us": 0.3809999999939464,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "simplify-while-loops",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.428,
+              "span_union_us": 0.4279999999998836,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "tree_reduction_rewriter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.469,
+              "span_union_us": 0.46899999999732245,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "tuple-simplifier",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.484,
+              "span_union_us": 0.48399999999674037,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "while-loop-constant-sinking",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.295,
+              "span_union_us": 0.29499999999825377,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "while-loop-invariant-code-motion",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.239,
+              "span_union_us": 0.23900000000139698,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "post_scatter_expansion_simplification",
+              "pass": "zero_sized_hlo_elimination",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.295,
+              "span_union_us": 0.29499999999825377,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "pre-spmd-partitioner",
+              "pass": "strip-memory-placement-annotations",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.585,
+              "span_union_us": 0.5850000000064028,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "sharding-removal",
+              "pass": "control-dep-rewriter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.714,
+              "span_union_us": 0.7140000000072177,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "sharding-removal",
+              "pass": "dce",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 3.27,
+              "span_union_us": 3.2700000000040745,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "sharding-removal",
+              "pass": "flatten-call-graph",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.748,
+              "span_union_us": 0.7480000000068685,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "sharding-removal",
+              "pass": "sharding-remover",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 2.329,
+              "span_union_us": 2.3289999999979045,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "sharding-removal",
+              "pass": "shardy-xla",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.863,
+              "span_union_us": 0.8629999999975553,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "constant_folding",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 56.856,
+              "span_union_us": 56.85599999999977,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "dce",
+              "thread": "thread-0",
+              "count": 2,
+              "inclusive_total_us": 1.141,
+              "span_union_us": 1.1410000000032596,
+              "status_counts": {
+                "OK": 2
+              },
+              "changed_counts": {
+                "false": 2
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "gather_expander",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.502,
+              "span_union_us": 0.5019999999931315,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "gather_simplifier",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.639,
+              "span_union_us": 0.6389999999955762,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "reshape-mover",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.911,
+              "span_union_us": 1.9109999999927823,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "simplify-conditional",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.849,
+              "span_union_us": 1.849000000001979,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "simplify-sorts",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.195,
+              "span_union_us": 1.195000000006985,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "simplify-while-loops",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.381,
+              "span_union_us": 1.3809999999939464,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "tree_reduction_rewriter",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.079,
+              "span_union_us": 1.0789999999979045,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "tuple-simplifier",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.052,
+              "span_union_us": 1.0519999999960419,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "while-loop-constant-sinking",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.822,
+              "span_union_us": 0.8220000000001164,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "while-loop-invariant-code-motion",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.174,
+              "span_union_us": 1.1739999999990687,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification",
+              "pass": "zero_sized_hlo_elimination",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 0.337,
+              "span_union_us": 0.33699999999953434,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification after layout assignment",
+              "pass": "cse",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 2.514,
+              "span_union_us": 2.513999999995576,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            },
+            {
+              "module": "jit_pass_event_workload",
+              "program_id": "0",
+              "pipeline": "simplification after layout assignment",
+              "pass": "dce",
+              "thread": "thread-0",
+              "count": 1,
+              "inclusive_total_us": 1.214,
+              "span_union_us": 1.2140000000072177,
+              "status_counts": {
+                "OK": 1
+              },
+              "changed_counts": {
+                "false": 1
+              }
+            }
+          ],
+          "timing_scope": "Chrome trace ts/dur microseconds; inclusive and per-group interval union are not total CPU work or device time."
+        },
+        "max_absolute_errors": [
+          5.551717559629243e-09,
+          5.551717559629243e-09,
+          5.551717559629243e-09
+        ]
+      }
+    },
+    "rollback": {
+      "default": {
+        "capture": "artifacts/jax-stack/pass-patch-rollback-001/rollback-env/default",
+        "manifest": {
+          "sha256": "08bbb8cd140fb133e03c8c0ad25a22425f4b684ff75260f19ca04f6d57f4a56b",
+          "size_bytes": 4826
+        },
+        "qualifiers": [],
+        "build_id": "kickoff-cpu-source-003",
+        "wheel": {
+          "path": "artifacts/builds/kickoff-cpu-source-003/attempts/0001/wheels/jaxlib-0.11.2.dev0+selfbuilt-cp312-cp312-manylinux_2_27_x86_64.whl",
+          "sha256": "8e0e4f9c87de126cd1316e46897b53368744056a1f14c7208c6061773b9b1cef",
+          "size_bytes": 88323271
+        },
+        "observations": {
+          "expected_custom_events": "absent",
+          "disabled_pass": null,
+          "compiled_module": "jit_pass_event_workload",
+          "custom_event_count": 0,
+          "selected_custom_event_count": 0,
+          "other_module_custom_event_count": 0,
+          "warm_scope_count": 3,
+          "generic_known_pass_counts": {
+            "algsimp": 3,
+            "constant_folding": 2,
+            "layout-assignment": 1
+          },
+          "groups": [],
+          "timing_scope": "Chrome trace ts/dur microseconds; inclusive and per-group interval union are not total CPU work or device time."
+        },
+        "max_absolute_errors": [
+          5.551717559629243e-09,
+          5.551717559629243e-09,
+          5.551717559629243e-09
+        ]
+      },
+      "filtered": {
+        "capture": "artifacts/jax-stack/pass-patch-rollback-001/rollback-env/filtered",
+        "manifest": {
+          "sha256": "efec2ec4f5e78523cdcd46e24b82ccb5abc2e92f426b0475a13c55a07effd042",
+          "size_bytes": 4931
+        },
+        "qualifiers": [],
+        "build_id": "kickoff-cpu-source-003",
+        "wheel": {
+          "path": "artifacts/builds/kickoff-cpu-source-003/attempts/0001/wheels/jaxlib-0.11.2.dev0+selfbuilt-cp312-cp312-manylinux_2_27_x86_64.whl",
+          "sha256": "8e0e4f9c87de126cd1316e46897b53368744056a1f14c7208c6061773b9b1cef",
+          "size_bytes": 88323271
+        },
+        "observations": {
+          "expected_custom_events": "absent",
+          "disabled_pass": "algsimp",
+          "compiled_module": "jit_pass_event_workload",
+          "custom_event_count": 0,
+          "selected_custom_event_count": 0,
+          "other_module_custom_event_count": 0,
+          "warm_scope_count": 3,
+          "generic_known_pass_counts": {
+            "algsimp": 3,
+            "constant_folding": 2,
+            "layout-assignment": 1
+          },
+          "groups": [],
+          "timing_scope": "Chrome trace ts/dur microseconds; inclusive and per-group interval union are not total CPU work or device time."
+        },
+        "max_absolute_errors": [
+          5.551717559629243e-09,
+          5.551717559629243e-09,
+          5.551717559629243e-09
+        ]
+      }
+    }
+  },
+  "source_restored": true,
+  "artifacts": {
+    "artifacts/jax-stack/pass-event-build-002/unit-test.xml": {
+      "sha256": "87258c5aab0f0a2e0238d992943695cbf1e8164d3e875c73dde4cd4c5c0eaa21",
+      "size_bytes": 6192
+    },
+    "artifacts/jax-stack/pass-event-build-002/test-state.json": {
+      "sha256": "82a2c1fefcddd3411ede4a430ccabbefa3b97f0beb8e29ebd47c14e5601cea41",
+      "size_bytes": 269
+    },
+    "artifacts/jax-stack/pass-event-build-002/test-launch.json": {
+      "sha256": "dbbe7f1b917d6dc3b9e18baf60d88bf98e9a84b94545e6a6198a01db0a8ee642",
+      "size_bytes": 2483
+    },
+    "artifacts/jax-stack/pass-event-build-002/rollback.json": {
+      "sha256": "cf06d5924ad6227e9f78643dc8206e307ec4c85b306643eaafabf988447a6cfb",
+      "size_bytes": 1672
+    },
+    "artifacts/jax-stack/pass-event-build-002/program-id-loss.json": {
+      "sha256": "eac46f0a2ac5f280e19fde4c25fcff190cbbd5883a819a2234fe32098843ef33",
+      "size_bytes": 444
+    },
+    "artifacts/jax-stack/pass-event-build-002/xspace-decode.json": {
+      "sha256": "e2ef830c7757bfacca865d2bf571b8850400ed2ae37e9f0143275cbe6735e898",
+      "size_bytes": 743
+    }
+  },
+  "limits": [
+    "CPU compiler spans only; no TPU compilation, device trace, LLO or performance conclusion.",
+    "Rollback restores source and loads the retained verified baseline wheel in fresh processes; it does not rebuild a third wheel.",
+    "Test-only Googletest patches are recorded separately; production builds do not use that override."
+  ]
+}

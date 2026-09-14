@@ -961,7 +961,11 @@
       "evidence_level": "SOURCE-ONLY",
       "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
       "callers": [],
-      "callees": []
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/pass-event-patch.md",
+        "research/jax-stack/pass-hack-results.json"
+      ]
     },
     {
       "id": "xla.trace-json",
@@ -981,7 +985,63 @@
       "evidence_level": "SOURCE-ONLY",
       "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
       "callers": [],
-      "callees": []
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/pass-event-patch.md",
+        "research/jax-stack/pass-hack-results.json"
+      ]
+    },
+    {
+      "id": "xla.xplane-trace-events",
+      "component": "xla",
+      "layer": "Trace export",
+      "symbol": "ConvertXPlaneToTraceEvents",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/tsl/profiler/convert/xplane_to_trace_events.cc",
+      "line": 62,
+      "end_line": null,
+      "anchor": "void ConvertXPlaneToTraceEvents(",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/tsl/profiler/convert/xplane_to_trace_events.cc#L62",
+      "source_sha256": "7b4d7c9088c5982b1ec66986c5d30b6cff8c35251d24bf2d73afafca39b29326",
+      "inputs": "XPlaneVisitor 的事件、共享 metadata 与 occurrence stats",
+      "outputs": "TraceContainer 中的 TraceEvent 及可见 args",
+      "constraint": "跳过 IsInternalStat 命中的字段；原始 XSpace 有 program_id 不保证 Chrome trace JSON 保留它。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
+      "callers": [],
+      "callees": [
+        "xla.internal-trace-stat"
+      ],
+      "related_experiments": [
+        "research/jax-stack/pass-event-patch.md",
+        "research/jax-stack/pass-hack-results.json"
+      ]
+    },
+    {
+      "id": "xla.internal-trace-stat",
+      "component": "xla",
+      "layer": "Profiler schema",
+      "symbol": "IsInternalStat",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/tsl/profiler/utils/xplane_schema.cc",
+      "line": 615,
+      "end_line": null,
+      "anchor": "bool IsInternalStat(",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/tsl/profiler/utils/xplane_schema.cc#L615",
+      "source_sha256": "cfa9c3cef4d5a2b17e7dfd3727ed0db6a950dd6e4da3a4ae32b1feba4f93443a",
+      "inputs": "可选 StatType",
+      "outputs": "该字段是否属于不向 trace viewer 导出的内部 stat",
+      "constraint": "kProgramId 返回 true，未知的自定义字段返回 false；本次 Hack 使用 research_program_id 副本供导出分组。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
+      "callers": [
+        "xla.xplane-trace-events"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/pass-event-patch.md",
+        "research/jax-stack/pass-hack-results.json"
+      ]
     },
     {
       "id": "jax.metadata-api",
@@ -2575,6 +2635,16 @@
     }
   ],
   "edges": [
+    {
+      "caller": "xla.xplane-trace-events",
+      "callee": "xla.internal-trace-stat",
+      "kind": "direct",
+      "condition": "转换每个有值的 metadata/occurrence stat 时。",
+      "path": "upstream/xla/xla/tsl/profiler/convert/xplane_to_trace_events.cc",
+      "line": 94,
+      "anchor": "            if (IsInternalStat(stat.Type())) return;",
+      "evidence_level": "SOURCE-ONLY"
+    },
     {
       "caller": "xla.ir-compile",
       "callee": "xla.llvm-pass-manager",

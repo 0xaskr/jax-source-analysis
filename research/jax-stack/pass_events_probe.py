@@ -49,7 +49,10 @@ def build_gate(path, expected, observation=None):
     patches = manifest["inputs"]["source_patches"]
     if expected == "present":
         require(len(patches) == 1 and patches[0]["component"] == "xla", "positive control requires exactly the XLA event patch")
-        require(patches[0]["sha256"] == fingerprint(ROOT / "research/jax-stack/xla-hlo-pass-events.patch")["sha256"], "build uses another source patch")
+        approved = [ROOT / "research/jax-stack/xla-hlo-pass-events.patch",
+                    ROOT / "research/jax-stack/xla-hlo-pass-events-with-tests.patch",
+                    ROOT / "research/jax-stack/xla-hlo-pass-events-exportable.patch"]
+        require(patches[0]["sha256"] in {fingerprint(p)["sha256"] for p in approved if p.is_file()}, "build uses another source patch")
     else:
         require(not patches, "bound absent control must use an unpatched source build")
     return manifest

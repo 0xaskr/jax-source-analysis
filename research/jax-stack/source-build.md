@@ -2,6 +2,11 @@
 
 对应 kickoff R04，以及消除 R02 native `VERSION-SKEW` 的前置步骤。
 
+最新结果：003 已补齐 wheel Git identity，并在固定镜像的独立环境中通过 native 字节
+绑定、pass 对照和完整 18 组 CPU 数值复验，见 [源码运行基线](source-runtime-baseline.md)。
+自定义 pass 补丁也已完成 C++ 测试、构建、实际加载和源码/运行回滚，见
+[Hack 验收](pass-event-acceptance.md)；原始上游树未修改。
+
 ## 已完成的环境核查
 
 宿主机预检报告 Python executable 字节不匹配、缺少固定 Clang/Clang++。
@@ -20,8 +25,8 @@ XLA、Bazel 8.7.0、Clang 18.1.3。工作区另建 JAX/XLA 的同 revision 克�
 - 镜像和宿主机原始仓库只读；仅隔离克隆、构建产物与 build manifest 目录可写。
 - 原有宿主机 `.venv` 不被覆盖；构建使用保留的 Docker venv。
 - Bazel 使用 4 个 jobs，JVM 上限 4 GiB；容器限 4 CPU、24 GiB 内存，资源配置保存到启动记录。
-- 002 已构建完成；下一构建为带 Git metadata 的 003。002 的容器 ID 和挂载映射保存到
-  `artifacts/jax-stack/source-build-002/launch.json`。
+- 002、003 均已构建完成，003 通过运行身份和数值验收。CID 和挂载映射分别保存到
+  `artifacts/jax-stack/source-build-002/launch.json` 与 `source-build-003/launch.json`。
 
 构建是否运行必须通过该容器的当前 `docker inspect` 状态判断。wrapper 的 PID
 属于容器 PID namespace，不能在宿主机凭同号 PID 或一个旧 manifest 判定它已停止，
@@ -29,19 +34,16 @@ XLA、Bazel 8.7.0、Clang 18.1.3。工作区另建 JAX/XLA 的同 revision 克�
 
 ## 仍需验收
 
-1. 带固定 Git identity 的新构建结束，wheel/RECORD/native payload 验证通过。
-2. 在隔离环境安装 wheel，核对实际加载二进制及 build revision，重新执行 matmul。
-3. 记录 Bazel 外部 module/repository 来源与下载完整性。现有 wrapper 固定
+1. 记录 Bazel 外部 module/repository 来源与下载完整性。现有 wrapper 固定
    `--lockfile_mode=off`；在外部依赖闭包补齐前，不宣称整个构建可完整离线重放。
-4. 做一个有预期日志变化的可逆诊断修改，重新编译、加载、对照并回滚。
+2. 将已验证的 CPU 诊断修改扩展到目标 TPU 编译/设备环境，按实际条件分别取证。
 
-[独立运行环境](runtime-environment.md) 已创建并用旧 wheel 完成 CPU 负对照；源码 wheel
-成功后可由同一入口在新环境离线安装、核对 native payload 并运行默认/过滤对照。
-目前尚未执行成功构建 wheel 的安装分支。
+[独立运行环境](runtime-environment.md) 已分别验证旧 wheel 负对照和源码 wheel 003。
+成功构建 wheel 的离线安装、native payload 核对、默认/过滤及完整 CPU 对照均已运行。
 
 容器预检通过不等于构建成功；wheel 构建成功不等于运行验证或 Hack 验收完成。
 
-## 当前 attempt
+## 002 构建与身份缺口
 
 构建 `kickoff-cpu-source-002` 已成功结束，容器 ID 为
 `82c9bf9dfe02ba334964a856a5b41c652e83ade2af2ffdb4ce6b950fb4acc077`。
@@ -60,17 +62,17 @@ SHA-256 `c4d8f981c3d24ca8c53eb57c629d69cf9e6bb25c4a40c50fc12ca555ef4e25b4`。
 固定上游 [jaxlib_git_hash flag](../../upstream/jax/jaxlib/tools/BUILD.bazel#L129) 默认空；
 [wheel rule](../../upstream/jax/jaxlib/jax.bzl#L618) 说明须显式设置，
 [build_utils](../../upstream/jax/jaxlib/tools/build_utils.py#L125) 只在非空时传递 `JAX_GIT_HASH`。
-因此下一构建使用新的 `kickoff-cpu-source-003` ID，并增加：
+因此构建 003 使用新的 `kickoff-cpu-source-003` ID，并增加：
 
 ```text
 --bazel-option=--//jaxlib/tools:jaxlib_git_hash=5832e866449a41c3eea6333416528039119a0fde
 ```
 
 包装器只允许与锁定 JAX revision 相等的值，拒绝空值、其他 hash、缩写与 dirty 后缀；
-原有无该选项的历史构建仍可验证。自测通过后，先提交输入工具，再按
-`artifacts/jax-stack/source-build-003/launch.json` 复用固定镜像、4 jobs、原 clone 和缓存。
-缓存复用量须以新日志为准，不预先承诺只重做打包。旧 wheel 与 manifest 保留。
-后续安装和验证继续在固定镜像中进行，取得 Git identity 与 native 字节绑定后才验收。
+原有无该选项的历史构建仍可验证。工具自测、提交和推送完成后，003 复用固定镜像、
+4 jobs、原 clone 和缓存。实际日志报告 20,774 个 action cache hit、2 个 process；31 个
+native `.so` 与 002 完全相同，wheel 增加了正确 Git metadata。003 已在同一固定镜像中
+通过安装和运行验收。旧 wheel、manifest 与身份门槛失败记录继续保留。
 
 旧尝试 `kickoff-cpu-source-001` 实测约使用 2 CPU 后，为利用原有容器额度，发送 SIGTERM
 正常停止，再以 4 jobs 创建新尝试。旧 manifest 明确记为 `interrupted`、signal 15；
@@ -87,8 +89,8 @@ revision，成功得到干净隔离树。没有修改或修复原源码，也没
 
 ## 核心归档与实际补丁审计
 
-已独立验证 [build-dependency-results.json](build-dependency-results.json)，原始材料在
-`artifacts/jax-stack/build-dependencies-002`。XLA 声明的三份基础 revision 都与 baseline
+已独立验证 [build-dependency-results.json](build-dependency-results.json)，最新终态材料在
+`artifacts/jax-stack/build-dependencies-003`，构建过程中原记录 002 保留。三份基础 revision 与 baseline
 一致；实际编译输入还包括它的补丁集，不能只记录 pristine Git revision。
 
 | 组件 | 固定基础 revision | XLA 补丁数 | 复放并逐字节核对的目标文件数 |
@@ -101,7 +103,8 @@ revision，成功得到干净隔离树。没有修改或修复原源码，也没
 目录按声明顺序应用补丁，再与 Bazel 实际目录逐字节比较。LLVM configure overlay 的
 代表源码路径也解析到了经补丁的 llvm-raw。原始 checkout、运行中的源码与配置均未改动。
 
-仓库下载缓存快照中 1,085 个 payload、731,484,721 bytes 的 SHA-256 都与 CAS key 一致。
+最新终态缓存快照中 1,093 个 payload、734,532,494 bytes 的 SHA-256 都与 CAS key 一致；
+原 002 快照为 1,085 个 payload、731,484,721 bytes。
 这是已缓存对象快照，可能包含未使用依赖；未逐个重建所有 external 文件，也没有证明
 完整 action 输入闭包或离线可重放。wrapper 仍使用 `--lockfile_mode=off`。
 
@@ -116,7 +119,8 @@ revision，成功得到干净隔离树。没有修改或修复原源码，也没
 清单、复放结果与当前编译目录的一致性。
 
 ```bash
-.venv/bin/python -B research/jax-stack/verify_build_dependencies.py --selftest
+.venv/bin/python -B research/jax-stack/verify_build_dependencies.py \
+  --capture artifacts/jax-stack/build-dependencies-003 --selftest
 ```
 
 验证器另用 6 个反例检查损坏哈希、缺失产物、错误证据层级、错误 pin/归档/补丁目标。
