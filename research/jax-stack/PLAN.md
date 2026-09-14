@@ -28,7 +28,7 @@
 ## 本轮进度与恢复入口
 
 CPU matmul、两种 Pallas 解释路径、host/编译事件和开放源码 Mosaic 标记已有可复查材料；
-完整 kickoff 尚未完成。源码索引扩展至 148 个入口、47 条关系，包括固定 XProf 源码；Pallas/profiling
+完整 kickoff 尚未完成。源码索引扩展至 166 个入口、53 条关系，包括固定 XProf 源码；Pallas/profiling
 Notebook 的 7 个代码单元已真实执行。
 原始 capture 继续留在忽略目录；验证器校验清单、哈希与关键语义。
 
@@ -104,7 +104,11 @@ CPU executable 与运行时分支已进一步取证，见 [cpu-executable-and-tr
 原型环境相等检查因新增映射 _mlirHlo.so 失败；正式采集只允许新增且绑定到源码 wheel 的库，
 原有库/源码/其余环境保持一致。39 个运行、94 个 schema、62 个审计产物已复查，
 19 个反例及 5 个真实 Notebook 单元通过；旧 wheel 的 producer 和 verifier 均实际被拒绝。
-下一步核对原始 XSpace 的 producer/consumer context 字段，验证跨线程关联及 JSON 导出边界；
+原始 XSpace 关联已验证，见 [xspace-contexts.md](xspace-contexts.md)：49 组一对一关联、
+13 组跨线程；新增四个 source-bound CPU 任务，覆盖超大 uint64 ID、逆序完成与异常终点。
+98 个原始事件与 JSON 唯一对应，18 个零 duration 导出为 1 ps；重复 _src 的覆盖顺序已核对。
+17 个新增运行、45 个审计产物、20 个拒绝样本和六个正向边界通过；5 个真实 Notebook 单元通过归档复查。
+派生 flow 不是 XProf 原生预处理或 UI 验收。下一步逐项审计 kickoff 三组交付及 R01–R12；
 TPU 与业务实验继续等待 U01–U03。
 
 [独立环境](runtime-environment.md) 的旧 wheel 复验与新增源码 wheel 复验分别保留，

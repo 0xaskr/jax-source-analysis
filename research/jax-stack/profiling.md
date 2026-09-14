@@ -9,7 +9,7 @@
 
 | 区间 | 插入入口 | 当前证据 | 尚未证明 |
 |---|---|---|---|
-| Host 函数/请求 | `TraceAnnotation`、`StepTraceAnnotation` | 15 个自定义事件，生命周期和时间包含关系通过 | 跨线程起止、任意异步任务关联 |
+| Host 函数/请求 | `TraceAnnotation`、`StepTraceAnnotation` | 15 个历史范围；新增 4 个 source-bound 跨线程任务，逆序完成和异常终点通过 | 任意多 host/进程关联、TPU 设备时长 |
 | 编译 pipeline/pass | C++ `tsl::profiler::TraceMe`，leaf RunHelper 范围 | 自建补丁默认/过滤 127/124 个事件，algsimp 3→0，数值与 warm 对照通过 | TPU 编译路径覆盖与 instrumentation 开销 |
 | Pallas TPU kernel 内部 | kernel 内 `jax.named_scope` → `tpu.trace_start/stop` | 无标记/三组标记对照，真实生产 lowering | libtpu 接受、LLO 保留、TPU 执行与 trace 可见性 |
 | 普通 JAX TPU 运算 | 源码名称信息 + 设备 profiler | 固定源码/API 定位 | 不能据名称 metadata 宣称存在任意设备区间的 start/stop |
@@ -24,7 +24,9 @@
 
 通常直接用 context manager。若要在两个函数中分别起止，可用 `ExitStack` 持有 context，
 在 `finally` 中 `close()`，完整示例见 [profile_events_probe.py](profile_events_probe.py)。
-这次只验证同线程生命周期，没有实现跨线程异步事件 API。
+该历史实验只验证同线程生命周期。新增 [XSpace 关联实验](xspace-contexts.md)
+以两个独立本地范围和内部 context 字段连接跨线程起止，包含逆序完成和异常终点；
+未把活的 TraceAnnotation 传给另一线程，也未定义稳定的公开异步事件 API。
 
 每步拆成 dispatch 和 `block_until_ready()` 等待。Host 外层测量主机所见的过程；
 结束 dispatch 不保证设备完成，profile session 也需要覆盖设备完成点。
@@ -52,9 +54,9 @@
 在循环中创建 `TraceMe(pass->name())`。范围还涉及元数据、检查与 dump，且标记在过滤 gate
 前创建。因此事件存在不等于转换已执行或 IR 有变化，要联查 before/after IR 与 changed 记录。
 
-下一步诊断补丁可在选定编译函数增加 RAII `TraceMe`，或为既有范围加 module/pass/occurrence
-元数据。必须用固定源码构建、加载自建 wheel 后验证标记，再做数值对照和回滚；
-现有 wheel 捕获不能代替这一步。Python `jit` 函数体里的标记随 tracing 执行，
+诊断补丁已经在 leaf RunHelper 增加 RAII `TraceMe` 与身份 metadata；
+固定源码构建、加载、数值对照和回滚均已完成，见 [编译器 Hack](pass-event-acceptance.md)。
+上面的历史 wheel 捕获保留原证据边界。Python `jit` 函数体里的标记随 tracing 执行，
 不代表 executable 每次执行的内部区间。
 
 ## 设备内部：Pallas 名称栈变成 IR 操作
