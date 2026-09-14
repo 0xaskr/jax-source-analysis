@@ -1,8 +1,8 @@
 # 软件栈与入口总览
 
 依据 [kickoff revision 51](https://outline.infiscale-tech.com/doc/research-plan-jax-kickoff-ib5QULKSS4)。
-当前索引有 166 个经过文件指纹和行号核对的入口、53 条带调用位置的关系，见
-[source-index.json](source-index.json)。这是关键入口索引；普通 TPU 的公开执行/完成链尚待补齐。私有 libtpu/LLO、
+当前索引有 198 个经过文件指纹和行号核对的入口、77 条带调用位置的关系，见
+[source-index.json](source-index.json)。这是关键入口索引；[普通 TPU 公开执行/完成链](tpu-runtime-boundary.md) 已补充源码依据。私有 libtpu/LLO、
 实际推理业务和 TPU 执行验收仍未完成，逐项覆盖见 [coverage-review.md](coverage-review.md)。
 
 ## 组件的职责和边界
@@ -77,6 +77,14 @@ jaxlib 的 [`CompileAndLoadIfrtProgram`](../../upstream/jax/jaxlib/py_client.cc#
 在 IFRT 调用和等待 future 的代码范围内释放 GIL。这是固定源码事实；它不能单独
 说明历史挂起案例的触发条件、修复状态或当前 wheel 的线程行为。
 
+## 运行提交与完成
+
+[运行接口导读](tpu-runtime-boundary.md) 分开记录 Python `execute_sharded` 与缓存 C++
+fastpath，它们在 IFRT 汇合，只有 C API provider 分支进入 plugin。取得输出 wrapper、
+output buffer ready 和 execution status ready 是不同观察点。`effects_barrier` 只等待
+当前线程记录的 tokens；PJRT 库调用 TraceMe 不能代替 TPU kernel 事件。
+这些新增结论都是 SOURCE-ONLY，没有加载 libtpu 或新增设备运行。
+
 ## Pallas 的两层表示
 
 ```mermaid
@@ -100,7 +108,7 @@ Mosaic module，再通过 helper 进入 custom call 接口。
 
 ## 本轮可以验证到哪里
 
-- 源码：166 个入口和 53 条调用/分派关系的路径、revision、行号与 SHA-256，含已锁定的 XProf tooling 源码。
+- 源码：198 个入口和 77 条调用/分派关系的路径、revision、行号与 SHA-256，含已锁定的 XProf tooling 源码。
 - CPU：四组 matmul 变换的数值、实际 native HLO dump、部分 MLIR/LLVM 代码生成、
   ELF 目标文件，以及四个序列化 executable 的同进程重新加载。
 - Pallas/profiling：两种解释路径、host 生命周期及统计、现有 wheel 的编译 pass 事件，
@@ -114,7 +122,7 @@ Mosaic module，再通过 helper 进入 custom call 接口。
 - Host 关联：[原始 XSpace](xspace-contexts.md) 的 49 组关联、13 组跨线程通过，包含异常终点；
   这些 host 时间不等于设备 kernel latency。
 - 仍未证明：libtpu 编译与 TPU runtime/LLO、真实业务 fusion/Pallas 注入、split 降低运行峰值、
-  通信 overlap、TPU 设备 trace；普通 TPU 的公开执行链继续补索引。
+  通信 overlap、TPU 设备 trace；Shardy 的 import/export 与 HLO round trip 仍需展开关键接口。
 
 宿主机旧 wheel 和历史 captures 保留 `VERSION-SKEW`。新增源码 003 基线、metadata、
 CPU thunk 与 host context captures 单独绑定成功构建和实际 native 字节；不能只凭事件名称

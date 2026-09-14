@@ -39,6 +39,10 @@
 需要经过时间时取区间并集。每步“剩余范围”是父范围减去**选定**子区间并集，
 不能称作完整 profiler 的 self time。本实验的耗时含观测开销，不是性能基准。
 
+[普通 TPU 公开运行接口](tpu-runtime-boundary.md) 进一步区分了输出 buffer ready、执行
+status 与当前线程 effect tokens；PJRT 库调用使用 type 14 的 linkage context，并不是设备
+kernel start/stop。该部分只有源码证据，不增加上述运行计数。
+
 ## 编译 pass：冷编译与重复执行分别捕获
 
 [compiler_events_probe.py](compiler_events_probe.py) 关闭持久编译缓存，分别标记

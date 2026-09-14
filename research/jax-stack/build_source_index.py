@@ -9,6 +9,8 @@ import json
 from pathlib import Path
 import subprocess
 
+from runtime_chain_index import SITES as RUNTIME_SITES, EDGES as RUNTIME_EDGES, IDS as RUNTIME_IDS
+
 
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
@@ -445,7 +447,9 @@ SITES.extend([
     ('xla.xline-display-id', 'xla', 'XSpace contexts and export', 'xla/tsl/profiler/utils/xplane_visitor.h', '  int64_t DisplayId() const {', 332, 'line display_id / id', '显示资源 ID', 'display_id 非零时优先，否则回退完整 line id；JSON converter 再转为 uint32。'),
 ])
 
-EDGES = [
+SITES.extend(RUNTIME_SITES)
+
+EDGES = RUNTIME_EDGES + [
     ('xla.trace-context-producer', 'xla.trace-new-activity', '                                           : TraceMe::NewActivityId()) {', 'direct', '调用者未提供 context_id 时。'),
     ('xla.trace-new-activity', 'xla.trace-activity-id', '    return TraceMeRecorder::NewActivityId();', 'direct', ''),
     ('xla.profiled-future', 'xla.trace-context-producer', '        tsl::profiler::TraceMeProducer traceme(', 'direct', 'on_block_start 回调。'),
@@ -594,6 +598,9 @@ def main():
         if entry["id"] in {'xprof.flow-arguments', 'xprof.flow-json', 'xla.xline-display-id', 'xla.internal-trace-stat', 'xla.threadpool-record', 'xla.xplane-trace-events', 'xla.profiled-future', 'xla.trace-new-activity', 'xla.context-group-connect', 'xla.context-group-set', 'xla.threadpool-start', 'xla.context-group-stats', 'xla.trace-context-producer', 'xprof.context-preprocess', 'xla.xevent-time', 'xla.context-add-flows', 'xla.trace-context-consumer', 'xla.xstat-wire-format', 'xla.trace-json', 'xla.trace-context-types', 'xla.trace-activity-id'}:
             entry.setdefault("related_experiments", []).extend(["research/jax-stack/xspace-contexts.md", "research/jax-stack/xspace-context-results.json"])
             entry["runtime_boundary"] = "Raw source-built CPU captures are audited separately. XProf preprocessing and viewer rendering are SOURCE-ONLY or unverified here."
+        if entry["id"] in RUNTIME_IDS:
+            entry["related_experiments"] = ["research/jax-stack/tpu-runtime-boundary.md", "research/jax-stack/runtime-chain-results.json"]
+            entry["runtime_boundary"] = "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation."
     index = {
         "schema_version": "1.0", "kickoff_revision": 51,
         "source_roots": {name: {"path": s["path"], "revision": s["git_commit"]} for name, s in sources.items()},
