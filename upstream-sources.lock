@@ -3,12 +3,12 @@
 # Repositories are shallow-cloned, then detached at `ref`. Keep duplicate
 # versions when XLA consumes more than one revision of the same project.
 
-core|upstream/jax|https://github.com/jax-ml/jax.git|5832e866449a41c3eea6333416528039119a0fde|project baseline
-core|upstream/xla|https://github.com/openxla/xla.git|496bd4bd49db9ecbffd85da630b49c860b724604|jax/MODULE.bazel
+core|upstream/jax|https://github.com/jax-ml/jax.git|2d66622450e2c8633cda2307688ef7aa294bd6eb|jax-v0.11.1 release tag
+core|upstream/xla|https://github.com/openxla/xla.git|dcf304bc5dca1932b99f740b911dbd73631a1a69|jax/MODULE.bazel
 core|upstream/stablehlo|https://github.com/openxla/stablehlo.git|7b1b15781ccbd770f50c7eef4b0c3e03834649fd|xla/third_party/stablehlo/workspace.bzl
-core|upstream/shardy|https://github.com/openxla/shardy.git|eb23a98329aa70d991aa2d8a51a209af1f8df8fc|xla/third_party/shardy/workspace.bzl
-core|upstream/llvm-project|https://github.com/llvm/llvm-project.git|ab547095ead5464dc024d66264d9b8a987f429f3|xla/third_party/llvm/workspace.bzl
-core|upstream/triton|https://github.com/triton-lang/triton.git|23689d2aa356d3b8f6869e1867ef0e2576ea52bb|xla/third_party/triton/workspace.bzl
+core|upstream/shardy|https://github.com/openxla/shardy.git|2832731619ffb4bcc718faa4aa8054214a68c969|xla/third_party/shardy/workspace.bzl
+core|upstream/llvm-project|https://github.com/llvm/llvm-project.git|75a45c373407c13a44c7abb28a78d891a97fe665|xla/third_party/llvm/workspace.bzl
+core|upstream/triton|https://github.com/triton-lang/triton.git|96bc7e783a19958182794f477d5f72f9a77d5924|xla/third_party/triton/workspace.bzl
 
 cpu|upstream/cpu/compute-library|https://github.com/ARM-software/ComputeLibrary.git|v52.8.0|xla/third_party/compute_library/workspace.bzl
 cpu|upstream/cpu/kleidiai|https://gitlab.arm.com/kleidi/kleidiai.git|dce86647385ab2638aa5abebcb652f3e4271970d|xla/third_party/kleidiai/workspace.bzl
