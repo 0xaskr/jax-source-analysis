@@ -97,16 +97,18 @@ git -C artifacts/jax-stack/publication-worktree-001 status --short
 
 | 组件 | revision |
 |---|---|
-| JAX | `5832e866449a41c3eea6333416528039119a0fde` |
-| XLA | `496bd4bd49db9ecbffd85da630b49c860b724604` |
+| JAX | `2d66622450e2c8633cda2307688ef7aa294bd6eb`（tag `jax-v0.11.1`） |
+| XLA | `dcf304bc5dca1932b99f740b911dbd73631a1a69` |
 | StableHLO | `7b1b15781ccbd770f50c7eef4b0c3e03834649fd` |
-| Shardy | `eb23a98329aa70d991aa2d8a51a209af1f8df8fc` |
-| LLVM | `ab547095ead5464dc024d66264d9b8a987f429f3` |
+| Shardy | `2832731619ffb4bcc718faa4aa8054214a68c969` |
+| LLVM | `75a45c373407c13a44c7abb28a78d891a97fe665` |
+| Triton | `96bc7e783a19958182794f477d5f72f9a77d5924` |
 | XProf | `68dba1826c37986af41f6119930ec315592a51f6` |
 
-### 4.1 JAX 版本判定（2026-09-15 复核，权威结论）
+### 4.1 JAX 版本判定（2026-09-15 定案：已换到 stable 0.11.1）
 
-**结论：继续使用当前 pinned 的 `5832e866...`。它是可获得的最新 JAX，无需换版本。**
+**结论：用户决定跟踪 stable 最新版，pin 已从 0.11.2 开发快照换成 released tag
+`jax-v0.11.1`。commit `c3a88db`（pin）+ `35dc506`（baseline 刷新）。**
 
 判定依据（全部为当日实测，不是推测）：
 
@@ -115,30 +117,47 @@ git -C artifacts/jax-stack/publication-worktree-001 status --short
 | PyPI `jax` | 最新 stable **0.11.1**（2026-08-17 上传），`0.11.2` **不存在** |
 | PyPI `jaxlib` | 最新 stable **0.11.1**，`0.11.2` **不存在** |
 | GitHub releases | 最新为 `jax-v0.11.1`，published 2026-08-17T20:45:31Z，**无更新 tag** |
-| pinned commit 日期 | **2026-08-30T08:08:43Z**，比 0.11.1 发布**晚 13 天** |
-| pinned 源码声明 | `upstream/jax/jax/version.py:24` → `_version = "0.11.2"` |
-| pinned 自述的兼容 jaxlib | `upstream/jax/setup.py:25` → `_latest_jaxlib_version_on_pypi = '0.11.1'` |
+| 旧 pin `5832e866` | 日期 2026-08-30，比 0.11.1 发布晚 13 天，`version.py` 自述 `0.11.2` |
+| 新 pin `2d666224` | 即 `jax-v0.11.1` tag commit，`version.py` 自述 `0.11.1` |
 
-因此 pinned commit 是 **0.11.2 的开发快照**：版本号已 bump，但 0.11.2 尚未发布。
-它比任何已发布版本都新，正是用户要求"有更新的就用最新"的那个最新版本。
+**旧 pin 其实比 0.11.1 新**（0.11.2 开发快照），但用户明确选择 stable 可对照性优先。
+这次换 pin 在"新鲜度"上是回退、在"稳定与可对照"上是前进，这是刻意的取舍。
 
-**交叉一致性已核对**：pinned JAX 自身声明的 XLA 依赖就是本项目 pin 的 XLA。
-`upstream/jax/MODULE.bazel:35-36` 写的是 `xla-496bd4bd49db9ecbffd85da630b49c860b724604`，
-与 `upstream/xla` 的 HEAD 完全一致。所以 JAX/XLA 这一对无需调整。
+**级联范围（已逐项核实）**：JAX、XLA、Shardy、LLVM、Triton 五个换；
+**StableHLO 不变**，因为新 XLA 声明同一 revision（`7b1b1578`），
+所以第二组索引用到的 StableHLO 结论无需重做。
+
+**换 pin 带来的实质收益**：`tools/sync-environment.py check` 的结论
+从 `VERSION-SKEW` 变为 **`ALIGNED`** —— 因为 0.11.1 与 PyPI 上可下载的 jaxlib 0.11.1
+同版本，editable JAX 检出与已装 jaxlib 的 build revision 现在真正一致。
 
 **必须记录的两个版本陷阱：**
 
-1. **不要写 "JAX 0.11.1" 来描述源码栈。** 那是 PyPI 邻近版本，仅用于 004 的独立设备事件
-   环境。pinned 源码是 0.11.2 快照。源码构建出的 wheel 命名为
-   `jaxlib-0.11.2.dev0+selfbuilt-...`，`0.11.1` 与 `0.11.2` 在文档里必须区分。
-2. **libtpu 不要升到最新的 0.0.47。** PyPI 上 libtpu 最新已是 **0.0.47**，但
-   `upstream/jax/setup.py:27` 钉的是 `_libtpu_version = '0.0.46.*'`，且已发布的
-   0.0.46.1 存在。源码 jaxlib 必须配 **0.0.46.x**，用 0.0.47 会跳过 pinned 声明。
-   这与"用最新"不冲突：libtpu 的版本由 pinned 源码规定，不是自由选择。
+1. **`libtpu` 不要升到最新的 0.0.47。** PyPI 上 libtpu 最新已是 **0.0.47**，但
+   `upstream/jax/setup.py:27` 钉的是 `_libtpu_version = '0.0.46.*'`。源码 jaxlib 必须配
+   **0.0.46.x**。"用最新"不适用于 libtpu：它的版本由 pinned 源码规定，不是自由选择。
+2. **旧产物一律对应旧 pin。** `kickoff-cpu-source-003` wheel、9 份
+   `manifests/build-fingerprints/*.json`、`source-index.json` 里的 revision 与
+   `source_sha256` 都锁在旧 pin 上。构建 `kickoff-tpu-source-001` 已因此在换 pin 时中止。
+   引用这些材料时必须说明它们对应的是 0.11.2 快照时期的源码。
 
 **关于 SGLang 业务栈 0.8.1**：那是 `python/pyproject.toml` 的硬性要求，不是版本选择，
-因此**不升级**。研究源码栈（0.11.2 快照）与业务栈（0.8.1/libtpu 0.0.30）继续分开记录，
-两者都带 `VERSION-SKEW`，只有源码栈能在修复后摆脱它。
+因此**不升级**。研究源码栈（0.11.1）与业务栈（0.8.1/libtpu 0.0.30）继续分开记录，
+业务栈始终带 `VERSION-SKEW`。
+
+### 4.2 换 pin 后必须重做的东西
+
+换 pin 使以下材料失效，不能沿用：
+
+| 材料 | 状态 | 需要的动作 |
+|---|---|---|
+| CPU wheel `kickoff-cpu-source-003` | 锁在旧 pin | 用新 pin 重建 |
+| 9 份 build fingerprint manifest | 输入指纹含旧 revision | 重建后重新生成 |
+| `source-index.json` 的 219 条 | `revision` / `source_sha256` 全部为旧值 | 重新核对生成 |
+| `kickoff-tpu-source-001` 构建 | **已中止**（记录的是旧 pin） | 用新 pin 重启 |
+| `manifests/baseline.json` | 已随 `35dc506` 刷新 | 完成 |
+
+新 pin 的 `.bazelversion` 是 `7.7.1`（旧 pin 不同），构建工具链需重新核对。
 
 本轮起始检查五个 pinned upstream 工作树均干净；交接时再次检查 JAX/XLA 和外部 SGLang 树仍干净。
 

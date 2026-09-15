@@ -14,6 +14,7 @@ import argparse
 import json
 from collections import Counter, defaultdict
 from pathlib import Path
+import subprocess
 
 ROOT = Path(__file__).resolve().parents[2]
 INDEX = ROOT / 'research/jax-stack/source-index.json'
@@ -63,6 +64,29 @@ def main():
     add(f"- schema_version: {data.get('schema_version')}")
     add(f"- 入口总数: **{len(entries)}**，关系总数: **{len(edges)}**")
     add('')
+    # The index records the revisions that were indexed. Compare per root, not as
+    # a set: revisions shared by more than one root (and roots this script does
+    # not re-read, such as xprof) would otherwise hide a genuine pin change.
+    drifted = []
+    for name, root in sorted((data.get('source_roots') or {}).items()):
+        if not isinstance(root, dict):
+            continue
+        rel, indexed = root.get('path'), root.get('revision')
+        try:
+            live = subprocess.run(['git', '-C', str(ROOT / rel), 'rev-parse', 'HEAD'],
+                                  capture_output=True, text=True, check=True).stdout.strip()
+        except Exception:
+            continue
+        if indexed and live and indexed != live:
+            drifted.append((name, rel, indexed, live))
+    if drifted:
+        add('> **注意：本索引记录的是换 pin 之前的源码 revision。**')
+        add('> 工作区已换到 stable 0.11.1（见 [交接文档 4.1](AGENT-HANDOFF-2026-09-15.md)），')
+        add('> 下列组件已不一致，索引的 `revision` 与 `source_sha256` 需针对新 pin 重新核对：')
+        add('>')
+        for name, rel, indexed, live in drifted:
+            add(f'> - `{name}`（`{rel}`）：索引 `{indexed[:12]}` → 现为 `{live[:12]}`')
+        add('')
     add('## 组件覆盖')
     add('')
     add('| 组件 | 入口数 | 关系（出/入） | 职责 |')

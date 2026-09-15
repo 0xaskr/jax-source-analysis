@@ -123,11 +123,14 @@ Notebook 单元通过；旧 native reader 在 IR 解析前被实际拒绝。两�
 
 [独立环境](runtime-environment.md) 的旧 wheel 复验与新增源码 wheel 复验分别保留，
 不改写旧证据。源码基线仍观察到 logical peak 诊断差异，不能据此推导物理内存峰值。
-**JAX 版本判定已复核（2026-09-15）**：PyPI 与 GitHub releases 的最新 JAX 均为 `0.11.1`
-（2026-08-17），`0.11.2` 未发布；pinned commit `5832e866` 日期为 2026-08-30，晚 13 天，
-且 `jax/version.py` 自述 `0.11.2`。故 pinned 源码即当前可获得的最新 JAX，**继续沿用**；
-libtpu 由 pinned `setup.py:27` 规定为 `0.0.46.*`，不采用更新的 0.0.47。完整依据见
-[交接文档 4.1](AGENT-HANDOFF-2026-09-15.md)。
+**JAX 版本判定已定案（2026-09-15）**：PyPI 与 GitHub releases 的最新 stable JAX 均为
+`0.11.1`（2026-08-17），`0.11.2` 未发布。用户决定**跟踪 stable 最新版**，pin 已从
+0.11.2 开发快照 `5832e866` 换成 released tag **`jax-v0.11.1` (`2d66622450e2`)**，
+配套换 XLA/Shardy/LLVM/Triton；**StableHLO 不变**。commit `c3a88db` + `35dc506`。
+换 pin 后 `sync-environment.py check` 的结论由 `VERSION-SKEW` 改善为 **`ALIGNED`**。
+libtpu 仍由 pinned `setup.py:27` 规定为 `0.0.46.*`，不采用更新的 0.0.47。
+**换 pin 使旧 CPU wheel、build fingerprints 与 `source-index.json` 的 revision 全部失效**，
+需重建/重新核对，逐项见 [交接文档 4.2](AGENT-HANDOFF-2026-09-15.md)。
 完整恢复队列、已确认 U01–U04 和选定业务合同 保存在 [status.json](status.json)。
 
 ## 执行次序

@@ -29,7 +29,8 @@ Falcon 沿用现有 v7x 模板：`replica=1, device_count=8, device_topo=2x2x1`�
   原生 max_position_embeddings=40960。本轮长度不依赖额外 RoPE 扩展。
 - `python/pyproject.toml` 固定 `jax[tpu]==0.8.1`；PyPI 元数据要求 `libtpu==0.0.30.*`。
   预检显式安装 JAX/jaxlib 0.8.1、libtpu 0.0.30，采集实际设备、版本和 native SHA-256。
-  这与本研究固定 JAX `5832e866...` / XLA `496bd4bd...` 不一致，全部增加 `VERSION-SKEW`。
+  这与本研究固定源码栈（JAX `2d66622450e2` / XLA `dcf304bc5dca`）不一致，
+  全部增加 `VERSION-SKEW`。
   SGLang 兼容运行栈与源码研究栈分别建环境，不能用前者宣称已加载固定源码补丁。
 
 ## 业务入口与输入
@@ -125,8 +126,8 @@ gather；`cache_loc` host buffer 改为按 `CompilationManager` 定尺寸，并�
 revision 27 指出两个 libtpu 初始化 flags。实际 libtpu 0.0.30 拒绝第一个 flag，错误为
 `Unknown command line flag 'xla_enable_custom_call_region_trace'`。
 因此业务基线保留 0.8.1/0.0.30，内部事件另用 PyPI 上最新的已发布组合
-**jax/jaxlib 0.11.1 + libtpu 0.0.46** 的独立环境（注意：pinned 源码是 0.11.2 快照，
-0.11.2 未发布，详见 [交接文档 4.1](AGENT-HANDOFF-2026-09-15.md)）；
+**jax/jaxlib 0.11.1 + libtpu 0.0.46** 的独立环境（该组合与已换 pin 的研究源码栈同为
+0.11.1，见 [交接文档 4.1](AGENT-HANDOFF-2026-09-15.md)）；
 [设备采集脚本](tpu_device_events_probe.py) 在 fresh process 做默认/开启对照，
 [raw XSpace 验证器](verify_tpu_device_capture.py) 区分 module/op/TraceMe、整型 ps、
 oneof 与 metadata 所属 plane。两套运行都带 VERSION-SKEW；完整设备事件验收等待对照结果。

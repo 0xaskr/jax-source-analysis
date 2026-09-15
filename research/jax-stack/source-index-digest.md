@@ -7,6 +7,15 @@
 - schema_version: 1.0
 - 入口总数: **219**，关系总数: **92**
 
+> **注意：本索引记录的是换 pin 之前的源码 revision。**
+> 工作区已换到 stable 0.11.1（见 [交接文档 4.1](AGENT-HANDOFF-2026-09-15.md)），
+> 下列组件已不一致，索引的 `revision` 与 `source_sha256` 需针对新 pin 重新核对：
+>
+> - `jax`（`upstream/jax`）：索引 `5832e866449a` → 现为 `2d66622450e2`
+> - `llvm`（`upstream/llvm-project`）：索引 `ab547095ead5` → 现为 `75a45c373407`
+> - `shardy`（`upstream/shardy`）：索引 `eb23a98329aa` → 现为 `2832731619ff`
+> - `xla`（`upstream/xla`）：索引 `496bd4bd49db` → 现为 `dcf304bc5dca`
+
 ## 组件覆盖
 
 | 组件 | 入口数 | 关系（出/入） | 职责 |
