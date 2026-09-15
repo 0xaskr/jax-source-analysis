@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "updated_at": "2026-09-15T00:25:34.742777+00:00",
-  "goal_state": "blocked",
+  "updated_at": "2026-09-15T02:51:01.950193+00:00",
+  "goal_state": "in-progress",
   "objective": "按 Outline kickoff revision 51 完成软件栈总览、源码/API 索引和实际推理场景 Hack 实验。",
   "kickoff_source": "research/jax-stack/kickoff-source.json",
   "plan": "research/jax-stack/PLAN.md",
@@ -396,50 +396,37 @@
       "remaining": "host、CPU 编译/thunk 已有运行证据；普通 TPU 公开提交、完成与 type 14 profiler linkage 已补 SOURCE-ONLY。目标 TPU 编译、设备事件/LLO、开销需 U03；XProf native preprocessing/UI 未验收。"
     }
   ],
-  "pending_user_inputs": [
-    {
-      "id": "U01",
-      "question": "实际推理模型、仓库、入口、参考输入与精度标准是什么？",
-      "answered": false
-    },
-    {
-      "id": "U02",
-      "question": "fusion/split 的不修改源码是否同时约束业务模型和 JAX/XLA？",
-      "answered": false
-    },
-    {
-      "id": "U03",
-      "question": "可用 TPU 型号、访问条件、匹配 libtpu 资料和本轮设备验收范围是什么？",
-      "answered": false
-    }
-  ],
+  "pending_user_inputs": [],
   "next_actions": [
     {
-      "id": "business-workload-contract",
-      "ready": false,
-      "depends_on": [
-        "U01",
-        "U02"
-      ],
-      "action": "取得实际模型仓库/入口/输入/精度和允许修改层后，选择 fusion 算子对、Pallas 注入位置与 split 并行维度，完成具体业务实验合同。"
+      "id": "tpu-runtime-followup",
+      "ready": true,
+      "depends_on": [],
+      "action": "Read AGENT-HANDOFF-2026-09-15.md and terminal snapshot for baseline-005. Fix/decouple old-artifact retrieval before any new submission; decide benchmark adapter vs normal serving entry; recover or recapture modern region pair with immediate artifact verification."
     },
     {
-      "id": "tpu-device-profile",
+      "id": "sglang-real-baseline",
       "ready": false,
       "depends_on": [
-        "U03"
+        "tpu-runtime-followup"
       ],
-      "action": "针对指定 TPU/libtpu，执行普通 JAX 与 Pallas 标记对照，检查 LLO、设备 plane/core、计数/嵌套/开销。"
+      "action": "Run fixed Qwen3-8B checkpoint using original SGLang entry, fixed token inputs and baseline acceptance."
     },
     {
       "id": "business-fusion-split",
       "ready": false,
       "depends_on": [
-        "U01",
-        "U02",
-        "U03"
+        "sglang-real-baseline"
       ],
-      "action": "按指定实际推理模型和允许的修改方式完成 fusion/Pallas 注入及 split 验收。"
+      "action": "Inspect actual MLP HLO and memory, inject reversible compiler/lowering fusion and token-axis split, validate numerics and runtime memory."
+    },
+    {
+      "id": "tpu-device-profile",
+      "ready": false,
+      "depends_on": [
+        "tpu-runtime-followup"
+      ],
+      "action": "Audit raw TPU XSpace device events separately from host/compile markers and source-only Mosaic lowering."
     }
   ],
   "validation": {
@@ -526,7 +513,9 @@
     "public_runtime_chain": "32 source roles / 24 edges, 12 reviewed claims / 15 lexical guards, nine rejected scope/branch/reference mutations. SOURCE-ONLY provenance and contract integrity; not independent proof of runtime semantics.",
     "shardy": "65 new artifacts, two source-bound CPU modes, six numerical runs and two [4,12] shards per mode; native MLIR/HLO parsing distinguishes propagation from global-to-local partitioning. Four single-CPU pass pairs rechecked unchanged.",
     "shardy_selftest": "Nine invalid artifact/propagation/shape/rule/collective/stage cases rejected; old wheel native reader actually rejected before stage parsing.",
-    "shardy_notebook": "Five real Jupyter code cells passed; archive hashes, saved native snapshots, NumPy/global/local outputs and nine negatives. No new native parsing or TPU execution by Notebook."
+    "shardy_notebook": "Five real Jupyter code cells passed; archive hashes, saved native snapshots, NumPy/global/local outputs and nine negatives. No new native parsing or TPU execution by Notebook.",
+    "tpu_preflight": "Eight device producer numerical assertions, independent saved Pallas output NumPy check, strict raw XSpace schema parse and 10-event ProfileData count agreement; real model and internal region validation pending.",
+    "handoff_state": "Latest Falcon experiment failed exit 2 and job lease list empty; current manifest must not be blindly resubmitted."
   },
   "completion_claim": "本状态未宣称 kickoff 的任一完整交付组已经验收。",
   "artifact_fingerprints": {
@@ -535,12 +524,12 @@
       "size_bytes": 114
     },
     "PLAN.md": {
-      "sha256": "133febc94c52cbae9f0719b5a9817779b6a37b4246414435578396bc0cbba3e7",
-      "size_bytes": 14363
+      "sha256": "ddc8fe80fc1093718d36f68a2722cc35c25cfe8f39529f9e2115a050e4f04c83",
+      "size_bytes": 14737
     },
     "README.md": {
-      "sha256": "d5f7d106ed5eb5831bb49d1cdd209ed4ba7b22b4030ab78f1b3c66d2a259e852",
-      "size_bytes": 10728
+      "sha256": "f07f54eacb965c8e27b3f0eef7fa18abbc64aa4a7de759b266a2a4bcc4ce29dc",
+      "size_bytes": 11037
     },
     "attributes-and-cost.md": {
       "sha256": "026265fc41df52be91ccdee9d462dcaf36f132b3af4f0bdc69a6a361522052ee",
@@ -615,8 +604,8 @@
       "size_bytes": 7467
     },
     "coverage-review.md": {
-      "sha256": "221e51024d3824843e131637a59615946981dc1e4bc3f2e0ce2b587210d72436",
-      "size_bytes": 6889
+      "sha256": "b65da80918ec68e3cab147e1b2ba2cc62fca67fc181206fee286ada679ff2c65",
+      "size_bytes": 6632
     },
     "cpu-executable-and-trace.md": {
       "sha256": "279e91be7bfbedbb772c56adcb3e580a30d6cc422be447b463cb8b5ff03653cf",
@@ -1001,6 +990,34 @@
     "xspace_contexts.py": {
       "sha256": "2a5413c3bf93a9ba67510742206f290c8cff49cd4d7e0dfc5c961581678647d3",
       "size_bytes": 11917
+    },
+    "sglang-v7-workload.md": {
+      "sha256": "fb9719956144638723b29489815c03e07b75abbb3531faed14a8dea9ed1d5eeb",
+      "size_bytes": 8747
+    },
+    "sglang_v7_preflight.py": {
+      "sha256": "32ba863039d114967ecaa6f9213b9489e988e0fc3c6a14158ba47e9508f3b121",
+      "size_bytes": 6086
+    },
+    "sglang_v7_baseline.py": {
+      "sha256": "4a01d8f0a8506b38d22c33458d7d602804c9aca0eb9a8dd32705c70644cc4359",
+      "size_bytes": 7398
+    },
+    "sglang-v7-preflight-results.json": {
+      "sha256": "62fe251b463f54f1771be4b3d2ba42a6799b8dac5d07cf13e6c18cfad021ec09",
+      "size_bytes": 1433
+    },
+    "tpu_device_events_probe.py": {
+      "sha256": "07fc1fd31ef89f298f781118d2096376c39c168a58ef08d020944cb526e1d1e1",
+      "size_bytes": 3373
+    },
+    "verify_tpu_device_capture.py": {
+      "sha256": "1a14607450b9414711922e256111cda5b808509d6fe1b30978e1b07ae42639b1",
+      "size_bytes": 5879
+    },
+    "AGENT-HANDOFF-2026-09-15.md": {
+      "sha256": "cadc19efacebc0916d484df4fe5e25f20cc43ceff960f0ec2cc5a5e35be5e8cb",
+      "size_bytes": 29509
     }
   },
   "confirmed_user_inputs": [
@@ -1013,6 +1030,22 @@
         "compiler-pass",
         "device-execution"
       ]
+    },
+    {
+      "id": "U01",
+      "answer": "Choose a four-chip TPU v7 workload from sglang-jax.",
+      "resolution": "Agent selected Qwen/Qwen3-8B prefill; inputs and acceptance in sglang-v7-workload.md.",
+      "model_selection_delegated": true
+    },
+    {
+      "id": "U02",
+      "answer": "限制业务模型代码",
+      "resolution": "Preserve business model source; reversible JAX/XLA/compiler/lowering changes allowed."
+    },
+    {
+      "id": "U03",
+      "answer": "TPUV7，4卡，falcon",
+      "resolution": "Single host 2x2x1, four physical chips/eight JAX devices; discover runtime via bounded Falcon preflight."
     }
   ],
   "active_build": {
@@ -1027,7 +1060,7 @@
     "log": "artifacts/builds/kickoff-cpu-pass-events-002/attempts/0001/build.log"
   },
   "publication": {
-    "local_commit": "c31e60b954b8e807fa948902ebdc09ae45952121",
+    "local_commit": "a8e2a90ccff86cf98b56970cbbb9dcfce1ba2971",
     "original_staged_diff_preserved": true,
     "push_attempt": {
       "command": "git push origin main",
@@ -1038,9 +1071,9 @@
     },
     "remaining": "Root worktree retains its local research history and staged cleanup; remote merge integration is performed only in the isolated publication worktree.",
     "state": "pushed",
-    "integration_commit": "ebc6ab9fb9be5e57166383d2a84c3c518e7a728c",
+    "integration_commit": "b28ebb6be1bd7fc4cd8ce809374326998e972bb9",
     "push_result": "normal push origin HEAD:main",
-    "latest_milestone": "shardy-round-trip-source-chain"
+    "latest_milestone": "external-input-blocked-handoff"
   },
   "additional_sources": [
     {
@@ -1439,13 +1472,9 @@
     "deliverable_groups_reviewed": 3,
     "overall_complete": false,
     "ready_public_source_gap": null,
-    "pending_user_inputs": [
-      "U01",
-      "U02",
-      "U03"
-    ],
+    "pending_user_inputs": [],
     "scope": "Artifact and requirement review only; no new CPU/TPU capture.",
-    "remaining_work": "Business contract/fusion/Pallas/split and target TPU compilation/execution/profile/overlap/roofline depend on pending U01-U03. No additional CPU teaching example substitutes for these."
+    "remaining_work": "Inputs resolved; run SGLang compatible v7 baseline, then actual business fusion/split and device/profile acceptance. Source-stack compatibility remains separate."
   },
   "public_runtime_chain": {
     "evidence_level": "SOURCE-ONLY",
@@ -1476,7 +1505,7 @@
       }
     ]
   },
-  "workflow_state": "blocked-on-user-inputs",
+  "workflow_state": "handoff-ready-no-active-task-lease",
   "shardy_audit": {
     "source": "artifacts/jax-stack/shardy-runtime-001",
     "result": "research/jax-stack/shardy-results.json",
@@ -1529,7 +1558,7 @@
       }
     ]
   },
-  "blocked_audit": {
+  "historical_blocked_audit": {
     "consecutive_no_progress_turns": 3,
     "pending_inputs": [
       "U01",
@@ -1538,6 +1567,123 @@
     ],
     "record": "artifacts/jax-stack/input-wait-audit-003/record.json",
     "running_task_containers": 0,
-    "resume": "Use supplied workload/allowed edit scope for U01/U02, and supplied TPU/libtpu/access scope for U03; revalidate matching queue dependencies. Full kickoff objective remains incomplete."
+    "resume": "Use supplied workload/allowed edit scope for U01/U02, and supplied TPU/libtpu/access scope for U03; revalidate matching queue dependencies. Full kickoff objective remains incomplete.",
+    "resolved_by": "User selected SGLang-JAX, TPU v7 four chips via Falcon, business-model-only edit restriction; workload selection delegated."
+  },
+  "business_workload": {
+    "document": "research/jax-stack/sglang-v7-workload.md",
+    "source_revision": "338c6622cfe929223c677e641a97ea62525720b7",
+    "model": "Qwen/Qwen3-8B",
+    "model_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "physical_chips": 4,
+    "jax_devices": 8,
+    "jax": "0.8.1",
+    "libtpu": "0.0.30",
+    "qualifiers": [
+      "VERSION-SKEW"
+    ],
+    "business_model_source_modified": false,
+    "real_checkpoint_executed": false
+  },
+  "active_tpu_preflight": {
+    "state": "accepted-compatibility-only",
+    "exp_id": "exp-mchaxlzr62",
+    "job_id": "job-e44jkjviqk",
+    "capture": "artifacts/jax-stack/sglang-v7-preflight-002",
+    "jax": "0.8.1",
+    "libtpu": "0.0.30",
+    "qualifiers": [
+      "VERSION-SKEW"
+    ],
+    "completed_log_markers": [
+      "EIGHT_DEVICE_MATMUL_OK",
+      "PALLAS_EXECUTION_OK_PROFILE_REQUIRES_AUDIT",
+      "SGLANG_V7_PREFLIGHT_OK"
+    ],
+    "device_events_verified": "5 module and 5 op events on TPU:0; zero internal named regions at default settings",
+    "real_checkpoint": false,
+    "first_attempt": {
+      "exp_id": "exp-rpa9xkpbyu",
+      "state": "failed",
+      "reason": "Probe used Auto mesh instead of SGLang explicit mesh; corrected by calling original create_device_mesh; model source unchanged."
+    },
+    "artifact_retrieval": "Retrieved via bounded Falcon command/log transport; gzip/tar validated; raw protobuf and ProfileData counts agree (10 device events).",
+    "result": "research/jax-stack/sglang-v7-preflight-results.json"
+  },
+  "active_tpu_baseline": {
+    "state": "failed",
+    "exp_id": "exp-uvj2yptpe2",
+    "job_id": "job-pp9r06b00d",
+    "capture": "artifacts/jax-stack/sglang-v7-baseline-005",
+    "manifest": "deploy/falcon/sglang-v7-baseline.yaml",
+    "job_exit_code": 2,
+    "failure": "Pre-model archive of baseline-004: device-events-enabled Cannot stat; old-artifact retrieval must be decoupled from business run.",
+    "lease_state": "No active leases returned for job-pp9r06b00d",
+    "state_checked_at": "2026-09-15T02:44:14.273579+00:00",
+    "real_checkpoint_executed_this_attempt": false,
+    "full_model_baseline_accepted": false,
+    "business_model_source_modified": false,
+    "business_runtime": {
+      "jax": "0.8.1",
+      "libtpu": "0.0.30"
+    },
+    "qualifiers": [
+      "VERSION-SKEW"
+    ]
+  },
+  "tpu_baseline_attempts": [
+    {
+      "attempt": "001",
+      "exp_id": "exp-2cow48lqp1",
+      "state": "failed",
+      "reason": "Pinned bench.load_model omitted required ModelRunner dp_size; fixed in external caller."
+    },
+    {
+      "attempt": "002",
+      "exp_id": "exp-raj548h133",
+      "state": "failed-then-owned-retrieval-window-aborted",
+      "reason": "Benchmark bypassed TpModelWorker cache_loc host buffer initialization; external driver calls existing initializer."
+    },
+    {
+      "attempt": "003",
+      "exp_id": "exp-c1c8fhpjx2",
+      "state": "flag-probe-failed-then-owned-retrieval-window-aborted",
+      "reason": "libtpu 0.0.30 rejects xla_enable_custom_call_region_trace. Actual model stage not reached; modern device probe separated."
+    },
+    {
+      "attempt": "004",
+      "exp_id": "exp-tov960pjtm",
+      "job_id": "job-b2qxvr4cvq",
+      "state": "failed",
+      "reason": "Modern region default/enabled captures logged success; business forward returned three values but old benchmark expected two. Enabled raw profile not retrieved."
+    },
+    {
+      "attempt": "005",
+      "exp_id": "exp-uvj2yptpe2",
+      "job_id": "job-pp9r06b00d",
+      "state": "failed",
+      "reason": "Archive recovery of prior device-events-enabled directory failed before model stage; new three-value caller adapter untested."
+    }
+  ],
+  "device_event_reference": {
+    "url": "https://outline.infiscale-tech.com/doc/xprof-pb-n7E4kJFKlZ",
+    "revision": 27,
+    "snapshot": "artifacts/jax-stack/xprof-pb-reference-001/revision-27.md",
+    "flags": [
+      "xla_enable_custom_call_region_trace",
+      "xla_xprof_register_llo_debug_info"
+    ],
+    "old_runtime_rejection_observed": true,
+    "modern_runtime_verified": false,
+    "modern_runtime_flags_accepted": true,
+    "modern_raw_capture_locally_audited": false,
+    "retrieval_gap": "005 could not stat enabled directory in persisted 004 prefix; cause uninvestigated."
+  },
+  "handoff": {
+    "document": "research/jax-stack/AGENT-HANDOFF-2026-09-15.md",
+    "requested_by_user": true,
+    "latest_remote_snapshot": "artifacts/jax-stack/agent-handoff-20260915",
+    "new_experiments_started_during_handoff": false,
+    "checked_at": "2026-09-15T02:44:14.273579+00:00"
   }
 }

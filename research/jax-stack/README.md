@@ -140,3 +140,7 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/jupyter lab research/jax-stack/matmul-loweri
 本节原始 matmul 执行证据为 `RUN-CPU + VERSION-SKEW`。新增的 typed Pallas interpreter
 另记为 CPU 上的 `SIM-TPU`；生产 Mosaic lowering 也只在 CPU 主机运行，未调用 TPU backend
 编译。`COMPILE-TPU`、`RUN-TPU`、匹配源码构建/加载、实际业务 Hack 等完整验收仍未完成。
+
+当前 TPU 阶段见 [SGLang-JAX 四芯片业务合同](sglang-v7-workload.md)：用户输入已确定，使用 Qwen3-8B 真权重基线推进。
+
+接手本次任务请先读 [2026-09-15 详细交接上下文](AGENT-HANDOFF-2026-09-15.md)，其中记录最新失败、租约、版本边界与接手命令。

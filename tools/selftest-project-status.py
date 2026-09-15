@@ -6,6 +6,7 @@ from __future__ import annotations
 from copy import deepcopy
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -137,7 +138,7 @@ def _expect_invalid(
   print(f"OK: rejected {label}")
 
 
-def main() -> int:
+def _exercise() -> int:
   manifests = ROOT / "manifests"
   with tempfile.TemporaryDirectory(
       prefix=".project-status-selftest-", dir=manifests
@@ -343,6 +344,56 @@ def main() -> int:
 
   print("OK: project-status positive summary plus 20 negative contracts")
   return 0
+
+
+def main() -> int:
+  global ROOT, VALIDATOR
+  repository, validator = ROOT, VALIDATOR
+  with tempfile.TemporaryDirectory(prefix="project-status-selftest-") as name:
+    ROOT = Path(name)
+    VALIDATOR = ROOT / "tools/project-status.py"
+    try:
+      (ROOT / "tools").mkdir()
+      for name in ("project-status.py", "validate-coverage.py"):
+        shutil.copy2(repository / "tools" / name, ROOT / "tools" / name)
+      # Evidence integrity has its own selftest. These fixtures exercise the
+      # real status and coverage contracts without relying on research results.
+      (ROOT / "tools/validate-evidence.py").write_text(
+          "raise SystemExit(0)\n", encoding="utf-8"
+      )
+      shutil.copytree(repository / "manifests/schema", ROOT / "manifests/schema")
+      for document in ("PLAN.md", "README.md"):
+        (ROOT / document).write_text("# Isolated recovery fixture\n", encoding="utf-8")
+      _write(ROOT / "manifests/baseline.json", {})
+
+      def entry(entry_id: str) -> dict[str, Any]:
+        return {
+            "id": entry_id,
+            "title": "Unobserved fixture",
+            "status": "unobserved",
+            "target_depth": "L1",
+            "evidence": {key: [] for key in (
+                "documentation", "topic_refs", "claim_refs", "source_refs",
+                "capture_refs", "probe_refs",
+            )},
+            "depends_on": [],
+            "notes": [],
+            "next_action": "Collect fixture evidence.",
+        }
+
+      _write(ROOT / "manifests/coverage.json", {
+          "$schema": "schema/coverage.schema.json",
+          "schema_version": "1.0",
+          "updated_at": "2026-09-08T10:00:00+08:00",
+          "scope": {key: "Isolated recovery fixture." for key in (
+              "boundary", "coverage_unit", "covered_semantics", "completion_rule",
+          )},
+          "layers": [entry("fixture-layer")],
+          "features": [entry("fixture-feature")],
+      })
+      return _exercise()
+    finally:
+      ROOT, VALIDATOR = repository, validator
 
 
 if __name__ == "__main__":

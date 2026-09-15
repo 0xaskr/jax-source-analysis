@@ -1,0 +1,283 @@
+# Qwen3-8B real checkpoint baseline; four physical v7x chips; 45 minute limit.
+name: jax-source-analysis-sglang-v7-baseline-005
+exp_type: TRAINING
+artifact_type: GCS
+config: '{"purpose":"qwen3-real-baseline","source":"338c6622cfe929223c677e641a97ea62525720b7","physical_chips":4,"jax_devices":8,"VERSION-SKEW":true}'
+cluster_name: tpu-training-antgroup
+priority: 0
+role_to_task_spec:
+  worker:
+    command: |
+      cat > /tmp/sglang_v7_baseline.py <<'PROBE'
+      #!/usr/bin/env python3
+      """Capture real Qwen3 inference using unchanged SGLang benchmark entry functions."""
+
+      import argparse
+      from contextlib import nullcontext
+      from dataclasses import asdict
+      import hashlib
+      import importlib.metadata as metadata
+      import inspect
+      import json
+      from pathlib import Path
+      import time
+
+
+      def save(path, data):
+          path.write_text(json.dumps(data, ensure_ascii=False, indent=2, default=str) + '\n')
+
+
+      def main():
+          import jax
+          import numpy as np
+          from huggingface_hub import snapshot_download
+          from sgl_jax import bench_one_batch as bench
+          from sgl_jax.srt.server_args import ServerArgs
+          from sgl_jax.srt.entrypoints.engine import _set_envs_and_config
+
+          parser = argparse.ArgumentParser()
+          ServerArgs.add_cli_args(parser)
+          parser.add_argument('--research-output', type=Path, required=True)
+          args = parser.parse_args()
+          output = args.research_output
+          output.mkdir(parents=True, exist_ok=False)
+          server_args = ServerArgs.from_cli_args(args)
+          expected_revision = 'b968826d9c46dd6066d109eabc6255188de91218'
+          assert server_args.model_path == 'Qwen/Qwen3-8B' and server_args.revision == expected_revision
+          assert server_args.tp_size == 8 and len(jax.devices()) == 8
+          save(output / 'requested-server-args.json', asdict(server_args))
+          save(output / 'packages.json', sorted((d.metadata['Name'], d.version) for d in metadata.distributions()))
+          snapshot = Path(snapshot_download(server_args.model_path, revision=expected_revision,
+              allow_patterns=['*.json', '*.safetensors', '*.txt', '*.model', '*.jinja']))
+          weights = []
+          for p in sorted(snapshot.iterdir()):
+              if not p.is_file():
+                  continue
+              h = hashlib.sha256()
+              with p.open('rb') as f:
+                  for chunk in iter(lambda: f.read(8 << 20), b''):
+                      h.update(chunk)
+              weights.append({'name': p.name, 'sha256': h.hexdigest(), 'size_bytes': p.stat().st_size})
+          assert any(p['name'].endswith('.safetensors') for p in weights)
+          save(output / 'checkpoint.json', {'revision': expected_revision, 'files': weights})
+          server_args.model_path = str(snapshot)
+          server_args.tokenizer_path = str(snapshot)
+          server_args.cuda_graph_max_bs = 8
+          _set_envs_and_config(server_args)
+          # The pinned bench.load_model omits the now-required dp_size argument.
+          # Use the same constructors with the explicit CLI value; no source patch.
+          mesh = bench.create_device_mesh(ici_parallelism=[1, 8], dcn_parallelism=[1, 1])
+          class BenchModelRunner(bench.ModelRunner):
+              def forward(self, *args, **kwargs):
+                  logits, cache_misses, layers_topk_ids = super().forward(*args, **kwargs)
+                  # Current TpModelWorker consumes the third MoE routing result, while
+                  # this older benchmark expects two values. Dense Qwen has no routes.
+                  assert layers_topk_ids is None
+                  return logits, cache_misses
+
+          model = BenchModelRunner(model_config=bench.ModelConfig.from_server_args(server_args),
+              mem_fraction_static=server_args.mem_fraction_static, tp_size=8,
+              dp_size=server_args.dp_size, server_args=server_args, mesh=mesh)
+          # TpModelWorker normally initializes this buffer after choosing buckets;
+          # the standalone benchmark bypasses that worker. Cover the fixed KV cap.
+          model.req_to_token_pool.init_cache_loc_host_buffer(server_args.max_total_tokens)
+          tokenizer = bench.get_tokenizer(str(snapshot), tokenizer_mode=server_args.tokenizer_mode,
+                                         trust_remote_code=False)
+          from sgl_jax.srt.models import qwen3
+          model_file = Path(inspect.getfile(qwen3))
+          save(output / 'model-source.json', {'module': str(model_file),
+              'sha256': hashlib.sha256(model_file.read_bytes()).hexdigest(), 'modified': False})
+          save(output / 'resolved-server-args.json', asdict(server_args))
+          rng = np.random.default_rng(20260915)
+          text_prompts = [
+              '请用一句话概括：团队完成了编译器测试，随后验证了模型的精度和显存使用情况。摘要：',
+              'Question: Why does water freeze at low temperatures? Answer:',
+              'Calculate 17 + 25. The answer is',
+              'Complete the Python function:\ndef square(x):\n    return',
+          ]
+          cases = [(f'tokens-{n}', rng.integers(100, 10000, size=(1, n)).tolist()) for n in (512, 4096, 8192)]
+          cases.append(('text-regression', [tokenizer.encode(p) for p in text_prompts]))
+          save(output / 'text-prompts.json', text_prompts)
+          results = []
+          for name, inputs in cases:
+              case = output / name
+              case.mkdir()
+              save(case / 'input-ids.json', inputs)
+              previous = None
+              repetitions = []
+              # First invocation includes cold compilation. A separate profile run is
+              # excluded from the unprofiled timings; both save actual token outputs.
+              for rep in range(3):
+                  model.req_to_token_pool.clear()
+                  model.token_to_kv_pool_allocator.clear()
+                  reqs = bench.prepare_synthetic_inputs_for_latency_test(len(inputs), len(inputs[0]), inputs)
+                  for req in reqs:
+                      req.sampling_params.max_new_tokens = 32
+                  profiler = jax.profiler.trace(str(case / 'profile')) if rep == 2 else nullcontext()
+                  timings = []
+                  tokens = [[] for _ in inputs]
+                  with profiler:
+                      for step in range(32):
+                          start = time.perf_counter()
+                          with jax.profiler.StepTraceAnnotation('qwen3_baseline', step_num=step):
+                              if step == 0:
+                                  ids, logits, batch = bench.extend(reqs, model)
+                              else:
+                                  ids, logits = bench.decode(ids_cpu, batch, model)
+                              ids_cpu = np.asarray(ids.block_until_ready())
+                          timings.append(time.perf_counter() - start)
+                          logits_cpu = np.asarray(logits.block_until_ready()).astype(np.float32)
+                          assert np.all(np.isfinite(logits_cpu))
+                          if step == 0:
+                              np.save(case / f'prefill-logits-{rep}.npy', logits_cpu, allow_pickle=False)
+                          for i in range(len(inputs)):
+                              tokens[i].append(int(ids_cpu[i]))
+                  save(case / f'output-ids-{rep}.json', tokens)
+                  if previous is not None:
+                      assert tokens == previous, f'greedy repeatability failed: {name}, {rep}'
+                  previous = tokens
+                  repetitions.append({'rep': rep, 'cold': rep == 0, 'profiled': rep == 2,
+                      'step_seconds': timings, 'device_memory_stats_after': [d.memory_stats() for d in jax.devices()]})
+              save(case / 'runs.json', repetitions)
+              save(case / 'generated-text.json', [tokenizer.decode(t) for t in previous])
+              results.append({'case': name, 'input_lengths': list(map(len, inputs)), 'repeatable': True})
+              save(output / 'progress.json', results)
+              print('QWEN3_CASE_OK', name, flush=True)
+          save(output / 'result.json', {'evidence_level': 'RUN-TPU', 'qualifiers': ['VERSION-SKEW'],
+               'real_checkpoint': True, 'cases': results, 'compiler_modified': False,
+               'fusion_split_accepted': False, 'timing_scope': 'one cold, one warm, one profiled run; not a performance claim'})
+          print('QWEN3_REAL_BASELINE_OK', flush=True)
+
+
+      if __name__ == '__main__':
+          main()
+      PROBE
+      cat > /tmp/tpu_device_events_probe.py <<'REGION_PROBE'
+      #!/usr/bin/env python3
+      """Fresh-process default/enabled libtpu custom-region trace comparison."""
+      import argparse
+      from contextlib import nullcontext
+      import hashlib
+      import importlib.metadata as metadata
+      import json
+      import os
+      from pathlib import Path
+
+
+      def main(output):
+          import jax
+          import jax.numpy as jnp
+          import numpy as np
+          from jax.experimental import pallas as pl
+          from jax.experimental.pallas import tpu as pltpu
+
+          output.mkdir(parents=True, exist_ok=False)
+          rng = np.random.default_rng(20260915)
+          a, b = [(rng.normal(size=(128, 128)) * .02).astype(np.float32) for _ in range(2)]
+          np.savez(output / 'inputs.npz', a=a, b=b)
+          reference = a.astype(np.float64) @ b.astype(np.float64)
+          values = jax.device_put((a, b), jax.devices()[0])
+          rows = []
+          for named in (False, True):
+              case = output / ('named' if named else 'plain')
+              case.mkdir()
+              def scope(name):
+                  return jax.named_scope(name) if named else nullcontext()
+              def kernel(x, w, y):
+                  with scope('research_v7_kernel'):
+                      with scope('research_v7_dot'):
+                          z = jnp.matmul(x[...], w[...], precision=jax.lax.Precision.HIGHEST)
+                      with scope('research_v7_store'):
+                          y[...] = z
+              fn = jax.jit(pl.pallas_call(kernel, name='research_region_matmul',
+                  out_shape=jax.ShapeDtypeStruct((128, 128), jnp.float32), grid=(1,),
+                  in_specs=[pl.BlockSpec((128, 128), lambda i: (0, 0))] * 2,
+                  out_specs=pl.BlockSpec((128, 128), lambda i: (0, 0)),
+                  compiler_params=pltpu.CompilerParams(dimension_semantics=('parallel',))))
+              lowered = fn.lower(*values)
+              (case / 'stablehlo.mlir').write_text(lowered.as_text())
+              executable = lowered.compile()
+              (case / 'optimized-hlo.txt').write_text(executable.as_text())
+              actual = np.asarray(executable(*values).block_until_ready())
+              np.testing.assert_allclose(actual, reference, rtol=2e-5, atol=2e-5)
+              np.save(case / 'output.npy', actual, allow_pickle=False)
+              with jax.profiler.trace(str(case / 'profile')):
+                  for step in range(5):
+                      with jax.profiler.StepTraceAnnotation('research_region_step', step_num=step):
+                          executable(*values).block_until_ready()
+              rows.append({'case': case.name, 'max_abs_error': float(np.max(np.abs(actual-reference)))})
+          (output / 'result.json').write_text(json.dumps({
+              'packages': {n: metadata.version(n) for n in ('jax', 'jaxlib', 'libtpu')},
+              'libtpu_init_args': os.environ.get('LIBTPU_INIT_ARGS', ''),
+              'device': str(jax.devices()[0]), 'evidence_level': 'RUN-TPU',
+              'qualifiers': ['VERSION-SKEW'], 'cases': rows, 'device_regions_verified': False,
+              'loaded_libtpu': [{'path': p, 'sha256': hashlib.sha256(Path(p).read_bytes()).hexdigest()}
+                                for p in sorted({line.split()[-1] for line in Path('/proc/self/maps').read_text().splitlines()
+                                                 if '/libtpu/' in line and line.split()[-1].endswith('.so')})],
+          }, indent=2) + '\n')
+          print('TPU_REGION_CAPTURE_OK', output.name, flush=True)
+
+
+      if __name__ == '__main__':
+          parser = argparse.ArgumentParser()
+          parser.add_argument('--output', type=Path, required=True)
+          args = parser.parse_args()
+          main(args.output)
+      REGION_PROBE
+      cat > /tmp/run-baseline.sh <<'BOOTSTRAP'
+      set -eu
+      ulimit -c 0
+      tar -czf /tmp/preflight-captures.tar.gz -C /root/tops-pallas_kernel/jax-source-analysis sglang-v7-preflight-001 sglang-v7-preflight-002
+      mkdir -p /tmp/jax-v7-baseline
+      trap 'rc=$?; printf "%s\n" "$rc" > /tmp/jax-v7-baseline/exit-code; mkdir -p /root/tops-pallas_kernel/jax-source-analysis/sglang-v7-baseline-005; cp -r /tmp/jax-v7-baseline/. /root/tops-pallas_kernel/jax-source-analysis/sglang-v7-baseline-005/; echo CAPTURE_READY_FOR_RETRIEVAL; sleep 300; exit "$rc"' EXIT
+      python3 -m pip install --no-cache-dir 'uv==0.12.9'
+      python3 - <<'FETCH'
+      import urllib.request, tarfile, hashlib
+      from pathlib import Path
+      url='https://codeload.github.com/sgl-project/sglang-jax/tar.gz/338c6622cfe929223c677e641a97ea62525720b7'
+      a=Path('/tmp/sglang.tar.gz')
+      with urllib.request.urlopen(url, timeout=90) as r: a.write_bytes(r.read())
+      Path('/tmp/jax-v7-baseline/source-archive.sha256').write_text(hashlib.sha256(a.read_bytes()).hexdigest()+'\n')
+      with tarfile.open(a) as t: t.extractall('/tmp/sglang-source', filter='data')
+      FETCH
+      uv pip install --system --no-cache 'jax[tpu]==0.8.1' 'libtpu==0.0.30' /tmp/sglang-source/sglang-jax-338c6622cfe929223c677e641a97ea62525720b7/python
+      python3 - <<'CHECK'
+      import hashlib, inspect
+      from pathlib import Path
+      p=Path('/tmp/sglang-source/sglang-jax-338c6622cfe929223c677e641a97ea62525720b7/python/sgl_jax/srt/models/qwen3.py')
+      assert hashlib.sha256(p.read_bytes()).hexdigest() == '4bf0b5f83c97b7c150170baf825923ca856571a488ee80720bef163583f5661c'
+      CHECK
+      tar -czf /tmp/region-captures.tar.gz -C /root/tops-pallas_kernel/jax-source-analysis/sglang-v7-baseline-004 device-events-default device-events-enabled region-default.exit-code region-enabled.exit-code
+      echo REGION_ARCHIVE_BEGIN
+      base64 --wrap=1000 /tmp/region-captures.tar.gz
+      echo REGION_ARCHIVE_END
+      python3 /tmp/sglang_v7_baseline.py --research-output /tmp/jax-v7-baseline/capture \
+        --model-path Qwen/Qwen3-8B --revision b968826d9c46dd6066d109eabc6255188de91218 \
+        --tp-size 8 --dp-size 1 --device tpu --dtype bfloat16 \
+        --attention-backend fa --page-size 128 --max-running-requests 8 \
+        --max-total-tokens 65536 --max-prefill-tokens 8192 --chunked-prefill-size 8192 \
+        --context-length 32768 --mem-fraction-static 0.4 --disable-radix-cache \
+        --disable-precompile --random-seed 20260915
+      BOOTSTRAP
+      timeout --signal=TERM --kill-after=30s 45m bash /tmp/run-baseline.sh
+    replica: 1
+    image: python:3.12
+    device_count: 8
+    device_type: v7x
+    device_topo: 2x2x1
+    envs:
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+      JAX_PLATFORMS: tpu
+      XLA_FLAGS: "--xla_dump_to=/tmp/jax-v7-baseline/xla --xla_dump_hlo_as_text"
+      HF_HOME: /tmp/huggingface
+      JAX_COMPILATION_CACHE_DIR: /tmp/jax-cache
+      XLA_PYTHON_CLIENT_PREALLOCATE: "false"
+    mounts:
+      - name: tops-pallas-kernel
+        type: gcs
+        bucket: tops-pallas_kernel
+        mount_path: /root/tops-pallas_kernel
+        read_only: false
+        mount_options:
+          - implicit-dirs

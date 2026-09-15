@@ -40,18 +40,17 @@ Hack 的新增验收前提。相同原则适用于未研究的 Eigen/YNN microke
 “已回答直接问题”与“整个跨后端目标已完成”分别记录。所有整体 requirement 仍保持
 partial，R07 为 pending；这不是说已完成的 CPU 子项需要再次无条件重跑。
 
-## 下一步如何推进
+## 当前恢复队列
 
-1. **当前公开接口与 CPU 参考子项已补齐。** 普通 TPU [公开运行接口](tpu-runtime-boundary.md)
-   和 [Shardy 往返/传播/分区](shardy-round-trip.md) 已有对应材料。新增双 CPU 对照取得
-   五个 Shardy 内部保存点、局部 `[4,12]` 输出及 GSPMD 数值对照。不能将更多教学 CPU
-   样例当作指定业务或 TPU 验收；恢复队列转到下列尚未回答的输入。
-2. **需要 U01/U02：业务 Hack 定义。** 确定实际模型仓库/入口、固定输入、精度标准，
-   以及“不修改源码”约束哪些层。选定 fusion 算子对和 split 并行维度后，再写具体 pass
-   改写与 Pallas 注入方案。当前教学图不自动升级为真实业务。
-3. **需要 U03：TPU 编译与执行。** 明确型号、访问方式、libtpu/profiler 版本与验收范围。
-   先验证运行身份和最小普通/Pallas 数值，再检查设备事件/LLO，最后测内存、overlap 和
-   roofline。每种证据单独标记。
+U01–U03 已由用户的新指令解决：SGLang-JAX、TPU v7 四颗芯片、Falcon，限制业务模型源码；
+具体模型/输入/精度标准由研究选择，见 [Qwen3-8B 业务合同](sglang-v7-workload.md)。
+上表保留上次覆盖审计的验收缺口，U01–U03 不再表示等待用户回答。
 
-U01–U03 仍未回答，U04 已确认三类事件全研究；本次复查不擅自代填这些输入。
-源码树和用户原暂存清理改动均保留。恢复队列与下一条命令见 [status.json](status.json)。
+1. 保留已经完成的公开接口与 CPU 参考，继续验证原始 TPU 预检产物。
+2. 运行固定 Qwen3-8B 权重，使用原生 SGLang benchmark 的加载、prefill、decode 路径，
+   保存输入 IDs、logits、greedy 输出及 profile。预检随机权重不计为此项。
+3. 从真实编译图选择 fusion/Pallas 注入和 token 维度 split，验证精度与内存；设备事件
+   从 XSpace 单独审计。SGLang JAX 0.8.1/libtpu 0.0.30 始终带 VERSION-SKEW，
+   不替代本仓库固定源码构建的加载验收。
+
+源码树和用户原暂存清理改动均保留。实验状态与下一条命令见 [status.json](status.json)。

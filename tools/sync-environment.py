@@ -359,15 +359,23 @@ def verify_workspace(lock, uv, *, strict=False):
     if python.resolve() != Path(lock["python"]["path"]):
         raise EnvironmentError("venv must resolve to the locked OS Python path")
     environment = process_environment(uv)
-    for arguments in (
+    checks = [
         [uv, "lock", "--check", "--offline"],
         [python, "-B", "tools/capture-baseline.py", "--verify"],
+        [python, "-B", "labs/001-jit-cpu/probe.py", "--stage", "run"],
+    ]
+    # A source-only workspace has no analysis bundle. Partial bundles still
+    # require both validators so missing evidence cannot silently pass.
+    if any(path.exists() for path in (
+        ROOT / "docs", ROOT / "manifests/status.json", ROOT / "manifests/coverage.json",
+    )):
         # Historical captures retain their original revisions and patches. Live
         # capture matching is a recording-time gate, not an environment restore.
-        [python, "-B", "tools/validate-evidence.py"],
-        [python, "-B", "labs/001-jit-cpu/probe.py", "--stage", "run"],
-        [python, "-B", "tools/project-status.py", "--check"],
-    ):
+        checks.extend([
+            [python, "-B", "tools/validate-evidence.py"],
+            [python, "-B", "tools/project-status.py", "--check"],
+        ])
+    for arguments in checks:
         run(arguments, env=environment)
     if strict:
         run([python, "-B", "tools/check-jaxlib-build-env.py", "--strict"], env=environment)
