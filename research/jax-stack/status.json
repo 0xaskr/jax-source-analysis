@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "updated_at": "2026-09-15T00:19:08.840726+00:00",
-  "goal_state": "active",
+  "updated_at": "2026-09-15T00:25:34.742777+00:00",
+  "goal_state": "blocked",
   "objective": "按 Outline kickoff revision 51 完成软件栈总览、源码/API 索引和实际推理场景 Hack 实验。",
   "kickoff_source": "research/jax-stack/kickoff-source.json",
   "plan": "research/jax-stack/PLAN.md",
@@ -535,8 +535,8 @@
       "size_bytes": 114
     },
     "PLAN.md": {
-      "sha256": "75383baabecc399b28f653089b30c0b95bf7f56ba0c997036c71eae596ec08f3",
-      "size_bytes": 14199
+      "sha256": "133febc94c52cbae9f0719b5a9817779b6a37b4246414435578396bc0cbba3e7",
+      "size_bytes": 14363
     },
     "README.md": {
       "sha256": "d5f7d106ed5eb5831bb49d1cdd209ed4ba7b22b4030ab78f1b3c66d2a259e852",
@@ -1027,7 +1027,7 @@
     "log": "artifacts/builds/kickoff-cpu-pass-events-002/attempts/0001/build.log"
   },
   "publication": {
-    "local_commit": "9c9a8808dde2e4da73760a217a9189a9e0eeb04b",
+    "local_commit": "c31e60b954b8e807fa948902ebdc09ae45952121",
     "original_staged_diff_preserved": true,
     "push_attempt": {
       "command": "git push origin main",
@@ -1038,9 +1038,9 @@
     },
     "remaining": "Root worktree retains its local research history and staged cleanup; remote merge integration is performed only in the isolated publication worktree.",
     "state": "pushed",
-    "integration_commit": "133dd56ba95eaa0b474027d9c74dede25c9a2d2d",
+    "integration_commit": "ebc6ab9fb9be5e57166383d2a84c3c518e7a728c",
     "push_result": "normal push origin HEAD:main",
-    "latest_milestone": "regular-tpu-runtime-source-chain"
+    "latest_milestone": "shardy-round-trip-source-chain"
   },
   "additional_sources": [
     {
@@ -1476,7 +1476,7 @@
       }
     ]
   },
-  "workflow_state": "waiting-for-user-inputs",
+  "workflow_state": "blocked-on-user-inputs",
   "shardy_audit": {
     "source": "artifacts/jax-stack/shardy-runtime-001",
     "result": "research/jax-stack/shardy-results.json",
@@ -1528,5 +1528,16 @@
         "size_bytes": 262
       }
     ]
+  },
+  "blocked_audit": {
+    "consecutive_no_progress_turns": 3,
+    "pending_inputs": [
+      "U01",
+      "U02",
+      "U03"
+    ],
+    "record": "artifacts/jax-stack/input-wait-audit-003/record.json",
+    "running_task_containers": 0,
+    "resume": "Use supplied workload/allowed edit scope for U01/U02, and supplied TPU/libtpu/access scope for U03; revalidate matching queue dependencies. Full kickoff objective remains incomplete."
   }
 }
