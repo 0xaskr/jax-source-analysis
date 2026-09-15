@@ -6,7 +6,8 @@
 - [Kickoff 覆盖复查](coverage-review.md)：三组交付及 R01–R12 的已完成子项、剩余证据和输入依赖。
 - [软件栈与 API 总览](overview.md)：组件、控制链、普通 CPU/TPU 与 Pallas 两层表示。
 - [普通 TPU 运行接口](tpu-runtime-boundary.md)：Python/C++ 两种提交路径、buffer/执行完成与等待，明确 C API 和 libtpu 边界。
-- [源码索引](source-index.json)：198 个入口、77 条带调用位置及分支条件的关系，含锁定的 XProf tooling 源码。
+- [Shardy 往返与分区](shardy-round-trip.md)：两个 CPU 上对照 Shardy/GSPMD，区分传播、全局形状与局部分区；[Notebook](shardy-round-trip.ipynb)。
+- [源码索引](source-index.json)：219 个入口、92 条带调用位置及分支条件的关系，含锁定的 XProf tooling 源码。
 - [Pallas 对照](pallas-comparison.md)：相同输入的普通 JAX、generic 与 TPU interpret。
 - [三类 profiling 区间](profiling.md)：host、编译 pass、设备标记的实验证据与验收边界。
 - [扩展实验结果](extension-results.json)：四组 capture、62 个产物的独立复查。

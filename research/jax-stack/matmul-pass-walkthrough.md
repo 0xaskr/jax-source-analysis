@@ -157,3 +157,9 @@ venv 的 Python。宿主机旧 wheel 不能充当匹配源码的 native reader�
 operand forwarding、layout copy 和最终图。六个反例覆盖错误哈希、漏文件、提升证据等级、
 不相邻 pass、误称全部 dot 已库融合，以及漏记 operand 重接。
 Notebook 另用真实 Jupyter 内核复查归档与数学参考；它没有在旧 wheel 中重跑源码 reader。
+
+## 分片阶段的后续对照
+
+[Shardy 往返与分区](shardy-round-trip.md) 重新核对了本章四组单 CPU 的 `shardy-xla`
+边界相同，并增加两个 CPU 设备的 Shardy/GSPMD 对照。新证据区分中间张量分片传播
+和后续全局→局部形状改写，不将本章的单分区 pass 名称视为传播已发生。

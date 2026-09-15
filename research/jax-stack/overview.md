@@ -1,7 +1,7 @@
 # 软件栈与入口总览
 
 依据 [kickoff revision 51](https://outline.infiscale-tech.com/doc/research-plan-jax-kickoff-ib5QULKSS4)。
-当前索引有 198 个经过文件指纹和行号核对的入口、77 条带调用位置的关系，见
+当前索引有 219 个经过文件指纹和行号核对的入口、92 条带调用位置的关系，见
 [source-index.json](source-index.json)。这是关键入口索引；[普通 TPU 公开执行/完成链](tpu-runtime-boundary.md) 已补充源码依据。私有 libtpu/LLO、
 实际推理业务和 TPU 执行验收仍未完成，逐项覆盖见 [coverage-review.md](coverage-review.md)。
 
@@ -13,7 +13,7 @@
 | JAX MLIR lowering | 根据 Jaxpr、平台、sharding、effects 等上下文创建 MLIR module | [`lower_jaxpr_to_module`](../../upstream/jax/jax/_src/interpreters/mlir.py#L1324)、[`_dot_general_lower`](../../upstream/jax/jax/_src/lax/lax.py#L6264) |
 | jaxlib | Python/native 绑定、client 与 executable 的包装 | [`PyClient::CompileAndLoad`](../../upstream/jax/jaxlib/py_client.cc#L475)；此 revision 的源码位于 JAX 仓库 |
 | StableHLO | 操作、类型和属性的方言定义；本例矩阵收缩以 dot_general 表达 | [`StableHLO_DotGeneralOp`](../../upstream/stablehlo/stablehlo/dialect/StablehloOps.td#L2740) |
-| Shardy | 分片表示以及 import、propagation、export 的 pass 组织 | [`addPropagationPipeline`](../../upstream/shardy/shardy/dialect/sdy/transforms/propagation/propagation_pipeline.cc#L62) |
+| Shardy | 分片表示以及 import、propagation、export 的 pass 组织 | [`addPropagationPipeline`](../../upstream/shardy/shardy/dialect/sdy/transforms/propagation/propagation_pipeline.cc#L62)；[往返、传播与双 CPU 分区对照](shardy-round-trip.md) |
 | XLA | MLIR/HLO 转换，以及后端 HLO 优化、调度、buffer assignment 和代码生成 | [`MlirToXlaComputation`](../../upstream/xla/xla/pjrt/mlir_to_hlo.cc#L99)、[`CpuCompiler`](../../upstream/xla/xla/service/cpu/cpu_compiler.cc#L1188) |
 | IFRT/PJRT | 编译、设备和 executable 接口；在具体 provider 上完成 compile/load 等操作 | [`PjRtCompiler`](../../upstream/xla/xla/python/pjrt_ifrt/pjrt_compiler.cc#L91)、[`PjRtLoadedExecutable::Create`](../../upstream/xla/xla/python/pjrt_ifrt/pjrt_executable.cc#L744) |
 | LLVM/MLIR | CPU 编译器使用 MLIRContext、LLVMContext、LLVM Module 和目标代码生成设施 | [`CompileCpuExecutable`](../../upstream/xla/xla/service/cpu/cpu_compiler.cc#L1727)；[LLVM/MC/ORC 导读](llvm-and-objects.md) 已关联四个内部入口和三个实际对象 |
@@ -108,7 +108,7 @@ Mosaic module，再通过 helper 进入 custom call 接口。
 
 ## 本轮可以验证到哪里
 
-- 源码：198 个入口和 77 条调用/分派关系的路径、revision、行号与 SHA-256，含已锁定的 XProf tooling 源码。
+- 源码：219 个入口和 92 条调用/分派关系的路径、revision、行号与 SHA-256，含已锁定的 XProf tooling 源码。
 - CPU：四组 matmul 变换的数值、实际 native HLO dump、部分 MLIR/LLVM 代码生成、
   ELF 目标文件，以及四个序列化 executable 的同进程重新加载。
 - Pallas/profiling：两种解释路径、host 生命周期及统计、现有 wheel 的编译 pass 事件，
@@ -122,7 +122,8 @@ Mosaic module，再通过 helper 进入 custom call 接口。
 - Host 关联：[原始 XSpace](xspace-contexts.md) 的 49 组关联、13 组跨线程通过，包含异常终点；
   这些 host 时间不等于设备 kernel latency。
 - 仍未证明：libtpu 编译与 TPU runtime/LLO、真实业务 fusion/Pallas 注入、split 降低运行峰值、
-  通信 overlap、TPU 设备 trace；Shardy 的 import/export 与 HLO round trip 仍需展开关键接口。
+  通信 overlap、TPU 设备 trace。Shardy 的 [往返/传播/分区](shardy-round-trip.md) 已有双 CPU 对照；
+  mixed-IR fallback、V3 和 tuple/alias 恢复仍只按源码边界解释。
 
 宿主机旧 wheel 和历史 captures 保留 `VERSION-SKEW`。新增源码 003 基线、metadata、
 CPU thunk 与 host context captures 单独绑定成功构建和实际 native 字节；不能只凭事件名称
