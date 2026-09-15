@@ -58,8 +58,8 @@ GIT_FIXED_OPTIONS = (
 )
 
 EXPECTED_SOURCE_COMMITS = {
-    "jax": "5832e866449a41c3eea6333416528039119a0fde",
-    "xla": "496bd4bd49db9ecbffd85da630b49c860b724604",
+    "jax": "2d66622450e2c8633cda2307688ef7aa294bd6eb",
+    "xla": "dcf304bc5dca1932b99f740b911dbd73631a1a69",
 }
 SOURCE_PATHS = {
     "jax": ROOT / "upstream/jax",

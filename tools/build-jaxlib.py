@@ -44,8 +44,8 @@ GIT_PATH = Path("/usr/bin/git")
 EXPECTED_GIT_VERSION = "git version 2.43.0"
 EXPECTED_GIT_SHA256 = "2a8c18fbf43da9f692d75474c72bea9dfd796c260b0f3dfe456376abc3bbd668"
 EXPECTED_SOURCE_COMMITS = {
-    "jax": "5832e866449a41c3eea6333416528039119a0fde",
-    "xla": "496bd4bd49db9ecbffd85da630b49c860b724604",
+    "jax": "2d66622450e2c8633cda2307688ef7aa294bd6eb",
+    "xla": "dcf304bc5dca1932b99f740b911dbd73631a1a69",
 }
 EXPECTED_TOOL_PATHS = {
     "bazel": JAX_ROOT / "bazel-8.7.0-linux-x86_64",
