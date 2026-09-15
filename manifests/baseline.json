@@ -24,39 +24,39 @@
         "size_bytes": 481
       },
       "upstream-sources.lock": {
-        "sha256": "eb7a7a5fbb7eb7a3c10753b2519add1244fc64ce41a0fe0165788c2635938555",
-        "size_bytes": 14333
+        "sha256": "66f96578a170de578fd6dd03e85979f321d4cb2f3e7c2d1be810ea6938f705ed",
+        "size_bytes": 14340
       },
       "upstream/jax/.bazelversion": {
-        "sha256": "331890b9bae605c036309f3f56e1cfca916aff3dfd61aebe50370d4bfa125c78",
+        "sha256": "2080871d1a0d5cc3d3a304acff946cb083f90a6cae0b8291fe399b1d4fd83369",
         "size_bytes": 6
       },
       "uv.lock": {
-        "sha256": "401301d83658e42bf7b5431fed3ae1599422f5d1abe3ca56051c7de1904d426b",
+        "sha256": "3f66f573c5603aeeaa182175ae0e531d0672c70e616bc009fd9565a8a0deaa63",
         "size_bytes": 150179
       }
     },
     "root": {
-      "git_commit": "c8526fc89a4263f02291ee51705d5370a7780c2f",
+      "git_commit": "7417c034a29015031fa7fc38f7ed663860a4f964",
       "path": ".",
       "verification": "ancestor"
     },
     "sources": {
       "jax": {
         "dirty": false,
-        "git_commit": "5832e866449a41c3eea6333416528039119a0fde",
+        "git_commit": "2d66622450e2c8633cda2307688ef7aa294bd6eb",
         "path": "upstream/jax",
         "status": []
       },
       "llvm": {
         "dirty": false,
-        "git_commit": "ab547095ead5464dc024d66264d9b8a987f429f3",
+        "git_commit": "75a45c373407c13a44c7abb28a78d891a97fe665",
         "path": "upstream/llvm-project",
         "status": []
       },
       "shardy": {
         "dirty": false,
-        "git_commit": "eb23a98329aa70d991aa2d8a51a209af1f8df8fc",
+        "git_commit": "2832731619ffb4bcc718faa4aa8054214a68c969",
         "path": "upstream/shardy",
         "status": []
       },
@@ -68,7 +68,7 @@
       },
       "xla": {
         "dirty": false,
-        "git_commit": "496bd4bd49db9ecbffd85da630b49c860b724604",
+        "git_commit": "dcf304bc5dca1932b99f740b911dbd73631a1a69",
         "path": "upstream/xla",
         "status": []
       }
@@ -92,8 +92,8 @@
       "imported_file_sha256": "e97031df0826c1ed1399652872281209a5c8d1d64302da6cf8ce158c0bb51f66",
       "install_type": "editable-source",
       "reported_git_hash": null,
-      "source_checkout_git_hash": "5832e866449a41c3eea6333416528039119a0fde",
-      "version": "0.11.2.dev20260830+5832e86644"
+      "source_checkout_git_hash": "2d66622450e2c8633cda2307688ef7aa294bd6eb",
+      "version": "0.11.1.dev20260818+2d66622450"
     },
     "jaxlib": {
       "build_revision": "2d66622450e2c8633cda2307688ef7aa294bd6eb",
@@ -241,12 +241,10 @@
   "schema_version": "1.0",
   "status": {
     "evidence_level": "RUN-CPU",
-    "jax_source_matches_jaxlib_build": false,
-    "qualifiers": [
-      "VERSION-SKEW"
-    ],
-    "reason": "The imported JAX checkout or jaxlib build revision is not aligned; native runtime observations are version-skewed.",
-    "runtime_source_alignment": "VERSION-SKEW"
+    "jax_source_matches_jaxlib_build": true,
+    "qualifiers": [],
+    "reason": "The imported editable JAX checkout and jaxlib build revision are aligned.",
+    "runtime_source_alignment": "ALIGNED"
   },
   "toolchain": {
     "python": {
