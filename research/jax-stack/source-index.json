@@ -440,9 +440,17 @@
       "outputs": "XlaComputation/HLO",
       "constraint": "先处理 CHLO、常量作用域及分片等转换，再导出；不是只更换文本格式。",
       "evidence_level": "SOURCE-ONLY",
-      "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
       "callers": [],
-      "callees": []
+      "callees": [
+        "xla.gspmd-detection",
+        "xla.sdy-export-for-gspmd",
+        "xla.sdy-roundtrip-export"
+      ],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
     },
     {
       "id": "xla.stablehlo-export",
@@ -799,9 +807,18 @@
       "outputs": "包含 import/propagation/export 的 pass pipeline",
       "constraint": "本次单 CPU 只观测到空 mesh/分片表示；未执行多设备传播验收。",
       "evidence_level": "SOURCE-ONLY",
-      "runtime_boundary": "CPU captures with VERSION-SKEW do not prove execution of the indexed native source.",
-      "callers": [],
-      "callees": []
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [
+        "xla.shardy-propagate"
+      ],
+      "callees": [
+        "shardy.export-pipeline",
+        "shardy.import-pipeline"
+      ],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
     },
     {
       "id": "jax.profile-events",
@@ -4599,9 +4616,703 @@
         "research/jax-stack/tpu-runtime-boundary.md",
         "research/jax-stack/runtime-chain-results.json"
       ]
+    },
+    {
+      "id": "jax.sharding-representation",
+      "component": "jax",
+      "layer": "Shardy round trip and partitioning",
+      "symbol": "_to_physical_op_sharding",
+      "revision": "5832e866449a41c3eea6333416528039119a0fde",
+      "path": "upstream/jax/jax/_src/interpreters/mlir.py",
+      "line": 1203,
+      "end_line": 1224,
+      "anchor": "def _to_physical_op_sharding(",
+      "source_url": "https://github.com/jax-ml/jax/blob/5832e866449a41c3eea6333416528039119a0fde/jax/_src/interpreters/mlir.py#L1203",
+      "source_sha256": "e45f2c880bc3598c1c379d0e2082989c7991bc217b9efe9dc3de14a6911dac5b",
+      "inputs": "aval、sharding 与 axis context",
+      "outputs": "SdyArray 或 OpSharding",
+      "constraint": "配置决定前端 sharding 表示；extended dtype/manual axes 先处理。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
+    },
+    {
+      "id": "jax.compile-partitioner",
+      "component": "jax",
+      "layer": "Shardy round trip and partitioning",
+      "symbol": "get_compile_options",
+      "revision": "5832e866449a41c3eea6333416528039119a0fde",
+      "path": "upstream/jax/jax/_src/compiler.py",
+      "line": 180,
+      "end_line": 331,
+      "anchor": "def get_compile_options(",
+      "source_url": "https://github.com/jax-ml/jax/blob/5832e866449a41c3eea6333416528039119a0fde/jax/_src/compiler.py#L180",
+      "source_sha256": "2c6011177b799d30267457bc42bb9af3ddb432df608bf7474cc5cb495b8d5cb8",
+      "inputs": "replicas/partitions、device assignment、配置",
+      "outputs": "CompileOptions",
+      "constraint": "use_spmd_partitioning=True；use_shardy_partitioner 来自 JAX 配置，不代表传播一定发生。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
+    },
+    {
+      "id": "xla.cpu-spmd-gate",
+      "component": "xla",
+      "layer": "Shardy round trip and partitioning",
+      "symbol": "CpuCompiler::RunHloPassesThroughLayoutAssn",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/service/cpu/cpu_compiler.cc",
+      "line": 596,
+      "end_line": null,
+      "anchor": "absl::Status CpuCompiler::RunHloPassesThroughLayoutAssn(",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/service/cpu/cpu_compiler.cc#L596",
+      "source_sha256": "06782328a196d069d41337d923a3af4009d1cd7ae1b3b314e602cb89aedfdf7d",
+      "inputs": "HLO config 与 CPU options",
+      "outputs": "分片传播/分区或单分区清理",
+      "constraint": "num_partitions>1 时传播再 StatefulRngSpmdPartitioner；单分区构造 ShardyXLA(false)。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [],
+      "callees": [
+        "xla.shardy-pass"
+      ],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
+    },
+    {
+      "id": "xla.gspmd-detection",
+      "component": "xla",
+      "layer": "Shardy round trip and partitioning",
+      "symbol": "hasGspmdAttrsOrOps",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/service/spmd/shardy/utils.cc",
+      "line": 360,
+      "end_line": null,
+      "anchor": "bool hasGspmdAttrsOrOps(mlir::ModuleOp module) {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/service/spmd/shardy/utils.cc#L360",
+      "source_sha256": "806321f63f19b6cccd702488f924c39eafe0cbd4c0b250f5ea43995c0c402236",
+      "inputs": "可能混有旧式 sharding 的 module",
+      "outputs": "是否触发 GSPMD 兼容判断",
+      "constraint": "非 main 参数、func results 和 Sharding custom calls 等有具体条件；不以任意 mhlo.sharding 存在就回退。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [
+        "xla.mlir-to-hlo"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
+    },
+    {
+      "id": "xla.sdy-export-for-gspmd",
+      "component": "xla",
+      "layer": "Shardy round trip and partitioning",
+      "symbol": "ExportShardyForGSPMD",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/pjrt/mlir_to_hlo.cc",
+      "line": 234,
+      "end_line": null,
+      "anchor": "absl::Status ExportShardyForGSPMD(mlir::ModuleOp module) {",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/pjrt/mlir_to_hlo.cc#L234",
+      "source_sha256": "f9c837896dead0c9628312441cdcaf27313c57ec42a6c9fd58bf0b7bb6b91a16",
+      "inputs": "含 Shardy mesh 的 module",
+      "outputs": "保留约束的 StableHLO",
+      "constraint": "无 mesh 提前返回；用于 GSPMD 兼容，区别于保存 SDY 信息的 round-trip export。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [
+        "xla.mlir-to-hlo"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
+    },
+    {
+      "id": "xla.sdy-roundtrip-export",
+      "component": "xla",
+      "layer": "Shardy round trip and partitioning",
+      "symbol": "addSdyRoundTripExportPipeline",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/service/spmd/shardy/sdy_round_trip/pipelines.cc",
+      "line": 52,
+      "end_line": null,
+      "anchor": "void addSdyRoundTripExportPipeline(mlir::OpPassManager& pm,",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/service/spmd/shardy/sdy_round_trip/pipelines.cc#L52",
+      "source_sha256": "87ec8e37f56e25d9fafd8cb6e47dbf92084ba41c0bf02516cb68b49636cca536",
+      "inputs": "SDY/StableHLO、mesh/V3 选项",
+      "outputs": "可转 HLO 且保存 SDY 信息的 pipeline",
+      "constraint": "lift/dedup、ops、shard_map、attrs 和 StableHLO shardings 各有步骤。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [
+        "xla.mlir-to-hlo"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
+    },
+    {
+      "id": "xla.sdy-roundtrip-import",
+      "component": "xla",
+      "layer": "Shardy round trip and partitioning",
+      "symbol": "addSdyRoundTripImportPipeline",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/service/spmd/shardy/sdy_round_trip/pipelines.cc",
+      "line": 72,
+      "end_line": null,
+      "anchor": "void addSdyRoundTripImportPipeline(mlir::OpPassManager& pm,",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/service/spmd/shardy/sdy_round_trip/pipelines.cc#L72",
+      "source_sha256": "87ec8e37f56e25d9fafd8cb6e47dbf92084ba41c0bf02516cb68b49636cca536",
+      "inputs": "HLO 导回的 StableHLO 与隐藏属性",
+      "outputs": "恢复 SDY 的 pipeline",
+      "constraint": "常量转为 sdy.constant 防止后续折叠；恢复 mesh、attrs、custom calls、shard_map。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [
+        "xla.shardy-propagate"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
+    },
+    {
+      "id": "xla.sdy-attrs-export",
+      "component": "xla",
+      "layer": "Shardy round trip and partitioning",
+      "symbol": "SdyRoundTripExportShardyAttrsPass",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/service/spmd/shardy/sdy_round_trip/export_shardy_attrs.cc",
+      "line": 150,
+      "end_line": null,
+      "anchor": "class SdyRoundTripExportShardyAttrsPass",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/service/spmd/shardy/sdy_round_trip/export_shardy_attrs.cc#L150",
+      "source_sha256": "63b720809634eb76d02dd1d33ec694a24a4578110204429590d44fa2e4aa864e",
+      "inputs": "SDY sharding/rules/meshes",
+      "outputs": "隐藏 frontend attrs 或 V3 表示",
+      "constraint": "V3 开启时 frontend attrs 只存 rules；本轮 CPU 样本观察到非 V3 的 xla.sdy.meshes/sharding。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
+    },
+    {
+      "id": "xla.sdy-attrs-import",
+      "component": "xla",
+      "layer": "Shardy round trip and partitioning",
+      "symbol": "SdyRoundTripImportShardyAttrsPass",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/service/spmd/shardy/sdy_round_trip/import_shardy_attrs.cc",
+      "line": 575,
+      "end_line": null,
+      "anchor": "class SdyRoundTripImportShardyAttrsPass",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/service/spmd/shardy/sdy_round_trip/import_shardy_attrs.cc#L575",
+      "source_sha256": "9bde2b5b86074ffcacd7ec4adea3c078f182801b43861b7f8129cb966011bb28",
+      "inputs": "隐藏 attrs 与 V3 开关",
+      "outputs": "恢复 mesh/tuple shardings 与 op attributes",
+      "constraint": "恢复后的表示不能据函数名认为图或全部 HLO metadata 字节不变。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
+    },
+    {
+      "id": "xla.shardy-pass",
+      "component": "xla",
+      "layer": "Shardy round trip and partitioning",
+      "symbol": "ShardyXLA::RunImpl",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/service/spmd/shardy/shardy_xla_pass.cc",
+      "line": 470,
+      "end_line": null,
+      "anchor": "absl::StatusOr<bool> ShardyXLA::RunImpl(",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/service/spmd/shardy/shardy_xla_pass.cc#L470",
+      "source_sha256": "dbd06c6eee89bae8dfba7c0f1c30501108ba9aecbd736e7050d2ff775e36f9ad",
+      "inputs": "HloModule、propagation 选项",
+      "outputs": "替换 computation 后的 HLO",
+      "constraint": "可提前返回；执行往返时保存/恢复 entry layout、alias、donor config。非完整模块直接替换。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [
+        "xla.cpu-spmd-gate"
+      ],
+      "callees": [
+        "xla.shardy-propagate",
+        "xla.shardy-replace-computations"
+      ],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
+    },
+    {
+      "id": "xla.shardy-propagate",
+      "component": "xla",
+      "layer": "Shardy round trip and partitioning",
+      "symbol": "runShardingPropagation",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/service/spmd/shardy/shardy_xla_pass.cc",
+      "line": 318,
+      "end_line": null,
+      "anchor": "absl::Status runShardingPropagation(HloModule* hloModule,",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/service/spmd/shardy/shardy_xla_pass.cc#L318",
+      "source_sha256": "dbd06c6eee89bae8dfba7c0f1c30501108ba9aecbd736e7050d2ff775e36f9ad",
+      "inputs": "从 HLO 导入的 MLIR 与 options",
+      "outputs": "SDY import/propagation/export 结果",
+      "constraint": "production 使用 SDY round-trip import；importMhloShardings 分支仅测试。V3 与旧 frontend payload 有独立 fallback。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [
+        "xla.shardy-pass"
+      ],
+      "callees": [
+        "shardy.propagation",
+        "xla.sdy-final-export",
+        "xla.sdy-roundtrip-import",
+        "xla.shardy-dump-gate"
+      ],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
+    },
+    {
+      "id": "xla.shardy-replace-computations",
+      "component": "xla",
+      "layer": "Shardy round trip and partitioning",
+      "symbol": "createFromProtoAndReplaceComputations",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/service/spmd/shardy/shardy_xla_pass.cc",
+      "line": 97,
+      "end_line": null,
+      "anchor": "absl::Status createFromProtoAndReplaceComputations(",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/service/spmd/shardy/shardy_xla_pass.cc#L97",
+      "source_sha256": "dbd06c6eee89bae8dfba7c0f1c30501108ba9aecbd736e7050d2ff775e36f9ad",
+      "inputs": "转换后的 HloModuleProto 与原 HloModule",
+      "outputs": "重建/替换 computations 并 DCE",
+      "constraint": "名称/ID 可重新分配；不能用逐字文本相等作为往返语义保留的唯一判断。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [
+        "xla.shardy-pass"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
+    },
+    {
+      "id": "xla.shardy-dump-gate",
+      "component": "xla",
+      "layer": "Shardy round trip and partitioning",
+      "symbol": "getShardyDirIfShouldDump",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/service/spmd/shardy/shardy_xla_pass.cc",
+      "line": 304,
+      "end_line": null,
+      "anchor": "std::string getShardyDirIfShouldDump(const DebugOptions& debugOptions,",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/service/spmd/shardy/shardy_xla_pass.cc#L304",
+      "source_sha256": "dbd06c6eee89bae8dfba7c0f1c30501108ba9aecbd736e7050d2ff775e36f9ad",
+      "inputs": "dump 目录、pass regex、verbose",
+      "outputs": "Shardy dump 根目录或空串",
+      "constraint": "需 xla_dump_to 与匹配 pass；详细 Shardy 文件由内部保存点产生，不等于所有 pass 逐项 dump。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [
+        "xla.shardy-propagate"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
+    },
+    {
+      "id": "xla.sdy-final-export",
+      "component": "xla",
+      "layer": "Shardy round trip and partitioning",
+      "symbol": "addStablehloExportPipeline",
+      "revision": "496bd4bd49db9ecbffd85da630b49c860b724604",
+      "path": "upstream/xla/xla/service/spmd/shardy/stablehlo_round_trip/stablehlo_export.cc",
+      "line": 31,
+      "end_line": null,
+      "anchor": "void addStablehloExportPipeline(mlir::OpPassManager& pm,",
+      "source_url": "https://github.com/openxla/xla/blob/496bd4bd49db9ecbffd85da630b49c860b724604/xla/service/spmd/shardy/stablehlo_round_trip/stablehlo_export.cc#L31",
+      "source_sha256": "41a9f9be6686fe963581fc6a2c4c918c9a4501e686334d28beca3444f37cb9ee",
+      "inputs": "传播后 SDY module 和 export options",
+      "outputs": "可供后续 HLO/SPMD 的 StableHLO",
+      "constraint": "sdy.constant→stablehlo.constant、ops、shard_map、shardings、callbacks；不是最初保存 round-trip 信息的 export。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [
+        "xla.shardy-propagate"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
+    },
+    {
+      "id": "shardy.import-pipeline",
+      "component": "shardy",
+      "layer": "Shardy round trip and partitioning",
+      "symbol": "addImportPipeline",
+      "revision": "eb23a98329aa70d991aa2d8a51a209af1f8df8fc",
+      "path": "upstream/shardy/shardy/dialect/sdy/transforms/import/import_pipeline.cc",
+      "line": 30,
+      "end_line": null,
+      "anchor": "void addImportPipeline(OpPassManager& pm, int& dumpIndex,",
+      "source_url": "https://github.com/openxla/shardy/blob/eb23a98329aa70d991aa2d8a51a209af1f8df8fc/shardy/dialect/sdy/transforms/import/import_pipeline.cc#L30",
+      "source_sha256": "44cea8807c5ffa2b02d0fe86f0f7cdff6dd5ead49d88b6e6c46a67d20f42ba41",
+      "inputs": "SDY module 与 propagation options",
+      "outputs": "清理、dataflow edges 与 constraints",
+      "constraint": "before_propagation dump 在部分清理之后，不等于最初输入 module。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [
+        "shardy.propagation"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
+    },
+    {
+      "id": "shardy.user-priority",
+      "component": "shardy",
+      "layer": "Shardy round trip and partitioning",
+      "symbol": "UserPriorityPropagationPassImpl::propagate",
+      "revision": "eb23a98329aa70d991aa2d8a51a209af1f8df8fc",
+      "path": "upstream/shardy/shardy/dialect/sdy/transforms/propagation/user_priority_propagation.cc",
+      "line": 231,
+      "end_line": null,
+      "anchor": "LogicalResult UserPriorityPropagationPassImpl::propagate(",
+      "source_url": "https://github.com/openxla/shardy/blob/eb23a98329aa70d991aa2d8a51a209af1f8df8fc/shardy/dialect/sdy/transforms/propagation/user_priority_propagation.cc#L231",
+      "source_sha256": "5cc8f86fb0f40222b8b8decf5727b0e3fbddafaeeef4d659fdc1d5895d877078",
+      "inputs": "sharding references 与用户优先级",
+      "outputs": "按优先级运行传播",
+      "constraint": "先 priority 0 再逐个用户优先级；本轮未添加不同用户优先级实验。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [],
+      "callees": [
+        "shardy.op-priority"
+      ],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
+    },
+    {
+      "id": "shardy.op-priority",
+      "component": "shardy",
+      "layer": "Shardy round trip and partitioning",
+      "symbol": "OpPriorityPropagationPassImpl::propagate",
+      "revision": "eb23a98329aa70d991aa2d8a51a209af1f8df8fc",
+      "path": "upstream/shardy/shardy/dialect/sdy/transforms/propagation/op_priority_propagation.cc",
+      "line": 178,
+      "end_line": null,
+      "anchor": "LogicalResult OpPriorityPropagationPassImpl::propagate(",
+      "source_url": "https://github.com/openxla/shardy/blob/eb23a98329aa70d991aa2d8a51a209af1f8df8fc/shardy/dialect/sdy/transforms/propagation/op_priority_propagation.cc#L178",
+      "source_sha256": "ab0393223255dc7b252c5e10d5fa00e952c5d71f99981d9713b4a64bd7d09765",
+      "inputs": "module 与方向规则",
+      "outputs": "按 op schedule 的传播",
+      "constraint": "配置可直接用 aggressive propagation；源码层次不等于本例执行次数采样。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [
+        "shardy.user-priority"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
+    },
+    {
+      "id": "shardy.dot-general-rule",
+      "component": "shardy",
+      "layer": "Shardy round trip and partitioning",
+      "symbol": ".Case",
+      "revision": "eb23a98329aa70d991aa2d8a51a209af1f8df8fc",
+      "path": "upstream/shardy/shardy/dialect/sdy/transforms/propagation/op_sharding_rule_registry.cc",
+      "line": 739,
+      "end_line": null,
+      "anchor": "      .Case([](stablehlo::DotGeneralOp dotGeneral) {",
+      "source_url": "https://github.com/openxla/shardy/blob/eb23a98329aa70d991aa2d8a51a209af1f8df8fc/shardy/dialect/sdy/transforms/propagation/op_sharding_rule_registry.cc#L739",
+      "source_sha256": "98b3b8bfabd080d8681dd69035a3f53268f1f47c2ac5df674dd154bf469ef9cd",
+      "inputs": "batch/contracting/noncontracting 维度",
+      "outputs": "matmul factor rule",
+      "constraint": "batch 保留两边/输出，收缩维度标为 reduction；不能据允许分片推断最优设备划分。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
+    },
+    {
+      "id": "shardy.dot-rule",
+      "component": "shardy",
+      "layer": "Shardy round trip and partitioning",
+      "symbol": ".Case",
+      "revision": "eb23a98329aa70d991aa2d8a51a209af1f8df8fc",
+      "path": "upstream/shardy/shardy/dialect/sdy/transforms/propagation/op_sharding_rule_registry.cc",
+      "line": 790,
+      "end_line": null,
+      "anchor": "      .Case([](stablehlo::DotOp dot) {",
+      "source_url": "https://github.com/openxla/shardy/blob/eb23a98329aa70d991aa2d8a51a209af1f8df8fc/shardy/dialect/sdy/transforms/propagation/op_sharding_rule_registry.cc#L790",
+      "source_sha256": "98b3b8bfabd080d8681dd69035a3f53268f1f47c2ac5df674dd154bf469ef9cd",
+      "inputs": "向量或矩阵 dot 的输入 shape",
+      "outputs": "factor rule",
+      "constraint": "本例导回 StableHLO 为 dot；观察到 ([i,k],[k,j])->([i,j])，k 为 reduction。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
+    },
+    {
+      "id": "shardy.export-pipeline",
+      "component": "shardy",
+      "layer": "Shardy round trip and partitioning",
+      "symbol": "addExportPipeline",
+      "revision": "eb23a98329aa70d991aa2d8a51a209af1f8df8fc",
+      "path": "upstream/shardy/shardy/dialect/sdy/transforms/export/export_pipeline.cc",
+      "line": 89,
+      "end_line": null,
+      "anchor": "void addExportPipeline(OpPassManager& pm, int& dumpIndex,",
+      "source_url": "https://github.com/openxla/shardy/blob/eb23a98329aa70d991aa2d8a51a209af1f8df8fc/shardy/dialect/sdy/transforms/export/export_pipeline.cc#L89",
+      "source_sha256": "9b894b9f4ec5d86b109577ac811c6772e0b2d548d638ab6b36beee07e10b7816",
+      "inputs": "传播后 SDY 与 export options",
+      "outputs": "关闭 sharding、移除辅助信息、可选 reshards/collectives",
+      "constraint": "after_propagation 保存点在清理之后；后续 minimal partitioner 仍使用 global shapes。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [
+        "shardy.propagation"
+      ],
+      "callees": [
+        "shardy.minimal-partitioner"
+      ],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
+    },
+    {
+      "id": "shardy.minimal-partitioner",
+      "component": "shardy",
+      "layer": "Shardy round trip and partitioning",
+      "symbol": "runShardyPartitioner",
+      "revision": "eb23a98329aa70d991aa2d8a51a209af1f8df8fc",
+      "path": "upstream/shardy/shardy/dialect/sdy/transforms/export/export_pipeline.cc",
+      "line": 40,
+      "end_line": null,
+      "anchor": "void runShardyPartitioner(OpPassManager& pm, int& dumpIndex,",
+      "source_url": "https://github.com/openxla/shardy/blob/eb23a98329aa70d991aa2d8a51a209af1f8df8fc/shardy/dialect/sdy/transforms/export/export_pipeline.cc#L40",
+      "source_sha256": "9b894b9f4ec5d86b109577ac811c6772e0b2d548d638ab6b36beee07e10b7816",
+      "inputs": "传播后的 constraints 与 export options",
+      "outputs": "显式 reshard 或选定 collective/局部 partitioning",
+      "constraint": "默认 enableInsertExplicitCollectives=false、enablePerInstructionPartitioning=false；本例真正 global→local 在后续 XLA SPMD。",
+      "evidence_level": "SOURCE-ONLY",
+      "runtime_boundary": "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here.",
+      "callers": [
+        "shardy.export-pipeline"
+      ],
+      "callees": [],
+      "related_experiments": [
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json"
+      ]
     }
   ],
   "edges": [
+    {
+      "caller": "xla.mlir-to-hlo",
+      "callee": "xla.gspmd-detection",
+      "kind": "direct",
+      "condition": "build options 开启 Shardy；混合旧式 IR 兼容检查。",
+      "path": "upstream/xla/xla/pjrt/mlir_to_hlo.cc",
+      "line": 110,
+      "anchor": "        xla::sdy::hasGspmdAttrsOrOps(module)) {",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.mlir-to-hlo",
+      "callee": "xla.sdy-export-for-gspmd",
+      "kind": "direct",
+      "condition": "检测到需 GSPMD 的 IR 后先关闭 Shardy/V3。",
+      "path": "upstream/xla/xla/pjrt/mlir_to_hlo.cc",
+      "line": 119,
+      "anchor": "      ABSL_RETURN_IF_ERROR(ExportShardyForGSPMD(module));",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.mlir-to-hlo",
+      "callee": "xla.sdy-roundtrip-export",
+      "kind": "direct",
+      "condition": "不按 use_shardy flag 跳过，纯 StableHLO 时可无 SDY 操作可处理。",
+      "path": "upstream/xla/xla/pjrt/mlir_to_hlo.cc",
+      "line": 131,
+      "anchor": "    xla::sdy::addSdyRoundTripExportPipeline(pm, /*keepMeshesInlined=*/false,",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.cpu-spmd-gate",
+      "callee": "xla.shardy-pass",
+      "kind": "pass registration",
+      "condition": "num_partitions>1 且 use_shardy=true。",
+      "path": "upstream/xla/xla/service/cpu/cpu_compiler.cc",
+      "line": 638,
+      "anchor": "      spmd_pipeline.AddPass<sdy::ShardyXLA>();",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.cpu-spmd-gate",
+      "callee": "xla.shardy-pass",
+      "kind": "pass registration",
+      "condition": "num_partitions<=1，显式 runSdyShardingPropagation=false。",
+      "path": "upstream/xla/xla/service/cpu/cpu_compiler.cc",
+      "line": 676,
+      "anchor": "      sharding_removal_pipeline.AddPass<sdy::ShardyXLA>(",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.shardy-pass",
+      "callee": "xla.shardy-propagate",
+      "kind": "direct",
+      "condition": "runSdyShardingPropagation=true。",
+      "path": "upstream/xla/xla/service/spmd/shardy/shardy_xla_pass.cc",
+      "line": 521,
+      "anchor": "    ABSL_RETURN_IF_ERROR(runShardingPropagation(",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.shardy-pass",
+      "callee": "xla.shardy-replace-computations",
+      "kind": "direct",
+      "condition": "完成 StableHLO→HLO 转换后。",
+      "path": "upstream/xla/xla/service/spmd/shardy/shardy_xla_pass.cc",
+      "line": 538,
+      "anchor": "      createFromProtoAndReplaceComputations(hloModule, hloProto.hlo_module()));",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.shardy-propagate",
+      "callee": "xla.shardy-dump-gate",
+      "kind": "direct",
+      "condition": "",
+      "path": "upstream/xla/xla/service/spmd/shardy/shardy_xla_pass.cc",
+      "line": 330,
+      "anchor": "      getShardyDirIfShouldDump(debugOptions, passName, isShardyVerbose);",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.shardy-propagate",
+      "callee": "xla.sdy-roundtrip-import",
+      "kind": "direct",
+      "condition": "production 分支；测试 importMhloShardings=false。",
+      "path": "upstream/xla/xla/service/spmd/shardy/shardy_xla_pass.cc",
+      "line": 409,
+      "anchor": "    addSdyRoundTripImportPipeline(pm, /*enableConstantImport=*/true,",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.shardy-propagate",
+      "callee": "shardy.propagation",
+      "kind": "direct",
+      "condition": "完成 import 后。",
+      "path": "upstream/xla/xla/service/spmd/shardy/shardy_xla_pass.cc",
+      "line": 421,
+      "anchor": "  mlir::sdy::addPropagationPipeline(pm, dumpIndex, options);",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "xla.shardy-propagate",
+      "callee": "xla.sdy-final-export",
+      "kind": "direct",
+      "condition": "SDY propagation/export 后。",
+      "path": "upstream/xla/xla/service/spmd/shardy/shardy_xla_pass.cc",
+      "line": 430,
+      "anchor": "  addStablehloExportPipeline(pm, stablehloExportPipelineOptions);",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "shardy.propagation",
+      "callee": "shardy.import-pipeline",
+      "kind": "direct",
+      "condition": "",
+      "path": "upstream/shardy/shardy/dialect/sdy/transforms/propagation/propagation_pipeline.cc",
+      "line": 64,
+      "anchor": "  addImportPipeline(pm, dumpIndex, options);",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "shardy.propagation",
+      "callee": "shardy.export-pipeline",
+      "kind": "direct",
+      "condition": "传播和函数 call 处理后。",
+      "path": "upstream/shardy/shardy/dialect/sdy/transforms/propagation/propagation_pipeline.cc",
+      "line": 110,
+      "anchor": "  addExportPipeline(pm, dumpIndex, exportOptions);",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "shardy.user-priority",
+      "callee": "shardy.op-priority",
+      "kind": "direct",
+      "condition": "首先 priority 0。",
+      "path": "upstream/shardy/shardy/dialect/sdy/transforms/propagation/user_priority_propagation.cc",
+      "line": 238,
+      "anchor": "  if (failed(OpPriorityPropagationPassImpl::propagate(",
+      "evidence_level": "SOURCE-ONLY"
+    },
+    {
+      "caller": "shardy.export-pipeline",
+      "callee": "shardy.minimal-partitioner",
+      "kind": "direct",
+      "condition": "avoidExportForPartitioning=false。",
+      "path": "upstream/shardy/shardy/dialect/sdy/transforms/export/export_pipeline.cc",
+      "line": 115,
+      "anchor": "    runShardyPartitioner(pm, dumpIndex, options);",
+      "evidence_level": "SOURCE-ONLY"
+    },
     {
       "caller": "jax.execute-replicated",
       "callee": "jaxlib.execute-sharded",

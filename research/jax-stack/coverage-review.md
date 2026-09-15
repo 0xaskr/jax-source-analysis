@@ -13,7 +13,7 @@
 | 交付组 | 已有材料 | 仍需补齐 |
 |---|---|---|
 | 软件栈总览 | [组件与编译/Pallas 图](overview.md)，固定依赖、公开/私有边界；[LLVM/ORC](llvm-and-objects.md) 与 [CPU runtime](cpu-executable-and-trace.md) | [普通 TPU 公开提交/完成/等待链](tpu-runtime-boundary.md) 已补 SOURCE-ONLY；目标 libtpu/LLO/运行证据仍需 U03 |
-| matmul 源码与 API 索引 | [198 个入口、77 条关系](source-index.json)；四种程序变换；[逐 pass 导读](matmul-pass-walkthrough.md)、IR/LLVM/object/thunk；[10 单元 Notebook](matmul-lowering.ipynb) | 普通 TPU 与 Pallas 的目标编译产物和运行映射；分片传播入口目前只有简要索引，不能声称完整的分片图研究 |
+| matmul 源码与 API 索引 | [219 个入口、92 条关系](source-index.json)；四种程序变换；[逐 pass 导读](matmul-pass-walkthrough.md)、IR/LLVM/object/thunk；[10 单元 Notebook](matmul-lowering.ipynb) | [Shardy 往返/分区](shardy-round-trip.md) 已补双 CPU 运行；普通 TPU 与 Pallas 的目标编译产物和运行映射仍缺 U03 |
 | 简单 Hack 实验集 | [编译事件补丁及验收](pass-event-acceptance.md)、[5 单元 Notebook](compiler-pass-hack.ipynb)、构建/加载/回滚；属性、fusion/memory、调度、profiling 的脚本与 Notebook | 指定推理业务中“无需修改源码”的 fusion/Pallas 注入与 split；精度、目标内存峰值及设备事件对照 |
 
 Kickoff 要求关键流程和关键 pass，未要求穷举每个内部函数、所有后端指令或完整 Bazel
@@ -24,7 +24,7 @@ Hack 的新增验收前提。相同原则适用于未研究的 Eigen/YNN microke
 
 | ID | 已回答或验证的子项 | 尚未满足的部分及依赖 |
 |---|---|---|
-| R01 组件/API | [overview](overview.md) 覆盖主要组件、依赖和 CPU/TPU 编译分支；CPU executable 与对象接口已有证据 | [公开提交/完成/等待链](tpu-runtime-boundary.md) 已补；Shardy round trip 关键接口继续研究，私有实现与真机需 U03 |
+| R01 组件/API | [overview](overview.md) 覆盖主要组件、依赖和 CPU/TPU 编译分支；CPU executable 与对象接口已有证据 | [公开提交/完成/等待链](tpu-runtime-boundary.md) 已补；Shardy round trip 关键接口及双 CPU 对照已补，私有实现与真机需 U03 |
 | R02 lowering | [源码 003](source-runtime-baseline.md) 四组 matmul 数值与重载；[640 个 pass 边界](matmul-pass-walkthrough.md)、22 组叶子改写；LLVM/object/thunk/runtime 对应 | TPU 目标后端产物、LLO 与设备映射需 U03；不把 CPU emitter 解释为 TPU 实现 |
 | R03 普通/Pallas | [相同 matmul 对比](pallas-comparison.md)、两种 interpret、内层 Mosaic 与外层 custom-call、生产 lowering 标记 | 匹配 libtpu 接受/编译保留、LLO 和真实 TPU 数值/设备行为需 U03 |
 | R04 Hack 能力 | [成功构建与加载](source-runtime-baseline.md)、[pass 补丁](pass-event-acceptance.md)、25 个 C++ 测试、cold/warm/filter、源码和 runtime 回滚 | 在指定推理业务/目标环境复用该流程仍需 U01–U03；编译诊断子项已完成 |
@@ -42,11 +42,10 @@ partial，R07 为 pending；这不是说已完成的 CPU 子项需要再次无�
 
 ## 下一步如何推进
 
-1. **可以现在做：Shardy import/export 与 HLO round trip。** 普通 TPU 公开运行接口
-   已由 [本轮源码导读](tpu-runtime-boundary.md) 补齐，区分提交路径和三种完成范围。
-   当前 Shardy 仅有 propagation pipeline 的简要索引；下一步沿固定 `MlirToXlaComputation`
-   的 GSPMD fallback、sdy round trip 与 propagation/export 接口核对关键阶段，区分源码路径
-   与现有 matmul 实际捕获。未定义的分片业务或目标硬件不自动纳入实验假设。
+1. **当前公开接口与 CPU 参考子项已补齐。** 普通 TPU [公开运行接口](tpu-runtime-boundary.md)
+   和 [Shardy 往返/传播/分区](shardy-round-trip.md) 已有对应材料。新增双 CPU 对照取得
+   五个 Shardy 内部保存点、局部 `[4,12]` 输出及 GSPMD 数值对照。不能将更多教学 CPU
+   样例当作指定业务或 TPU 验收；恢复队列转到下列尚未回答的输入。
 2. **需要 U01/U02：业务 Hack 定义。** 确定实际模型仓库/入口、固定输入、精度标准，
    以及“不修改源码”约束哪些层。选定 fusion 算子对和 split 并行维度后，再写具体 pass
    改写与 Pallas 注入方案。当前教学图不自动升级为真实业务。

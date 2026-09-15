@@ -28,7 +28,7 @@
 ## 本轮进度与恢复入口
 
 CPU matmul、两种 Pallas 解释路径、host/编译事件和开放源码 Mosaic 标记已有可复查材料；
-完整 kickoff 尚未完成。源码索引扩展至 198 个入口、77 条关系，包括固定 XProf 源码；Pallas/profiling
+完整 kickoff 尚未完成。源码索引扩展至 219 个入口、92 条关系，包括固定 XProf 源码；Pallas/profiling
 Notebook 的 7 个代码单元已真实执行。
 原始 capture 继续留在忽略目录；验证器校验清单、哈希与关键语义。
 
@@ -114,7 +114,12 @@ CPU 参考和编译诊断子项保留完成结果，不将穷举内部调用或�
 普通 TPU 的 [公开执行接口](tpu-runtime-boundary.md) 已完成源码子项：新增 32 个入口、
 24 条关系，分开 Python/C++ 提交分支、buffer/执行 status/effect 等待及 callback 生存期。
 12 项结论、15 个源码检索条件和九个结构反例通过来源检查；没有新增设备运行。
-下一步补 Shardy import/export 与 HLO round trip 关键接口；TPU 运行与业务实验继续等待 U01–U03。
+[Shardy 往返与分区](shardy-round-trip.md) 已补 21 个入口、15 条关系及双 CPU 实验。
+Shardy/GSPMD 各三次数值通过；35+30 个新产物显示传播补属性仍为 `[8,12]`，后续 XLA SPMD
+才产生 `[4,12]`。五个内部 MLIR 保存点、四对旧单 CPU 相同边界、九个反例及五个真实
+Notebook 单元通过；旧 native reader 在 IR 解析前被实际拒绝。两次验证器接口适配失败保留，
+没有重跑生产任务。当前公开接口和 CPU 参考队列已完成；下一阶段业务定义需 U01/U02，
+目标 TPU 编译/运行/设备事件需 U03，已重新询问。
 
 [独立环境](runtime-environment.md) 的旧 wheel 复验与新增源码 wheel 复验分别保留，
 不改写旧证据。源码基线仍观察到 logical peak 诊断差异，不能据此推导物理内存峰值。

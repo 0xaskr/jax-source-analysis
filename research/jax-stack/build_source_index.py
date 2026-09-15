@@ -10,6 +10,7 @@ from pathlib import Path
 import subprocess
 
 from runtime_chain_index import SITES as RUNTIME_SITES, EDGES as RUNTIME_EDGES, IDS as RUNTIME_IDS
+from shardy_index import SITES as SHARDY_SITES, EDGES as SHARDY_EDGES, IDS as SHARDY_IDS
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -448,8 +449,9 @@ SITES.extend([
 ])
 
 SITES.extend(RUNTIME_SITES)
+SITES.extend(SHARDY_SITES)
 
-EDGES = RUNTIME_EDGES + [
+EDGES = SHARDY_EDGES + RUNTIME_EDGES + [
     ('xla.trace-context-producer', 'xla.trace-new-activity', '                                           : TraceMe::NewActivityId()) {', 'direct', '调用者未提供 context_id 时。'),
     ('xla.trace-new-activity', 'xla.trace-activity-id', '    return TraceMeRecorder::NewActivityId();', 'direct', ''),
     ('xla.profiled-future', 'xla.trace-context-producer', '        tsl::profiler::TraceMeProducer traceme(', 'direct', 'on_block_start 回调。'),
@@ -601,6 +603,9 @@ def main():
         if entry["id"] in RUNTIME_IDS:
             entry["related_experiments"] = ["research/jax-stack/tpu-runtime-boundary.md", "research/jax-stack/runtime-chain-results.json"]
             entry["runtime_boundary"] = "SOURCE-ONLY public interfaces and reference adapters; no native dispatch sampling, plugin execution, TPU/LLO or timing evidence. The open-source C wrapper is not identified as libtpu implementation."
+        if entry["id"] in SHARDY_IDS:
+            entry["related_experiments"] = ["research/jax-stack/shardy-round-trip.md", "research/jax-stack/shardy-results.json"]
+            entry["runtime_boundary"] = "Source-bound two-CPU Shardy/GSPMD evidence is recorded separately; mixed-IR fallback, V3, tuple/alias restoration and TPU execution are not runtime-verified here."
     index = {
         "schema_version": "1.0", "kickoff_revision": 51,
         "source_roots": {name: {"path": s["path"], "revision": s["git_commit"]} for name, s in sources.items()},

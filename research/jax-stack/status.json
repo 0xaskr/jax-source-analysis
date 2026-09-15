@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "updated_at": "2026-09-14T23:58:01.764765+00:00",
+  "updated_at": "2026-09-15T00:19:08.840726+00:00",
   "goal_state": "active",
   "objective": "按 Outline kickoff revision 51 完成软件栈总览、源码/API 索引和实际推理场景 Hack 实验。",
   "kickoff_source": "research/jax-stack/kickoff-source.json",
@@ -203,6 +203,11 @@
       "id": "regular-tpu-runtime-source-chain",
       "result": "补齐公开运行接口的 32 个入口/24 条关系：Python execute_sharded 与 C++ fastpath、内部/对外 status、buffer ready、tokens、C API ownership 与 profiler type 14。12 项 SOURCE-ONLY 结论、15 个检索条件及九个结构反例通过；未执行 libtpu/TPU，也未把 reference wrapper 当作私有实现。",
       "evidence": "research/jax-stack/tpu-runtime-boundary.md"
+    },
+    {
+      "id": "shardy-round-trip-source-chain",
+      "result": "21 个新增源码入口、15 条关系与 source-bound 双 CPU 运行通过：Shardy/GSPMD 各三次数值、每设备 [4,12] 输出、五个内部 MLIR 保存点、65 个新产物。传播与后续 SPMD 分区分别取证；四对旧单 CPU 边界相同。九个反例、五个真实 Jupyter 单元和旧 reader 拒绝通过。",
+      "evidence": "research/jax-stack/shardy-round-trip.md"
     }
   ],
   "requirements": [
@@ -218,9 +223,12 @@
         "research/jax-stack/cpu-thunk-results.json",
         "research/jax-stack/cpu-thunk-execution.ipynb",
         "research/jax-stack/tpu-runtime-boundary.md",
-        "research/jax-stack/runtime-chain-results.json"
+        "research/jax-stack/runtime-chain-results.json",
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json",
+        "research/jax-stack/shardy-round-trip.ipynb"
       ],
-      "remaining": "普通 TPU 公开提交/完成/等待接口已补 SOURCE-ONLY；Shardy import/export、HLO round trip 的关键接口仍需展开。匹配 libtpu/LLO/设备验收需 U03；不要求穷举所有内部调用。"
+      "remaining": "普通 TPU 公开运行链和 Shardy import/export/传播/分区关键接口已有材料；私有 libtpu、LLO 与目标硬件映射需 U03。当前未将穷举全部内部调用作为新增验收要求。"
     },
     {
       "id": "R02",
@@ -240,9 +248,12 @@
         "research/jax-stack/cpu-thunk-results.json",
         "research/jax-stack/cpu-thunk-execution.ipynb",
         "research/jax-stack/tpu-runtime-boundary.md",
-        "research/jax-stack/runtime-chain-results.json"
+        "research/jax-stack/runtime-chain-results.json",
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json",
+        "research/jax-stack/shardy-round-trip.ipynb"
       ],
-      "remaining": "匹配源码 CPU 关键 passes、布局/fusion、LLVM/object、序列化 thunk 和实际 warm dispatch 已对照。TPU lowering/后端产物、libtpu/LLO 与硬件部分仍需目标环境；未声明内部 Eigen/YNN microkernel或性能。"
+      "remaining": "源码 CPU 的四种程序变换、关键 pass、代码生成/runtime，以及双 CPU Shardy/GSPMD 传播/分区已对照；TPU 目标编译产物、libtpu/LLO 与设备映射仍需 U03。"
     },
     {
       "id": "R03",
@@ -326,7 +337,10 @@
         "research/jax-stack/cpu-results.json",
         "research/jax-stack/attributes-and-cost.md",
         "research/jax-stack/attributes-results.json",
-        "research/jax-stack/source-metadata-results.json"
+        "research/jax-stack/source-metadata-results.json",
+        "research/jax-stack/shardy-round-trip.md",
+        "research/jax-stack/shardy-results.json",
+        "research/jax-stack/shardy-round-trip.ipynb"
       ],
       "remaining": "匹配源码的 CPU 属性传递、MLIR 属性丢失、native setter 与 HLO 改写执行已通过；目标 TPU 属性/阶段边界仍需继续。"
     },
@@ -401,13 +415,13 @@
   ],
   "next_actions": [
     {
-      "id": "shardy-round-trip-source-chain",
-      "ready": true,
+      "id": "business-workload-contract",
+      "ready": false,
       "depends_on": [
-        "regular-tpu-runtime-source-chain"
+        "U01",
+        "U02"
       ],
-      "action": "沿固定 MlirToXlaComputation 的 Shardy/GSPMD gate、sdy round trip、propagation 与 export 核对关键接口；对照已有 matmul 产物，分清源码分支和已执行路径。不把单 CPU 无分片样例当成完整分片或 TPU 实验。",
-      "next_command": "sed -n '99,165p' upstream/xla/xla/pjrt/mlir_to_hlo.cc"
+      "action": "取得实际模型仓库/入口/输入/精度和允许修改层后，选择 fusion 算子对、Pallas 注入位置与 split 并行维度，完成具体业务实验合同。"
     },
     {
       "id": "tpu-device-profile",
@@ -429,7 +443,7 @@
     }
   ],
   "validation": {
-    "source_index": "198 source entries / 77 call edges checked against pinned clean source trees.",
+    "source_index": "219 source entries / 92 call edges checked against pinned clean source trees.",
     "capture": "1062 artifact sizes and SHA-256 verified",
     "numerics": "4 cases; NumPy float64 forward/analytic gradients",
     "serialized_executable": "4 in-process reloads, bit-for-bit comparison passed",
@@ -509,7 +523,10 @@
     "xspace_selftest": "20 negative cases and six positive boundaries passed, including legacy and FlowV2 presence guards.",
     "xspace_notebook": "Five real Jupyter code cells executed; pure protobuf archive parsing, exact IDs, independent NumPy and boundary checks. No new XProf converter or viewer execution.",
     "coverage_review": "Three deliverable groups and R01-R12 checked against revision 51 and current result documents; stale overview claims repaired; no new device evidence.",
-    "public_runtime_chain": "32 source roles / 24 edges, 12 reviewed claims / 15 lexical guards, nine rejected scope/branch/reference mutations. SOURCE-ONLY provenance and contract integrity; not independent proof of runtime semantics."
+    "public_runtime_chain": "32 source roles / 24 edges, 12 reviewed claims / 15 lexical guards, nine rejected scope/branch/reference mutations. SOURCE-ONLY provenance and contract integrity; not independent proof of runtime semantics.",
+    "shardy": "65 new artifacts, two source-bound CPU modes, six numerical runs and two [4,12] shards per mode; native MLIR/HLO parsing distinguishes propagation from global-to-local partitioning. Four single-CPU pass pairs rechecked unchanged.",
+    "shardy_selftest": "Nine invalid artifact/propagation/shape/rule/collective/stage cases rejected; old wheel native reader actually rejected before stage parsing.",
+    "shardy_notebook": "Five real Jupyter code cells passed; archive hashes, saved native snapshots, NumPy/global/local outputs and nine negatives. No new native parsing or TPU execution by Notebook."
   },
   "completion_claim": "本状态未宣称 kickoff 的任一完整交付组已经验收。",
   "artifact_fingerprints": {
@@ -518,12 +535,12 @@
       "size_bytes": 114
     },
     "PLAN.md": {
-      "sha256": "395a82b9b551550961fe70770e15f1ac78b5e5d56e8f07ece7bc70da77906799",
-      "size_bytes": 13694
+      "sha256": "75383baabecc399b28f653089b30c0b95bf7f56ba0c997036c71eae596ec08f3",
+      "size_bytes": 14199
     },
     "README.md": {
-      "sha256": "00948c1b0b59ad48866117ec555da2f78865dff8c18da456ed3f507f032f51ac",
-      "size_bytes": 10557
+      "sha256": "d5f7d106ed5eb5831bb49d1cdd209ed4ba7b22b4030ab78f1b3c66d2a259e852",
+      "size_bytes": 10728
     },
     "attributes-and-cost.md": {
       "sha256": "026265fc41df52be91ccdee9d462dcaf36f132b3af4f0bdc69a6a361522052ee",
@@ -578,8 +595,8 @@
       "size_bytes": 3471
     },
     "build_source_index.py": {
-      "sha256": "c764ffd63178f0147bc9bba4b82b14046f85989629b8f2aac20eb9a7ff00eeea",
-      "size_bytes": 74506
+      "sha256": "83901c833a67088929be7afd57f9448628dfe028ef8874198d1b60040fade44c",
+      "size_bytes": 75009
     },
     "capture_runtime.py": {
       "sha256": "7f040f7a36aea060ed57c217d109dc498cfe96082a81a0fe297ede87d540b025",
@@ -598,8 +615,8 @@
       "size_bytes": 7467
     },
     "coverage-review.md": {
-      "sha256": "1698fbd84fa5d01ed037fb9df534b8510d568c4dfd707c451f7e177e9a91496a",
-      "size_bytes": 6985
+      "sha256": "221e51024d3824843e131637a59615946981dc1e4bc3f2e0ce2b587210d72436",
+      "size_bytes": 6889
     },
     "cpu-executable-and-trace.md": {
       "sha256": "279e91be7bfbedbb772c56adcb3e580a30d6cc422be447b463cb8b5ff03653cf",
@@ -698,8 +715,8 @@
       "size_bytes": 32379
     },
     "matmul-pass-walkthrough.md": {
-      "sha256": "89d0c6b004e8ca03a20c055e2981ae5d1de3cb57177aee32fcf59a5052863e87",
-      "size_bytes": 10088
+      "sha256": "d47f52f5131c653f15c9c50bf5fa0a0b33b2f0777003a87f32b534df6190ad3a",
+      "size_bytes": 10427
     },
     "matmul_probe.py": {
       "sha256": "0a0892a74c2d2d786eef13b33ef82066461870f08b9b84ceb69fc0aee9ee8e46",
@@ -726,8 +743,8 @@
       "size_bytes": 13399
     },
     "overview.md": {
-      "sha256": "5c967ffc74cd810bdf1f9688bb1645f48f67ec87af812e2bf128b0d45d6f3b84",
-      "size_bytes": 9618
+      "sha256": "e7f62f526f627a4abf70273633207ef4c59c71287f91313794659aa763b7b179",
+      "size_bytes": 9769
     },
     "pallas-comparison.md": {
       "sha256": "6c7577ccc2315b8d1bf4c7663e3ea75d0d1d54cc0a7dabe69ba63654a24e7a0a",
@@ -825,6 +842,26 @@
       "sha256": "73f56c6b67aeff2ffc248d93073b320ef3196b2d4b8bbac315eb122e60e43035",
       "size_bytes": 14218
     },
+    "shardy-results.json": {
+      "sha256": "3222130c208ebcf76487c785168ddfb27e2e07d2e9cad57fe56c3e2e9b63b077",
+      "size_bytes": 113594
+    },
+    "shardy-round-trip.ipynb": {
+      "sha256": "6fa87961054422cfd0c1c1f140121e6f77322f181fba12509d2ecd3d0b61978e",
+      "size_bytes": 9885
+    },
+    "shardy-round-trip.md": {
+      "sha256": "f0fae4a2168d53b569e4817efce7fcf279abe0bd3587124d5556ab0359e1b68e",
+      "size_bytes": 11672
+    },
+    "shardy_index.py": {
+      "sha256": "ea392073959fca34456d098bfe54421c490be925c1ea1c1c88a32c0ce44148ea",
+      "size_bytes": 9543
+    },
+    "shardy_probe.py": {
+      "sha256": "141f8dd7032d3dfd1c3afbcf40fd3fbaccbcd748a020565306a62e705012f726",
+      "size_bytes": 5872
+    },
     "source-build-results.json": {
       "sha256": "d346de81789cbd1d6f2e18365dd38380d99a23fff6279c5eca8045fd3dcce4f0",
       "size_bytes": 1904
@@ -838,8 +875,8 @@
       "size_bytes": 17589
     },
     "source-index.json": {
-      "sha256": "662d077eb2b5771d12ae5e439749bc2c3db37824e32887db66b69a50c5b81931",
-      "size_bytes": 262348
+      "sha256": "e4cfb6aa8de6d7ca760f1d4155c05bcb09c73f8be028291fbcafddf5d6ee1f16",
+      "size_bytes": 297375
     },
     "source-metadata-baseline.md": {
       "sha256": "325c1e550d94f56d36a4cb6954dda2ce9b4a44fe3dad80103895a5b646634ed6",
@@ -925,6 +962,10 @@
       "sha256": "f2553087a260fe7c7135d19a6f5838c1a4b37cb0b4cce848b5c4835a11b54444",
       "size_bytes": 7336
     },
+    "verify_shardy.py": {
+      "sha256": "cca0806ad1559229caa0cc17c45bc43556be2b7ec5e2e1b84ac5ab07b04a9b44",
+      "size_bytes": 12142
+    },
     "verify_xspace_contexts.py": {
       "sha256": "3a6f2269d47d89e7f0aba34f3a185febbb5366c0591737587f64b85d5bfd21dd",
       "size_bytes": 9811
@@ -986,7 +1027,7 @@
     "log": "artifacts/builds/kickoff-cpu-pass-events-002/attempts/0001/build.log"
   },
   "publication": {
-    "local_commit": "b4883065338a4b03252299465275b5d166008478",
+    "local_commit": "9c9a8808dde2e4da73760a217a9189a9e0eeb04b",
     "original_staged_diff_preserved": true,
     "push_attempt": {
       "command": "git push origin main",
@@ -997,9 +1038,9 @@
     },
     "remaining": "Root worktree retains its local research history and staged cleanup; remote merge integration is performed only in the isolated publication worktree.",
     "state": "pushed",
-    "integration_commit": "4eb84f214a5df54f804903bfe3af04dc5613e7a7",
+    "integration_commit": "133dd56ba95eaa0b474027d9c74dede25c9a2d2d",
     "push_result": "normal push origin HEAD:main",
-    "latest_milestone": "kickoff-coverage-audit"
+    "latest_milestone": "regular-tpu-runtime-source-chain"
   },
   "additional_sources": [
     {
@@ -1015,14 +1056,14 @@
   ],
   "pending_user_inputs_last_requested": {
     "method": "functions.request_user_input_async",
-    "milestone": "source-cpu-thunk-dispatch-evidence",
+    "milestone": "shardy-round-trip-source-chain",
     "pending_ids": [
       "U01",
       "U02",
       "U03"
     ],
-    "recorded_at": "2026-09-14T22:43:02.185896+00:00",
-    "note": "Questions were re-presented earlier in this turn; no reply received as of this state update."
+    "recorded_at": "2026-09-15T00:19:08.840726+00:00",
+    "note": "Bundled questions re-presented during this turn; no reply as of this update."
   },
   "previous_builds": [
     {
@@ -1397,13 +1438,14 @@
     ],
     "deliverable_groups_reviewed": 3,
     "overall_complete": false,
-    "ready_public_source_gap": "shardy-round-trip-source-chain",
+    "ready_public_source_gap": null,
     "pending_user_inputs": [
       "U01",
       "U02",
       "U03"
     ],
-    "scope": "Artifact and requirement review only; no new CPU/TPU capture."
+    "scope": "Artifact and requirement review only; no new CPU/TPU capture.",
+    "remaining_work": "Business contract/fusion/Pallas/split and target TPU compilation/execution/profile/overlap/roofline depend on pending U01-U03. No additional CPU teaching example substitutes for these."
   },
   "public_runtime_chain": {
     "evidence_level": "SOURCE-ONLY",
@@ -1411,5 +1453,80 @@
     "runtime_execution_verified": false,
     "libtpu_implementation_identified": false,
     "followup_issue": "ConvertCEventToCppFuture callback-registration error cleanup is not fault-injected or repaired; success-path cleanup must not be generalized."
+  },
+  "active_shardy_runtime": {
+    "state": "complete",
+    "source_build": "kickoff-cpu-source-003",
+    "jobs": [
+      {
+        "mode": "shardy",
+        "container_id": "33cb35802a97ecb1ba189bf12f5f330b701329042656733b7e661364898194a9",
+        "launch_record": "artifacts/jax-stack/shardy-runtime-001/shardy-launch.json",
+        "terminal_record": "artifacts/jax-stack/shardy-runtime-001/shardy-terminal.json",
+        "state_at_last_inspection": "exited",
+        "exit_code": 0
+      },
+      {
+        "mode": "gspmd",
+        "container_id": "66ff11a4d01642379fc0e76c445b82fe7d52346d5b4670605de4bb72682e1895",
+        "launch_record": "artifacts/jax-stack/shardy-runtime-001/gspmd-launch.json",
+        "terminal_record": "artifacts/jax-stack/shardy-runtime-001/gspmd-terminal.json",
+        "state_at_last_inspection": "exited",
+        "exit_code": 0
+      }
+    ]
+  },
+  "workflow_state": "waiting-for-user-inputs",
+  "shardy_audit": {
+    "source": "artifacts/jax-stack/shardy-runtime-001",
+    "result": "research/jax-stack/shardy-results.json",
+    "source_build": "kickoff-cpu-source-003",
+    "evidence_records": [
+      {
+        "path": "artifacts/jax-stack/shardy-runtime-001/shardy-launch.json",
+        "sha256": "87552c5ea2ae50f46d9bb00d5151fd0e25ba730279487836e44139dae622128a",
+        "size_bytes": 1709
+      },
+      {
+        "path": "artifacts/jax-stack/shardy-runtime-001/gspmd-launch.json",
+        "sha256": "08a9aa7fbb343b15faaa637443ed7e10f935bb67de1704c3f2ee0512793c7afb",
+        "size_bytes": 1706
+      },
+      {
+        "path": "artifacts/jax-stack/shardy-runtime-001/shardy-terminal.json",
+        "sha256": "53c993880b5f6efbec54d2b25b3e8f398447d18da39c8645f594ce38ecca976b",
+        "size_bytes": 480
+      },
+      {
+        "path": "artifacts/jax-stack/shardy-runtime-001/gspmd-terminal.json",
+        "sha256": "57b40837c63997a4650de01c4677c6d4e605e8eb1e5b83f0c5c3919fc4424c9a",
+        "size_bytes": 480
+      },
+      {
+        "path": "artifacts/jax-stack/shardy-runtime-001/verification.json",
+        "sha256": "6e195389d0d477bc07e92abebc15882237431d4af8a6a81128bb4c57010bc52c",
+        "size_bytes": 2666
+      },
+      {
+        "path": "artifacts/jax-stack/shardy-runtime-001/verification-002.json",
+        "sha256": "15982510867d5f9a65d6dfdf5d165994f3efc4fc25e7de5bb16c19e9bc7135e2",
+        "size_bytes": 2772
+      },
+      {
+        "path": "artifacts/jax-stack/shardy-runtime-001/verification-003.json",
+        "sha256": "08d5b0c9c7e780b93b52620c6a4fc3cd118ea7cdaec260ce28650699e4ad667d",
+        "size_bytes": 1741
+      },
+      {
+        "path": "artifacts/jax-stack/shardy-runtime-001/old-reader-rejection.json",
+        "sha256": "110cd5b540855c23ec703e4895c83f88690b055f4b5645b03e1b37724400af0f",
+        "size_bytes": 3263
+      },
+      {
+        "path": "artifacts/jax-stack/shardy-notebook-001/execution.json",
+        "sha256": "54c1056904ac9fa01803ba0dafa6e79e8ce4de04d41e456500ca37107b26110c",
+        "size_bytes": 262
+      }
+    ]
   }
 }
