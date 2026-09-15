@@ -48,13 +48,13 @@ EXPECTED_SOURCE_COMMITS = {
     "xla": "dcf304bc5dca1932b99f740b911dbd73631a1a69",
 }
 EXPECTED_TOOL_PATHS = {
-    "bazel": JAX_ROOT / "bazel-8.7.0-linux-x86_64",
+    "bazel": JAX_ROOT / "bazel-7.7.1-linux-x86_64",
     "clang": Path("/usr/bin/clang"),
     "clangxx": Path("/usr/bin/clang++"),
     "git": GIT_PATH,
 }
-EXPECTED_BAZEL_VERSION = "bazel 8.7.0"
-EXPECTED_BAZEL_SHA256 = "d7606e679b78067c811096fb3d6cf135225b528835ca396e3a4dddf957859544"
+EXPECTED_BAZEL_VERSION = "bazel 7.7.1"
+EXPECTED_BAZEL_SHA256 = "115a1b62be95f29e5821d4dddffba1b058905a48019b499919c285e7f708d5e2"
 EXPECTED_CLANG_VERSION = "18.1.3"
 EXPECTED_JAXLIB_VERSION = "0.11.2.dev0+selfbuilt"
 EXPECTED_WHEEL_TAG = "cp312-cp312-manylinux_2_27_x86_64"
@@ -626,7 +626,7 @@ def _ignored_source_path_allowed(component: str, relative: str) -> bool:
     if relative in {
         ".jax_configure.bazelrc",
         "MODULE.bazel.lock",
-        "bazel-8.7.0-linux-x86_64",
+        "bazel-7.7.1-linux-x86_64",
     }:
         return True
     pure = PurePosixPath(relative)
@@ -872,7 +872,7 @@ def _build_command(attempt_dir: Path, config: dict[str, Any]) -> list[str]:
         "-S", "build/build.py", "build", "--wheels=jaxlib", "--python_version=3.12",
         "--local_xla_path=../xla",
         f"--output_path={os.path.relpath(wheel_dir, JAX_ROOT)}",
-        "--bazel_path=./bazel-8.7.0-linux-x86_64", "--clang_path=/usr/bin/clang",
+        "--bazel_path=./bazel-7.7.1-linux-x86_64", "--clang_path=/usr/bin/clang",
     ]
     command.extend(f"--bazel_startup_options={item}"
                    for item in config["bazel_startup_options"])

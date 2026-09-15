@@ -120,7 +120,7 @@ def _configure(root: Path, commits: dict[str, str]) -> None:
     BUILD.GENERATED_BAZELRC = BUILD.JAX_ROOT / ".jax_configure.bazelrc"
     BUILD.EXPECTED_SOURCE_COMMITS = commits
     BUILD.EXPECTED_TOOL_PATHS = {
-        "bazel": BUILD.JAX_ROOT / "bazel-8.7.0-linux-x86_64",
+        "bazel": BUILD.JAX_ROOT / "bazel-7.7.1-linux-x86_64",
         "clang": root / "toolchain/clang",
         "clangxx": root / "toolchain/clang++",
         "git": Path("/usr/bin/git"),
@@ -219,7 +219,7 @@ def _fixture(root: Path) -> tuple[dict[str, Any], Path, Path]:
     (root / ".venv/bin/python").symlink_to(BUILD.EXPECTED_BASE_PYTHON_PATH)
     (root / "toolchain/clang").write_bytes(b"fixture clang\n")
     (root / "toolchain/clang++").write_bytes(b"fixture clang++\n")
-    (jax / "bazel-8.7.0-linux-x86_64").write_bytes(b"fixture bazel\n")
+    (jax / "bazel-7.7.1-linux-x86_64").write_bytes(b"fixture bazel\n")
     _configure(root, commits)
     _make_analysis_repository(root)
 

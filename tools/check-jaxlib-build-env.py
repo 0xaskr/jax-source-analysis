@@ -23,11 +23,11 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 
-EXPECTED_BAZEL_VERSION = "8.7.0"
+EXPECTED_BAZEL_VERSION = "7.7.1"
 EXPECTED_BAZEL_SHA256 = (
-    "d7606e679b78067c811096fb3d6cf135225b528835ca396e3a4dddf957859544"
+    "115a1b62be95f29e5821d4dddffba1b058905a48019b499919c285e7f708d5e2"
 )
-BAZEL_PATH = ROOT / "upstream/jax/bazel-8.7.0-linux-x86_64"
+BAZEL_PATH = ROOT / "upstream/jax/bazel-7.7.1-linux-x86_64"
 
 EXPECTED_CLANG_VERSION = "18.1.3"
 CLANG_PATH = Path("/usr/bin/clang")
@@ -269,7 +269,7 @@ def _ignored_source_path_allowed(name: str, relative: str) -> bool:
     if relative in {
         ".jax_configure.bazelrc",
         "MODULE.bazel.lock",
-        "bazel-8.7.0-linux-x86_64",
+        "bazel-7.7.1-linux-x86_64",
     }:
         return True
     if path.parts and path.parts[0] == "jax.egg-info":

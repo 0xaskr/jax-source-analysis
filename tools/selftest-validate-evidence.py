@@ -505,7 +505,7 @@ def _configure_build_validator(build: Any, root: Path) -> None:
     toolchain = root / "toolchain"
     clang_path = toolchain / "clang"
     clangxx_path = toolchain / "clang++"
-    bazel_path = root / "upstream/jax/bazel-8.7.0-linux-x86_64"
+    bazel_path = root / "upstream/jax/bazel-7.7.1-linux-x86_64"
 
     build.ROOT = root
     build.JAX_ROOT = root / "upstream/jax"
@@ -566,7 +566,7 @@ def _install_valid_build_identity(root: Path) -> tuple[Path, Path]:
     clangxx_path = toolchain / "clang++"
     clang_path.write_bytes(b"fixture clang\n")
     clangxx_path.write_bytes(b"fixture clang++\n")
-    bazel_path = root / "upstream/jax/bazel-8.7.0-linux-x86_64"
+    bazel_path = root / "upstream/jax/bazel-7.7.1-linux-x86_64"
     bazel_path.write_bytes(b"fixture bazel\n")
 
     validator = VALIDATOR.EvidenceValidator(root)
