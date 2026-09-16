@@ -1,0 +1,1062 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="4100" height="6680" viewBox="0 0 4100 6680" role="img" aria-labelledby="title desc">
+  <title id="title">JAX 软件栈：组件位置与上下游关系</title>
+  <desc id="desc">JAX 前端分开展示普通 primitive lowering 与 Pallas TPU kernel lowering。Pallas kernel Jaxpr 生成 Mosaic TPU MLIR，序列化为 bytecode 与 Base64 后，存入外层 stablehlo.custom_call 的 backend_config.custom_call_config.body。实际 8x128 float32 加法例子展示 payload 及解码后的 arith.addf。外层 MLIR 经 jaxlib / IFRT / PJRT 提交；libtpu 内区分外层 HLO 与 Mosaic kernel 路径。CPU HLO hook 与 Pallas 离线 lowering 已验证，TPU 编译执行未验证。右侧保留条件分支及扩展接口，底部保留小字号逐行术语。</desc>
+  <defs>
+    <marker id="a" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0 0L9 4.5L0 9Z" fill="#526b88" />
+    </marker>
+    <marker id="c" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0 0L9 4.5L0 9Z" fill="#318b80" />
+    </marker>
+    <marker id="rule-arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0 0L9 4.5L0 9Z" fill="#8571b2" />
+    </marker>
+    <marker id="response-arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0 0L9 4.5L0 9Z" fill="#317f9a" />
+    </marker>
+    <marker id="query-arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0 0L9 4.5L0 9Z" fill="#a57125" />
+    </marker>
+    <marker id="transform-arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0 0L9 4.5L0 9Z" fill="#ad4f7c" />
+    </marker>
+  </defs>
+  <style>text{font-family:"Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#20344d;font-size:19px}.title{font-size:32px;font-weight:700}.heading{font-size:25px;font-weight:700}.small{font-size:17px;fill:#52677e}.pin{font-family:"DejaVu Sans Mono",monospace;font-size:17px;fill:#52677e}.flow{fill:none;stroke:#526b88;stroke-width:2.3;marker-end:url(#a)}.data{fill:none;stroke:#318b80;stroke-width:2;stroke-dasharray:2 6;marker-end:url(#c)}.component{font-size:22px;font-weight:700}.detail{font-size:16px;fill:#52677e}.config{fill:none;stroke:#8571b2;stroke-width:2;stroke-dasharray:7 5;marker-end:url(#rule-arrow)}.response{fill:none;stroke:#317f9a;stroke-width:2;stroke-dasharray:9 4;marker-end:url(#response-arrow)}.query{fill:none;stroke:#a57125;stroke-width:2;stroke-dasharray:11 6;marker-end:url(#query-arrow)}.transform-call{fill:none;stroke:#ad4f7c;stroke-width:2.5;marker-end:url(#transform-arrow)}.transform-return{fill:none;stroke:#ad4f7c;stroke-width:2.5;stroke-dasharray:10 5;marker-end:url(#transform-arrow)}.glossary-body{font-size:16px;fill:#52677e}#stack-glossary .title{font-size:24px}#stack-glossary .small{font-size:14px}#stack-glossary .detail{font-size:13px}</style>
+  <rect width="4100" height="6680" fill="#fff" />
+  <text x="35" y="48" class="title" text-anchor="start">JAX 软件栈：组件位置与上下游关系</text>
+  <text x="35" y="78" class="small" text-anchor="start">左侧：JAX / Pallas 的表示与提交路径；中栏：HLO 条件分支；右侧：扩展接口。框的面积不代表代码量或耗时。</text>
+  <g id="backend-stack" transform="translate(0 1430)">
+    <g id="tpu-compiler-stages">
+      <path id="libtpu" d="M995 2275H1330V2750H1670V3800H1330V3865H995Z" fill="#fff6e9" stroke="#c99149" stroke-width="1.6" stroke-dasharray="8 5" />
+      <text x="1015" y="2315" class="heading">libtpu</text>
+      <text x="1015" y="2350" class="small">二进制分发 · PyPI</text>
+      <text x="1015" y="2382" class="component">XLA TPU 编译器 / runtime</text>
+      <text x="1015" y="2413" class="detail">JAX 依赖约束：0.0.46.*</text>
+      <rect id="tpu-mlir-input" x="1015" y="2440" width="295" height="120" rx="12" fill="#fffaf3" stroke="#c99149" stroke-width="1.6" />
+      <text x="1033" y="2475" class="component">1 · StableHLO / sdy 输入</text>
+      <text x="1033" y="2511" class="small">MLIR 程序与编译选项</text>
+      <text x="1033" y="2541" class="detail">PJRT_Client_Compile</text>
+      <rect id="tpu-hlo-ir" x="1015" y="2610" width="295" height="120" rx="12" fill="#f0f7ec" stroke="#c99149" stroke-width="1.6" />
+      <text x="1033" y="2647" class="component">2 · HLO</text>
+      <text x="1033" y="2683" class="small">外层 HLO 可含 custom-call</text>
+      <text x="1033" y="2714" class="detail">Pallas body 进入右侧 Mosaic 路径</text>
+      <rect id="tpu-hlo-passes" x="1015" y="2780" width="295" height="250" rx="12" fill="#f0f7ec" stroke="#c99149" stroke-width="1.6" />
+      <text x="1033" y="2817" class="component">3 · HLO 优化与分片</text>
+      <text x="1033" y="2855" class="small">多核分片 / 模型并行</text>
+      <text x="1033" y="2890" class="small">BF16 处理 / 操作合法化</text>
+      <text x="1033" y="2925" class="small">外层程序的 HLO passes</text>
+      <text x="1033" y="2958" class="small">TPU 专用 passes</text>
+      <text x="1033" y="2999" class="detail">官方文档确认这些阶段</text>
+      <rect id="tpu-codegen" x="1015" y="3335" width="295" height="150" rx="12" fill="#fffaf3" stroke="#c99149" stroke-width="1.6" />
+      <text x="1033" y="3372" class="component">6 · TPU 后端编译</text>
+      <text x="1033" y="3407" class="small">后端 lowering / 代码生成</text>
+      <text x="1033" y="3441" class="detail">LLO 细节与完整 pass 顺序</text>
+      <text x="1033" y="3473" class="detail">待匹配目标 libtpu 版本</text>
+      <rect id="tpu-load-runtime" x="1015" y="3520" width="295" height="130" rx="12" fill="#fffaf3" stroke="#c99149" stroke-width="1.6" />
+      <text x="1033" y="3557" class="component">7 · 加载与运行</text>
+      <text x="1033" y="3593" class="detail">加载 TPU executable</text>
+      <text x="1033" y="3628" class="detail">执行提交与设备完成事件</text>
+      <path d="M1162 2560V2610" class="flow" />
+      <path d="M1162 2730V2780" class="flow" />
+      <path d="M1162 3030V3070" class="flow" />
+      <path d="M1162 3485V3520" class="flow" />
+      <text x="1015" y="3710" class="detail">架构依据：</text>
+      <a href="https://openxla.org/xla/hlo_passes#tpu-specific-hlo-pass-examples">
+        <text x="1015" y="3740" class="detail" style="fill:#256a8a;text-decoration:underline">OpenXLA · HLO Passes</text>
+      </a>
+      <text x="1015" y="3780" class="detail">目标版本的 pass 启用与顺序</text>
+      <text x="1015" y="3810" class="detail">仍需构建证据或实际 dump 核对</text>
+      <text x="1015" y="3840" class="detail">内部执行不代表实现全部闭源</text>
+      <a href="https://docs.cloud.google.com/tpu/docs/troubleshooting/trouble-tf#debug_logs">
+        <text x="1015" y="3760" class="detail" style="fill:#256a8a;text-decoration:underline">Google Cloud · libtpu 组成</text>
+      </a>
+      <rect id="tpu-hlo-schedule" x="1015" y="3070" width="295" height="100" rx="12" fill="#fffaf3" stroke="#c99149" stroke-width="1.6" />
+      <text x="1033" y="3107" class="component">4 · HLO 调度</text>
+      <text x="1033" y="3139" class="small">生成 HloSchedule / 指令次序</text>
+      <text x="1033" y="3162" class="detail">区别于最终 LLO / 指令调度</text>
+      <rect id="tpu-post-scheduler-hook" x="1015" y="3210" width="295" height="90" rx="12" fill="#fbeef5" stroke="#ad4f7c" stroke-width="1.6" />
+      <text x="1033" y="3247" class="component">5 · POST_SCHEDULER</text>
+      <text x="1033" y="3280" class="detail">已注册时调用用户 HLO 变换</text>
+      <path d="M1162 3170V3210" class="flow" />
+      <path d="M1162 3300V3335" class="flow" />
+      <g id="libtpu-mosaic-kernel-branch">
+        <text x="1395" y="2782" class="small">Pallas：Mosaic 专用路径</text>
+        <rect id="mosaic-backend-import" x="1395" y="2810" width="245" height="155" rx="12" fill="#fffaf3" stroke="#c99149" stroke-width="1.6" />
+        <text x="1410" y="2844" class="detail">识别 tpu_custom_call</text>
+        <text x="1410" y="2875" class="detail">读取 backend_config</text>
+        <text x="1410" y="2906" class="detail">Base64 解码 body</text>
+        <text x="1410" y="2937" class="detail">反序列化 kernel MLIR</text>
+        <rect id="mosaic-backend-lowering" x="1395" y="3030" width="245" height="195" rx="12" fill="#f0f7ec" stroke="#c99149" stroke-width="1.6" />
+        <text x="1410" y="3065" class="component">Mosaic TPU 编译</text>
+        <text x="1410" y="3103" class="detail">继续处理 kernel MLIR</text>
+        <text x="1410" y="3134" class="detail">生成后端所需表示</text>
+        <text x="1410" y="3165" class="detail">具体 passes 与顺序</text>
+        <text x="1410" y="3196" class="detail">需匹配 libtpu 版本</text>
+        <rect id="mosaic-backend-code" x="1395" y="3290" width="245" height="140" rx="12" fill="#fffaf3" stroke="#c99149" stroke-width="1.6" />
+        <text x="1410" y="3326" class="detail">kernel 后端代码生成</text>
+        <text x="1410" y="3358" class="detail">与外层程序编译结果集成</text>
+        <text x="1410" y="3390" class="detail">形成可加载的 executable</text>
+        <path d="M1310 2680H1320V2885H1395" class="flow" />
+        <path d="M1517 2965V3030" class="flow" />
+        <path d="M1517 3225V3290" class="flow" />
+        <path d="M1395 3380H1310" class="flow" />
+        <text x="1395" y="3490" class="detail">本次确认到：</text>
+        <text x="1395" y="3522" class="detail">宿主离线 lowering、</text>
+        <text x="1395" y="3554" class="detail">payload 提取与解码。</text>
+        <text x="1395" y="3586" class="detail">后端接线为架构推断；</text>
+        <text x="1395" y="3618" class="detail">未在本次编译 / 运行 TPU。</text>
+        <text x="1395" y="3650" class="detail">LLO / 最终机器码细节</text>
+        <text x="1395" y="3682" class="detail">仍需目标版本证据。</text>
+        <a href="https://docs.jax.dev/en/latest/pallas/design/design.html#lowering-pallas-to-mosaic-for-tpu">
+          <text x="1395" y="3750" class="detail" style="fill:#256a8a;text-decoration:underline">JAX · Pallas / Mosaic 设计</text>
+        </a>
+        <text x="1395" y="2802" class="detail">具体接入阶段与次序待核对</text>
+      </g>
+    </g>
+    <g id="pjrt-components">
+      <rect id="runtime-interfaces" x="300" y="435" width="1030" height="1780" rx="12" fill="#eff6ff" stroke="#88a9d0" stroke-width="1.5" />
+      <text x="325" y="472" class="heading">jaxlib / IFRT / PJRT · 编译、执行与设备对象</text>
+      <rect id="python-native-bindings" x="325" y="495" width="980" height="180" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="345" y="531" class="component">jaxlib：Python / native 包装</text>
+      <text x="765" y="531" class="detail">JAX revision：2d66622450e2</text>
+      <rect id="py-client" x="345" y="552" width="300" height="85" rx="12" fill="#f4f7fb" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="361" y="585" class="component">PyClient</text>
+      <text x="361" y="617" class="detail">compile_and_load / client</text>
+      <rect id="py-executable" x="665" y="552" width="300" height="85" rx="12" fill="#f4f7fb" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="681" y="585" class="component">PyLoadedExecutable</text>
+      <text x="681" y="617" class="detail">execute_sharded / 输出包装</text>
+      <rect id="py-array" x="985" y="552" width="300" height="85" rx="12" fill="#f4f7fb" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="1001" y="585" class="component">PyArray</text>
+      <text x="1001" y="617" class="detail">设备数组 / IFRT Array</text>
+      <rect id="ifrt-layer" x="325" y="715" width="980" height="360" rx="12" fill="#eef8fa" stroke="#78afb9" stroke-width="1.5" />
+      <text x="345" y="754" class="component">IFRT：高层运行时 API 与 PJRT 实现</text>
+      <text x="345" y="780" class="small">抽象接口：Client / Compiler / Program / Array / LoadedExecutable</text>
+      <rect id="ifrt-compile" x="345" y="820" width="455" height="220" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="365" y="856" class="component">ifrt::PjRtCompiler</text>
+      <text x="365" y="892" class="small">HloProgram：持有外层 MLIR（含 payload）</text>
+      <text x="365" y="927" class="detail">CompileAndLoad →</text>
+      <text x="365" y="957" class="detail">ifrt::PjRtLoadedExecutable::Create</text>
+      <text x="365" y="994" class="detail">→ xla::PjRtClient::CompileAndLoad</text>
+      <text x="365" y="1025" class="detail">转换编译选项 / 设备 ID / 输出元数据</text>
+      <rect id="ifrt-runtime" x="830" y="820" width="455" height="220" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="850" y="856" class="component">ifrt::PjRtClient / PjRtArray</text>
+      <text x="850" y="892" class="component">ifrt::PjRtLoadedExecutable</text>
+      <text x="850" y="927" class="detail">PjRtArray 包装各设备上的 PjRtBuffer</text>
+      <text x="850" y="957" class="detail">Execute：参数数组 → PJRT buffer 列表</text>
+      <text x="850" y="994" class="detail">输出 buffer → IFRT arrays；汇合 futures</text>
+      <text x="850" y="1025" class="detail">ExecuteResult 分开返回 outputs 与 status</text>
+      <text x="345" y="807" class="detail">IFRT 实现在 xla/python/pjrt_ifrt；这里的 ifrt:: 与下层 xla:: 对象属于不同包装层</text>
+      <rect id="pjrt-cpp-api" x="325" y="1125" width="980" height="340" rx="12" fill="#f5f1fb" stroke="#a696c5" stroke-width="1.5" />
+      <text x="345" y="1163" class="component">PJRT C++：xla:: 设备运行时接口</text>
+      <text x="345" y="1189" class="detail">CompileAndLoad 可合并编译与加载；也支持独立 Compile → Load 路径</text>
+      <rect id="pjrt-client" x="345" y="1210" width="285" height="210" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="362" y="1248" class="component">PjRtClient</text>
+      <text x="362" y="1283" class="detail">Compile / CompileAndLoad</text>
+      <text x="362" y="1317" class="detail">Load / Deserialize</text>
+      <text x="362" y="1351" class="detail">devices / memory_spaces</text>
+      <text x="362" y="1387" class="detail">backend 实例与服务</text>
+      <rect id="pjrt-device-buffer" x="655" y="1210" width="285" height="210" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="672" y="1247" class="detail">PjRtDevice / PjRtMemorySpace</text>
+      <text x="672" y="1281" class="detail">设备与可寻址内存</text>
+      <text x="672" y="1317" class="component">PjRtBuffer</text>
+      <text x="672" y="1351" class="detail">输入 / 输出 / 传输 / 内存</text>
+      <text x="672" y="1387" class="detail">GetReadyFuture：数据就绪</text>
+      <rect id="pjrt-executable" x="965" y="1210" width="320" height="210" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="982" y="1248" class="component">PjRtExecutable</text>
+      <text x="982" y="1282" class="detail">编译产物 / 可序列化</text>
+      <text x="982" y="1317" class="component">PjRtLoadedExecutable</text>
+      <text x="982" y="1351" class="detail">已加载，可 Execute</text>
+      <text x="982" y="1387" class="detail">返回 PjRtBuffer 与执行 futures</text>
+      <rect id="pjrt-providers" x="325" y="1515" width="980" height="635" rx="12" fill="#f4f7fb" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="345" y="1554" class="component">Provider</text>
+      <text x="345" y="1580" class="detail">按实际实现分派</text>
+      <rect id="native-provider" x="345" y="1595" width="360" height="180" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="365" y="1633" class="component">原生 C++ provider</text>
+      <text x="365" y="1669" class="small">CPU：PjRtCpuClient</text>
+      <text x="365" y="1702" class="detail">GPU：StreamExecutorGpuClient</text>
+      <text x="365" y="1734" class="detail">GPU 也可由 C API plugin 接入</text>
+      <text x="365" y="1761" class="detail">底层编译器与 runtime 由 provider 实现</text>
+      <rect id="completion-results" x="345" y="1845" width="360" height="230" rx="12" fill="#edf8f5" stroke="#7bb1a8" stroke-width="1.5" />
+      <text x="365" y="1881" class="component">异步返回与就绪</text>
+      <text x="365" y="1915" class="detail">输出句柄返回 ≠ 设备执行完成</text>
+      <text x="365" y="1947" class="detail">执行完成事件 → futures → IFRT status</text>
+      <text x="365" y="1979" class="detail">PJRT_Buffer_ReadyEvent → ready future</text>
+      <text x="365" y="2011" class="detail">status 与 buffer ready 分别跟踪</text>
+      <text x="365" y="2043" class="detail">outputs → PjRtArray / PyArray</text>
+      <rect id="pjrt-c-api-adapter" x="735" y="1595" width="550" height="525" rx="12" fill="#fff8ed" stroke="#c8a16b" stroke-width="1.5" />
+      <text x="755" y="1633" class="component">C API adapter：PJRT C++ ↔ C ABI</text>
+      <text x="755" y="1664" class="detail">PjRtCApiClient / PjRtCApiLoadedExecutable</text>
+      <text x="755" y="1695" class="detail">PjRtCApiBuffer；持有 PJRT_Api 函数表与对象句柄</text>
+      <rect id="capi-compile" x="755" y="1720" width="510" height="105" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="775" y="1751" class="small">默认 TPU：MLIR 预处理 → 序列化</text>
+      <text x="775" y="1781" class="detail">CHLO 合法化 / StableHLO 兼容展开（MLIR passes）</text>
+      <text x="775" y="1812" class="detail">format=mlir → PJRT_Client_Compile</text>
+      <rect id="capi-execute" x="755" y="1850" width="510" height="105" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="775" y="1881" class="small">执行：PJRT_LoadedExecutable_Execute</text>
+      <text x="775" y="1911" class="detail">参数 / 输出：PJRT_Buffer 指针列表</text>
+      <text x="775" y="1942" class="detail">device_complete_events → futures</text>
+      <rect id="plugin-bootstrap" x="755" y="1980" width="510" height="110" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="775" y="2011" class="small">插件加载与初始化（TPU 路径）</text>
+      <text x="775" y="2041" class="detail">libtpu.so → GetPjrtApi → PJRT_Api 函数表</text>
+      <text x="775" y="2072" class="detail">PJRT_Plugin_Initialize → PJRT_Client_Create</text>
+      <path d="M495 637V715" class="flow" />
+      <path d="M1135 637V715" class="flow" />
+      <path d="M572 1040V1125" class="flow" />
+      <path d="M1057 1040V1125" class="flow" />
+      <path d="M487 1420V1485H525V1595" class="flow" />
+      <path d="M487 1485H1010V1595" class="flow" />
+      <path d="M965 1360H940" class="flow" />
+      <path d="M755 1915H730V1960H705" class="response" />
+      <path d="M525 2075V2170H1310V592H1285" class="response" />
+      <path d="M1265 2040H1275V1670H1265" class="config" />
+      <path d="M525 1775V1805H315V2245H625V2275" class="flow" />
+      <path d="M1162 2120V2275" class="flow" />
+      <text x="345" y="2200" class="detail">蓝色虚线：输出对象 / 就绪状态返回</text>
+      <path d="M815 637V695H1070V715" class="flow" />
+      <path d="M1010 2120V2230H780V2275" class="flow" />
+      <text x="795" y="2254" class="detail">GPU plugin（可选）</text>
+      <path d="M1125 1420V1515" class="flow" />
+      <text x="1140" y="1484" class="detail">Execute 分派</text>
+    </g>
+    <g id="xla-hlo-details" transform="translate(0 1680)">
+      <rect id="xla" x="300" y="595" width="650" height="1385" rx="12" fill="#eff6ff" stroke="#88a9d0" stroke-width="1.5" />
+      <text x="325" y="635" class="heading">XLA</text>
+      <text x="405" y="635" class="pin">dcf304bc5dca</text>
+      <text x="665" y="635" class="small">源码 · 子模块</text>
+      <rect id="hlo-import" x="325" y="670" width="600" height="180" rx="12" fill="#eef8fa" stroke="#78afb9" stroke-width="1.5" />
+      <text x="345" y="706" class="component">1 · StableHLO / MLIR → HLO 导入</text>
+      <text x="345" y="740" class="small">先导出 / 保留 sdy 分片信息，处理 CHLO 等混合输入</text>
+      <text x="345" y="773" class="small">ConvertStablehloToHloWithOptions → HloModule</text>
+      <text x="345" y="805" class="detail">direct_stablehlo_to_hlo = true；不要求完整先转为 MHLO</text>
+      <text x="345" y="834" class="detail">入口：pjrt/mlir_to_hlo.cc → hlo/translate/stablehlo.cc</text>
+      <rect id="hlo-ir" x="325" y="895" width="600" height="220" rx="12" fill="#f0f7ec" stroke="#a1b98b" stroke-width="1.5" />
+      <text x="345" y="931" class="component">2 · HLO：XLA 内部的程序表示</text>
+      <rect id="hlo-module" x="345" y="950" width="560" height="120" rx="12" fill="#fff" stroke="#a1b98b" stroke-width="1.5" />
+      <text x="365" y="979" class="small">HloModule · 模块与全局配置</text>
+      <rect id="hlo-computation" x="515" y="987" width="370" height="68" rx="12" fill="#f0f7ec" stroke="#a1b98b" stroke-width="1.5" />
+      <text x="530" y="1011" class="detail">HloComputation · 计算</text>
+      <rect id="hlo-instruction" x="695" y="1018" width="175" height="29" rx="12" fill="#fff" stroke="#a1b98b" stroke-width="1.5" />
+      <text x="705" y="1039" class="detail">HloInstruction</text>
+      <text x="345" y="1097" class="detail">嵌套表示包含关系；HloModuleProto 是序列化表示</text>
+      <rect id="hlo-optimization" x="325" y="1155" width="600" height="175" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="345" y="1191" class="component">3 · HLO 优化、布局与分片</text>
+      <text x="345" y="1225" class="small">简化 / 常量折叠 / DCE / fusion / layout / SPMD</text>
+      <text x="345" y="1258" class="small">可选 Shardy：HLO → MLIR / sdy 传播 → 更新 HLO</text>
+      <text x="345" y="1290" class="detail">具体 pass 顺序、启用条件与后端配置有关</text>
+      <text x="345" y="1317" class="detail">RunHloPasses；ShardyXLA；后续调度前后仍可运行 passes</text>
+      <path d="M625 850V895" class="flow" />
+      <path d="M625 1115V1155" class="flow" />
+      <path d="M625 1330V1365H450V1400" class="flow" />
+      <path d="M625 1365H762V1400" class="flow" />
+      <rect id="cpu-backend" x="325" y="1400" width="250" height="545" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="345" y="1439" class="component">CPU 后端</text>
+      <rect id="cpu-schedule" x="345" y="1470" width="210" height="70" rx="12" fill="#f4f7fb" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="360" y="1502" class="small">4 · HLO schedule</text>
+      <text x="360" y="1530" class="detail">CreateHloSchedule</text>
+      <rect id="cpu-post-scheduler-hook" x="345" y="1565" width="210" height="85" rx="12" fill="#fbeef5" stroke="#ad4f7c" stroke-width="1.5" />
+      <text x="355" y="1592" class="detail">5 · POST_SCHEDULER</text>
+      <text x="360" y="1617" class="detail">注册的 Python HLO 变换</text>
+      <text x="360" y="1640" class="detail">CPU 直接注册；已实测</text>
+      <rect id="cpu-buffers" x="345" y="1680" width="210" height="70" rx="12" fill="#f4f7fb" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="360" y="1710" class="small">6 · Buffer assignment</text>
+      <text x="360" y="1736" class="detail">存活期 / 别名 / 内存复用</text>
+      <rect id="cpu-emitter" x="345" y="1780" width="210" height="120" rx="12" fill="#f4f7fb" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="360" y="1810" class="small">7 · CPU emitter</text>
+      <text x="360" y="1837" class="detail">HLO → kernel / thunk</text>
+      <text x="360" y="1864" class="detail">MLIR / LLVM IR</text>
+      <text x="360" y="1888" class="detail">runtime / 库调用</text>
+      <text x="345" y="1931" class="detail">CompileCpuExecutable</text>
+      <path d="M450 1540V1565" class="flow" />
+      <path d="M450 1650V1680" class="flow" />
+      <path d="M450 1750V1780" class="flow" />
+      <rect id="gpu-backend" x="600" y="1400" width="325" height="545" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="620" y="1439" class="component">GPU 后端</text>
+      <rect id="gpu-schedule" x="620" y="1470" width="285" height="90" rx="12" fill="#f4f7fb" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="635" y="1502" class="small">4 · HLO schedule</text>
+      <text x="635" y="1530" class="detail">依赖 / 内存约束下的调度</text>
+      <text x="635" y="1551" class="detail">ScheduleGpuModule</text>
+      <rect id="gpu-buffers" x="620" y="1605" width="285" height="85" rx="12" fill="#f4f7fb" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="635" y="1637" class="small">5 · Buffer assignment</text>
+      <text x="635" y="1667" class="detail">BufferAssigner：分配与复用</text>
+      <rect id="gpu-emitter" x="620" y="1735" width="285" height="170" rx="12" fill="#f4f7fb" stroke="#a7bfdc" stroke-width="1.5" />
+      <text x="635" y="1768" class="small">6 · emitter / 库选择</text>
+      <rect id="triton" x="635" y="1778" width="255" height="88" rx="12" fill="#edf8f2" stroke="#8bb8a1" stroke-width="1.5" />
+      <text x="650" y="1800" class="component">Triton</text>
+      <text x="650" y="1829" class="pin">96bc7e783a19</text>
+      <text x="635" y="1882" class="detail">其他 emitter / 库调用</text>
+      <text x="620" y="1931" class="detail">LLVM IR / 其他目标代码</text>
+      <path d="M762 1560V1605" class="flow" />
+      <path d="M762 1690V1735" class="flow" />
+      <text x="650" y="1855" class="detail">源码子模块 · 部分融合路径</text>
+      <text x="325" y="658" class="detail">以下展开公开 CPU / GPU 编译路径</text>
+    </g>
+    <g id="llvm-layer" transform="translate(0 2655)">
+      <rect x="300" y="1060" width="650" height="130" rx="13" fill="#f5f1fb" stroke="#a696c5" stroke-width="1.6" />
+      <text x="325" y="1096" class="heading">LLVM</text>
+      <text x="425" y="1096" class="pin">75a45c373407</text>
+      <text x="650" y="1094" class="small">与 MLIR 同源子模块</text>
+      <text x="325" y="1131">LLVM IR → 优化 → 目标代码生成</text>
+      <text x="325" y="1167" class="small">CPU 原生代码；GPU 目标代码再经工具链汇编 / 链接</text>
+    </g>
+    <text x="340" y="2240" class="detail" text-anchor="start">原生 provider → XLA</text>
+    <text x="995" y="2254" class="detail" text-anchor="start">TPU PJRT C API</text>
+    <rect x="300" y="3925" width="275" height="70" rx="13" fill="#f1f4f7" stroke="#a5b3c0" stroke-width="1.6" />
+    <text x="437.5" y="3968" class="" text-anchor="middle">CPU executable / 执行</text>
+    <rect x="600" y="3925" width="350" height="70" rx="13" fill="#f1f4f7" stroke="#a5b3c0" stroke-width="1.6" />
+    <text x="775.0" y="3968" class="" text-anchor="middle">GPU executable / 执行</text>
+    <rect x="995" y="3925" width="335" height="70" rx="13" fill="#f1f4f7" stroke="#a5b3c0" stroke-width="1.6" />
+    <text x="1162.5" y="3968" class="" text-anchor="middle">TPU executable / 执行</text>
+    <path d="M 450 3625 V 3715" class="flow" />
+    <text x="465" y="3696" class="small">LLVM IR</text>
+    <path d="M 450 3845 V 3925" class="flow" />
+    <path d="M 762 3625 V 3715" class="flow" />
+    <text x="777" y="3696" class="small">使用 LLVM 的路径</text>
+    <path d="M 762 3845 V 3925" class="flow" />
+    <path d="M 925 3560 H 975 V 3880 H 875 V 3925" class="flow" />
+    <text x="888" y="3910" class="small">其他路径 / 库调用</text>
+    <path d="M1162 3650V3670H1320V3880H1162V3925" class="flow" />
+    <text x="300" y="4050" class="small" text-anchor="start">硬件执行是架构终点；画出路径不代表已在对应设备上完成验证。</text>
+    <rect x="1395" y="2115" width="255" height="570" rx="13" fill="#edf8f5" stroke="#7bb1a8" stroke-width="1.6" />
+    <text x="1415" y="2156" class="heading" text-anchor="start">XProf</text>
+    <text x="1415" y="2192" class="pin" text-anchor="start">68dba1826c37</text>
+    <text x="1415" y="2232" class="small" text-anchor="start">源码 · upstream/tooling/</text>
+    <text x="1415" y="2315" class="" text-anchor="start">性能数据分析</text>
+    <text x="1415" y="2355" class="small" text-anchor="start">XSpace / .xplane.pb</text>
+    <text x="1415" y="2395" class="small" text-anchor="start">Trace Viewer</text>
+    <text x="1415" y="2435" class="small" text-anchor="start">算子统计 / 内存分析</text>
+    <text x="1415" y="2520" class="small" text-anchor="start">接收 profiler 采集数据</text>
+    <text x="1415" y="2560" class="small" text-anchor="start">可用事件由后端与</text>
+    <text x="1415" y="2590" class="small" text-anchor="start">采集配置决定</text>
+    <text x="1415" y="2650" class="small" text-anchor="start">不参与程序编译分派</text>
+    <path d="M437 3995V4020H1695V2625H1650" class="data" />
+    <path d="M 775 3995 V 4020 M 1162 3995 V 4020" fill="none" stroke="#318b80" stroke-width="2" stroke-dasharray="2 6" />
+    <text x="1382" y="3935" class="small" text-anchor="start">运行采集数据</text>
+    <path d="M 35 4085 H 90" class="flow" />
+    <text x="105" y="4092" class="small" text-anchor="start">表示流 / 调用</text>
+    <path d="M 440 4085 H 495" class="data" />
+    <text x="510" y="4092" class="small" text-anchor="start">性能采集数据</text>
+    <rect x="1005" y="4070" width="42" height="27" rx="13" fill="#fff6e9" stroke="#c99149" stroke-width="1.6" stroke-dasharray="8 5" />
+    <text x="1060" y="4092" class="small" text-anchor="start">libtpu 二进制边界</text>
+    <text x="1320" y="4092" class="small" text-anchor="start">pin: upstream-sources.lock</text>
+    <text x="1415" y="2270" class="small">来自 jax.profiler 采集</text>
+  </g>
+  <g id="jax-components">
+    <rect id="jax" x="300" y="110" width="2230" height="760" rx="12" fill="#eff6ff" stroke="#88a9d0" stroke-width="1.5" />
+    <text x="325" y="150" class="heading">JAX</text>
+    <text x="420" y="150" class="pin">2d66622450e2 · tag jax-v0.11.1</text>
+    <text x="325" y="181" class="small">源码：upstream/jax · 主流程展示 jit / lower 的编译路径</text>
+    <rect id="jax-tools" x="975" y="133" width="330" height="45" rx="12" fill="#edf8f5" stroke="#7bb1a8" stroke-width="1.5" />
+    <text x="993" y="162" class="small">工具：profiler / debug / export</text>
+    <rect id="numerical-api" x="325" y="210" width="620" height="80" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
+    <text x="345" y="242" class="component">数值 API</text>
+    <text x="505" y="242" class="small">jax.numpy · scipy · random · nn</text>
+    <text x="345" y="275" class="small">组合 lax 等底层操作；由 Python 函数表达计算</text>
+    <rect id="array-sharding" x="975" y="210" width="330" height="155" rx="12" fill="#f5f1fb" stroke="#a696c5" stroke-width="1.5" />
+    <text x="995" y="248" class="component">数组与分片</text>
+    <text x="995" y="282" class="small">jax.Array · Mesh · Sharding</text>
+    <text x="995" y="316" class="small">形状 / dtype / 设备 / 分片布局</text>
+    <text x="995" y="346" class="detail">sharding_impls · array</text>
+    <rect id="transforms" x="325" y="325" width="285" height="155" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
+    <text x="345" y="362" class="component">程序变换</text>
+    <text x="345" y="399" class="small">jit：staging / 编译</text>
+    <text x="345" y="432" class="small">grad：自动微分（ad）</text>
+    <text x="345" y="465" class="small">vmap：批量化（batching）</text>
+    <rect id="primitives" x="650" y="325" width="295" height="155" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
+    <text x="670" y="362" class="component">Primitive 与规则</text>
+    <text x="670" y="399" class="small">lax primitive / bind</text>
+    <text x="670" y="432" class="small">abstract_eval：类型 / 形状</text>
+    <text x="670" y="465" class="small">AD / batching / lowering 规则</text>
+    <rect id="tracing-jaxpr" x="325" y="535" width="620" height="90" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
+    <text x="345" y="571" class="component">Tracing / Jaxpr</text>
+    <text x="655" y="571" class="detail">core · partial_eval · pjit</text>
+    <text x="345" y="606" class="small">Tracer 记录计算 → Jaxpr（primitive 方程、类型、effects）</text>
+    <rect id="pallas" x="975" y="415" width="330" height="170" rx="12" fill="#edf8f2" stroke="#8bb8a1" stroke-width="1.5" />
+    <text x="995" y="452" class="component">Pallas · 专用 kernel 入口</text>
+    <text x="995" y="486" class="small">Ref / grid / BlockSpec</text>
+    <text x="995" y="516" class="small">kernel Jaxpr → 平台 lowering</text>
+    <text x="995" y="546" class="small">TPU：kernel lowering 见右侧展开</text>
+    <text x="995" y="575" class="detail">注册 primitive 的变换 / lowering</text>
+    <rect id="mlir-lowering" x="325" y="685" width="620" height="135" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
+    <text x="345" y="721" class="component">MLIR lowering</text>
+    <text x="650" y="721" class="detail">interpreters/mlir.py</text>
+    <text x="345" y="757" class="small">按 primitive 规则与平台上下文构建 MLIR module</text>
+    <text x="345" y="792" class="small">外层 StableHLO / sdy；Pallas 调用携带 kernel IR</text>
+    <rect id="compile-dispatch" x="975" y="685" width="330" height="135" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
+    <text x="995" y="721" class="component">编译 / 执行调度</text>
+    <text x="995" y="750" class="detail">pjit · pxla · compiler · dispatch</text>
+    <text x="995" y="779" class="small">缓存 / 后端 / executable</text>
+    <text x="995" y="807" class="detail">经 jaxlib 提交 compile / execute</text>
+    <path d="M467 290V325" class="flow" />
+    <path d="M797 290V325" class="flow" />
+    <path d="M650 412H610" class="config" />
+    <text x="613" y="401" class="detail">规则</text>
+    <path d="M467 480V535" class="flow" />
+    <path d="M797 480V535" class="flow" />
+    <path d="M635 625V685" class="flow" />
+    <text x="649" y="661" class="detail">lower</text>
+    <path d="M975 470H960V450H945" class="config" />
+    <path d="M975 555H962V737H945" class="flow" />
+    <path d="M1305 285H1320V650H925V685" class="config" />
+    <text x="1000" y="638" class="detail">mesh / sharding 配置</text>
+    <path d="M1320 650V755H1305" class="config" />
+    <path d="M945 786H975" class="flow" />
+    <g id="pallas-kernel-pipeline">
+      <text x="1395" y="160" class="heading">Pallas TPU：kernel lowering 与外层封装</text>
+      <rect id="pallas-kernel-detail" x="1395" y="210" width="1110" height="630" rx="12" fill="#edf8f2" stroke="#8bb8a1" stroke-width="1.6" />
+      <text x="1415" y="245" class="component">离线 lowering：float32[8,128] + float32[8,128]</text>
+      <rect id="pallas-add-source" x="1415" y="270" width="1070" height="115" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.6" />
+      <text x="1435" y="303" class="pin" xml:space="preserve">def add_kernel(x_ref, y_ref, out_ref):</text>
+      <text x="1435" y="332" class="pin" xml:space="preserve">    out_ref[...] = x_ref[...] + y_ref[...]</text>
+      <text x="1435" y="361" class="pin" xml:space="preserve">pl.pallas_call(add_kernel, out_shape=shape, name="pallas_add")</text>
+      <rect id="pallas-kernel-jaxpr" x="1415" y="440" width="325" height="225" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.6" />
+      <text x="1435" y="477" class="component">1 · kernel Jaxpr</text>
+      <text x="1435" y="516" class="small">Ref 读写与加法 primitive</text>
+      <text x="1435" y="548" class="small">grid / BlockSpec 映射</text>
+      <text x="1435" y="580" class="small">独立的 kernel 计算体</text>
+      <text x="1435" y="612" class="small">由 TPU lowering 规则接收</text>
+      <rect id="pallas-mosaic-mlir" x="1785" y="440" width="335" height="225" rx="12" fill="#f0f7ec" stroke="#a1b98b" stroke-width="1.6" />
+      <text x="1805" y="477" class="component">2 · Mosaic TPU MLIR</text>
+      <text x="1805" y="516" class="small">lower_jaxpr_to_</text>
+      <text x="1805" y="548" class="small">pipelined_module(...)</text>
+      <text x="1805" y="580" class="small">vector / arith / memref / tpu</text>
+      <text x="1805" y="612" class="small">此处已经生成 kernel IR</text>
+      <rect id="pallas-kernel-serialization" x="2165" y="440" width="320" height="225" rx="12" fill="#fff8ed" stroke="#c8a16b" stroke-width="1.6" />
+      <text x="2185" y="477" class="component">3 · 序列化 kernel</text>
+      <text x="2185" y="516" class="small">mosaic-serde</text>
+      <text x="2185" y="548" class="small">write_bytecode(...)</text>
+      <text x="2185" y="580" class="small">MLIR bytecode → Base64</text>
+      <text x="2185" y="612" class="small">写入 custom_call 的 body</text>
+      <path d="M1577 385V440" class="flow" />
+      <path d="M1740 550H1785" class="flow" />
+      <path d="M2120 550H2165" class="flow" />
+      <path d="M1305 490H1375V327H1415" class="flow" />
+      <text x="1415" y="712" class="small">pallas_call_p 本身已注册 mlir.register_lowering；内部 kernel 走 Mosaic MLIR lowering。</text>
+      <text x="1415" y="743" class="small">外层用 stablehlo.custom_call 表达调用，kernel 的计算逻辑以序列化 IR 随调用传递。</text>
+      <text x="1415" y="774" class="small">本次离线输出：1 个 custom_call；body 为 1372 字符 Base64 / 1029 字节 MLIR bytecode。</text>
+      <a href="../examples/pallas_add_stablehlo.py">
+        <text x="1415" y="814" class="detail" style="fill:#256a8a;text-decoration:underline">复现脚本与完整 IR：pallas_add_stablehlo.py</text>
+      </a>
+      <a href="../../../upstream/jax/jax/_src/pallas/mosaic/pallas_call_registration.py#L435">
+        <text x="1930" y="814" class="detail" style="fill:#256a8a;text-decoration:underline">源码：TPU lowering → Mosaic module</text>
+      </a>
+    </g>
+  </g>
+  <path d="M550 820V895" class="flow" />
+  <path d="M1140 820V850H235V1725H300" class="config" />
+  <path d="M735 4715H780" class="config" transform="translate(0 800)" />
+  <text x="795" y="4722" class="small" transform="translate(0 800)">规则 / 配置 / 初始化</text>
+  <g id="public-hlo-branches" transform="translate(0 800)">
+    <rect id="public-hlo-panel" x="1730" y="840" width="800" height="3460" rx="12" fill="#f7f9fc" stroke="#b5c5d6" stroke-width="1.5" />
+    <text x="1755" y="884" class="heading">开源 HLO 实现与条件分支</text>
+    <text x="1755" y="920" class="small">源码归属与运行时边界分别标注；以下方框不是一条顺序编译链。</text>
+    <rect id="public-hlo-source" x="1755" y="950" width="750" height="185" rx="12" fill="#f0f7ec" stroke="#a1b98b" stroke-width="1.5" />
+    <text x="1775" y="985" class="component">开源 XLA：HLO IR、分析与通用优化 pass</text>
+    <text x="1775" y="1020" class="small">HloModule / HloComputation / HloInstruction</text>
+    <text x="1775" y="1053" class="small">AlgebraicSimplifier / HloConstantFolding / HloDCE / HloRematerialization</text>
+    <text x="1775" y="1086" class="detail">路径：upstream/xla/xla/hlo/{ir,analysis,transforms}</text>
+    <text x="1775" y="1117" class="detail">开源实现可构建进不同后端库；不能按 libtpu 边界判断某个 pass 是否闭源。</text>
+    <rect id="explicit-hlo-export" x="1755" y="1185" width="750" height="265" rx="12" fill="#fff8ed" stroke="#c8a16b" stroke-width="1.5" />
+    <text x="1775" y="1222" class="component">① 显式导出 HLO：可选诊断接口</text>
+    <text x="1775" y="1258" class="small">触发：lowered.compiler_ir("hlo") / lowered.as_text("hlo")</text>
+    <text x="1775" y="1293" class="detail">stages.Lowering.hlo → PyMlirModuleToXlaComputation</text>
+    <text x="1775" y="1326" class="detail">→ MlirToXlaComputation → ConvertStablehloToHloWithOptions</text>
+    <text x="1775" y="1359" class="small">结果：XlaComputation / HloModule（开源代码完成转换）</text>
+    <text x="1775" y="1392" class="detail">不会自动成为默认 TPU compile() 的前置步骤。</text>
+    <text x="1775" y="1423" class="detail">源码：jax/_src/stages.py:231；jaxlib/mlir.cc:118</text>
+    <rect id="optimized-hlo-readback" x="1755" y="1550" width="750" height="300" rx="12" fill="#fff8ed" stroke="#c8a16b" stroke-width="1.5" />
+    <text x="1775" y="1587" class="component">② 编译后显式读取优化程序</text>
+    <text x="1775" y="1623" class="small">触发：compiled.as_text() / executable.hlo_modules()</text>
+    <text x="1775" y="1658" class="detail">PyLoadedExecutable → IFRT → PjRtCApiExecutable::GetHloModules</text>
+    <text x="1775" y="1691" class="detail">PJRT_Executable_OptimizedProgram：向 plugin 请求优化后的程序</text>
+    <text x="1775" y="1724" class="detail">hlo_with_config → HloModule::CreateFromProtoWithConfig</text>
+    <text x="1775" y="1757" class="detail">mlir → StableHLO / MHLO 转换 → HloModule</text>
+    <text x="1775" y="1790" class="detail">开源宿主侧解析 / 转换返回值，不是在这里重跑 TPU 优化。</text>
+    <text x="1775" y="1823" class="detail">源码：pjrt/c_api_client/pjrt_c_api_client.cc:2679</text>
+    <rect id="hlo-sharding-metadata" x="1755" y="1950" width="750" height="240" rx="12" fill="#eef8fa" stroke="#78afb9" stroke-width="1.5" />
+    <text x="1775" y="1987" class="component">③ 编译后的输出分片元数据</text>
+    <text x="1775" y="2023" class="small">触发：IFRT 包装编译结果，且 provider 返回输出分片信息</text>
+    <text x="1775" y="2058" class="detail">GetOutputShardings → GetHloShardings → HloSharding::FromProto</text>
+    <text x="1775" y="2091" class="small">构造输出 sharding / arrays 的元数据；不属于 HLO 图优化。</text>
+    <text x="1775" y="2124" class="detail">调用点：pjrt_ifrt/pjrt_executable.cc:772</text>
+    <text x="1775" y="2157" class="detail">转换实现：pjrt_ifrt/pjrt_executable.cc:128</text>
+    <rect id="default-tpu-hlo-audit" x="1755" y="2290" width="750" height="260" rx="12" fill="#eff6ff" stroke="#88a9d0" stroke-width="1.5" />
+    <text x="1775" y="2327" class="component">默认 JAX → TPU 提交路径的核对范围</text>
+    <text x="1775" y="2363" class="small">范围：普通 jit / compile()，需要新编译，使用 TPU PJRT C API。</text>
+    <text x="1775" y="2398" class="small">公开宿主侧传递 MLIR，执行合法化 / 兼容处理，再以 mlir 格式提交。</text>
+    <text x="1775" y="2433" class="detail">在这条已核对路径中，未发现提交前另跑一轮 XLA HloModule 优化流水线。</text>
+    <text x="1775" y="2466" class="detail">导出 HLO、读回优化后 HLO、处理 HloSharding 的代码都存在于开源侧。</text>
+    <text x="1775" y="2499" class="detail">注册变换后，后端编译还可回调宿主 Python 修改 HLO（见④）。</text>
+    <text x="1775" y="2530" class="detail">源码核对：JAX 2d66622450e2；XLA dcf304bc5dca</text>
+    <path d="M1775 2600H1830" class="query" />
+    <text x="1850" y="2606" class="detail">橙色虚线：显式导出 / 查询分支</text>
+    <path d="M1775 2640H1830" class="response" />
+    <text x="1850" y="2646" class="detail">蓝色虚线：编译结果 / 元数据处理</text>
+    <path d="M1330 965H1700V1315H1755" class="query" />
+    <path d="M1285 2320H1710V1700H1755" class="query" />
+    <path d="M1285 1625H1680V2070H1755" class="response" />
+    <rect id="registered-hlo-transform" x="1755" y="2800" width="750" height="1450" rx="12" fill="#fbeef5" stroke="#ad4f7c" stroke-width="1.6" />
+    <text x="1775" y="2841" class="heading">④ 编译期可写 HLO hook（注册后触发）</text>
+    <text x="1775" y="2876" class="detail">POST_SCHEDULER 指 HLO 调度之后；不是最终机器指令调度。</text>
+    <rect id="hlo-transform-registration" x="1775" y="2930" width="710" height="220" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.6" />
+    <text x="1795" y="2968" class="component">注册阶段：保存变换函数与平台 / stage</text>
+    <text x="1795" y="3005" class="detail">from jax.extend import xla as jax_xla</text>
+    <text x="1795" y="3040" class="detail">jax_xla.register_hlo_module_transformation(callback, ...)</text>
+    <text x="1795" y="3075" class="detail">stage=jax_xla.PipelineStage.POST_SCHEDULER</text>
+    <text x="1795" y="3110" class="detail">platforms="cpu" 或 "tpu"；也可传入平台列表。</text>
+    <text x="1795" y="3137" class="detail">此时保存回调；实际编译到达挂点时才执行。</text>
+    <rect id="hlo-transform-cpu-registration" x="1775" y="3210" width="330" height="270" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.6" />
+    <text x="1795" y="3248" class="component">CPU：进程内直接注册</text>
+    <text x="1795" y="3285" class="detail">jaxlib._xla</text>
+    <text x="1795" y="3317" class="detail">  .register_xla_transform</text>
+    <text x="1795" y="3350" class="detail">→ RegisterHloXlaTransform</text>
+    <text x="1795" y="3382" class="detail">→ CPU 编译器变换注册表</text>
+    <text x="1795" y="3415" class="detail">PyHloXlaTransform 调用 Python</text>
+    <text x="1795" y="3455" class="detail">该注册路径不经过 PJRT C API</text>
+    <rect id="hlo-transform-pjrt-registration" x="2140" y="3210" width="345" height="270" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.6" />
+    <text x="2160" y="3248" class="component">TPU：PJRT 扩展注册</text>
+    <text x="2160" y="3285" class="detail">get_pjrt_plugin("tpu")</text>
+    <text x="2160" y="3317" class="detail">→ jaxlib._xla</text>
+    <text x="2160" y="3350" class="detail">  .register_xla_transform_c_api</text>
+    <text x="2160" y="3382" class="detail">→ PJRT_Xla_Transform_Extension</text>
+    <text x="2160" y="3415" class="detail">传入 name、stage 与回调指针</text>
+    <text x="2160" y="3455" class="detail">plugin 缺少该扩展时注册报错</text>
+    <path d="M2130 3150V3180H1940V3210" class="flow" />
+    <path d="M2130 3180H2310V3210" class="flow" />
+    <rect id="hlo-transform-trigger" x="1775" y="3510" width="710" height="160" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.6" />
+    <text x="1795" y="3548" class="component">实际触发：所选后端编译到达 HLO 调度后挂点</text>
+    <text x="1795" y="3585" class="detail">CPU 与 TPU 回调均在宿主 Python 中运行；注册按 platforms 选择。</text>
+    <text x="1795" y="3620" class="detail">已有 executable 缓存命中通常不发生新编译，也不会重新触发该 hook。</text>
+    <text x="1795" y="3653" class="detail">CPU hook 已实测；TPU 测试定义见 xla_transform_test.py:451，未运行。</text>
+    <rect id="python-hlo-transform-callback" x="1775" y="3750" width="710" height="240" rx="12" fill="#fff" stroke="#ad4f7c" stroke-width="1.6" />
+    <text x="1795" y="3788" class="component">宿主 Python：TPU 用户变换示例</text>
+    <text x="1795" y="3825" class="component">transform_dsa_sparse_gather_schedule</text>
+    <text x="1795" y="3870" class="small">输入：序列化的 HloModuleProto bytes（可包含 HLO schedule）</text>
+    <text x="1795" y="3910" class="detail">函数解析 / 改写 HLO 或 schedule，返回修改后的 bytes，或返回 None。</text>
+    <text x="1795" y="3950" class="detail">这个回调参与编译；不是运行在 TPU 设备上的 kernel。</text>
+    <text x="1795" y="3978" class="detail">桥接实现：jaxlib/xla.cc:128，取得 GIL 后调用 Python 函数。</text>
+    <rect id="hlo-transform-writeback" x="1775" y="4040" width="710" height="180" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.6" />
+    <text x="1795" y="4078" class="component">交回编译器：更新 HLO，继续后端编译</text>
+    <text x="1795" y="4115" class="detail">None → changed=false；bytes → UpdateHloModuleFromProto。</text>
+    <text x="1795" y="4150" class="detail">公开 adapter 负责反序列化；更新 helper 会恢复返回 proto 中的 schedule。</text>
+    <text x="1795" y="4187" class="detail">此分支依据注册接口、公开桥接实现与 TPU 测试定义；不是本次 TPU 实测。</text>
+    <path d="M2340 3480V3495H1705V3375H1338V3820H1260V3840" class="config" />
+    <path d="M1310 3870H1370V3390H1745V3870H1775" class="transform-call" />
+    <path d="M1775 3955H1720V3360H1350V3910H1310" class="transform-return" />
+  </g>
+  <g id="cpu-python-hlo-callback" transform="translate(0 800)">
+    <rect x="35" y="3820" width="245" height="285" rx="12" fill="#fbeef5" stroke="#ad4f7c" stroke-width="1.6" />
+    <text x="55" y="3855" class="component">CPU Python 回调</text>
+    <text x="55" y="3890" class="detail">record_hlo（本次探针）</text>
+    <text x="55" y="3925" class="detail">输入：HloModuleProto</text>
+    <text x="55" y="3955" class="detail">读取并验证 HloSchedule</text>
+    <text x="55" y="3985" class="detail">返回 None：不改写 HLO</text>
+    <text x="55" y="4020" class="detail">2×3 @ 3×4 matmul</text>
+    <text x="55" y="4050" class="detail">回调 1 次；549 bytes</text>
+    <text x="55" y="4080" class="detail">CPU 执行数值匹配 NumPy</text>
+    <path d="M345 3910H280" class="transform-call" />
+    <path d="M280 3970H320V3940H345" class="transform-return" />
+  </g>
+  <g id="xla-extension-interfaces">
+    <rect id="xla-extension-panel" x="2570" y="110" width="1510" height="4590" rx="12" fill="#f7f9fc" stroke="#b5c5d6" stroke-width="1.6" />
+    <text x="2600" y="155" class="title">JAX / XLA Python 扩展接口：输入、作用阶段与下游</text>
+    <text x="2600" y="191" class="small">A–E 与主图同字母标记对应；这些接口可独立使用，卡片之间不表示顺序调用。</text>
+    <g id="xla-interface-a">
+      <rect id="a-panel" x="2600" y="230" width="1455" height="580" rx="12" fill="#ffffff" stroke="#b5c5d6" stroke-width="1.6" />
+      <text x="2630" y="274" class="heading">A · 自定义 primitive lowering</text>
+      <text x="2630" y="311" class="small">位置：JAX 内部的 Jaxpr → MLIR；改变一个 primitive 如何生成目标平台 IR。</text>
+      <rect id="lowering-api" x="2630" y="345" width="1395" height="115" rx="12" fill="#f5f1fb" stroke="#a696c5" stroke-width="1.6" />
+      <text x="2655" y="379" class="pin">from jax.interpreters import mlir</text>
+      <text x="2655" y="414" class="pin">mlir.register_lowering(primitive, lowering_rule, platform="cpu" / "tpu" / None)</text>
+      <rect id="lowering-primitive" x="2630" y="515" width="365" height="135" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.6" />
+      <text x="2650" y="550" class="small">Jaxpr 中的 primitive 方程</text>
+      <text x="2650" y="584" class="small">输入 aval、effects 与平台上下文</text>
+      <text x="2650" y="618" class="small">查找通用 / 平台专用规则</text>
+      <rect id="lowering-rule" x="3040" y="515" width="465" height="135" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.6" />
+      <text x="3060" y="550" class="small">lowering_rule(ctx, *operands, ...)</text>
+      <text x="3060" y="584" class="small">接收 MLIR values / lowering context</text>
+      <text x="3060" y="618" class="small">返回代表计算结果的 MLIR values</text>
+      <rect id="lowering-result" x="3550" y="515" width="474" height="135" rx="12" fill="#f0f7ec" stroke="#a1b98b" stroke-width="1.6" />
+      <text x="3570" y="550" class="small">MLIR module</text>
+      <text x="3570" y="584" class="small">通常生成 StableHLO / sdy / custom_call</text>
+      <text x="3570" y="618" class="small">继续进入 jaxlib → IFRT → PJRT</text>
+      <path d="M2995 583H3040" class="flow" />
+      <path d="M3505 583H3550" class="flow" />
+      <text x="2630" y="697" class="small">这是 primitive 的 lowering 规则注册；AD / batching / abstract_eval 规则需要分别定义。</text>
+      <text x="2630" y="731" class="small">本地导出可用；jax.interpreters.mlir 为扩展入口，内部实现位于 jax._src.interpreters.mlir。</text>
+      <a href="../../../upstream/jax/jax/_src/interpreters/mlir.py#L1003">
+        <text x="2630" y="781" class="detail" style="fill:#256a8a;text-decoration:underline">源码：register_lowering；按平台保存规则并在 lowering 时选择</text>
+      </a>
+    </g>
+    <g id="xla-interface-b">
+      <rect id="b-panel" x="2600" y="880" width="1455" height="690" rx="12" fill="#ffffff" stroke="#b5c5d6" stroke-width="1.6" />
+      <text x="2630" y="924" class="heading">B · custom_partitioning：定义分片与每个 shard 的计算</text>
+      <text x="2630" y="961" class="small">位置：JAX 记录规则，XLA / Shardy 的分片过程使用；作用范围为被装饰的计算。</text>
+      <rect id="partitioning-api" x="2630" y="995" width="1395" height="100" rx="12" fill="#f5f1fb" stroke="#a696c5" stroke-width="1.6" />
+      <text x="2655" y="1031" class="pin">from jax.experimental.custom_partitioning import custom_partitioning</text>
+      <text x="2655" y="1064" class="pin">@custom_partitioning  →  f.def_partition(partition, ..., sharding_rule=...)</text>
+      <rect id="partitioning-shardy" x="2630" y="1150" width="675" height="160" rx="12" fill="#f0f7ec" stroke="#a1b98b" stroke-width="1.6" />
+      <text x="2655" y="1189" class="small">Shardy 开启时：sharding_rule</text>
+      <text x="2655" y="1225" class="small">描述维度传播 / reduction / replication 规则</text>
+      <text x="2655" y="1261" class="small">规则可以是字符串、SdyShardingRule 或生成规则的函数</text>
+      <rect id="partitioning-gspmd" x="3350" y="1150" width="674" height="160" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.6" />
+      <text x="3375" y="1189" class="small">使用其他分片路径时：回调推导</text>
+      <text x="3375" y="1225" class="small">infer_sharding_from_operands(...)</text>
+      <text x="3375" y="1261" class="small">propagate_user_sharding(...)</text>
+      <path d="M2967 1095V1150" class="config" />
+      <path d="M3687 1095V1150" class="config" />
+      <rect id="partitioning-per-shard" x="2630" y="1360" width="1395" height="120" rx="12" fill="#eef8fa" stroke="#78afb9" stroke-width="1.6" />
+      <text x="2655" y="1394" class="small">partition(mesh, arg_shapes, result_shape) → mesh、lower_fn、输出 shardings、输入 shardings</text>
+      <text x="2655" y="1426" class="small">lower_fn 描述每个 shard 的计算 → trace 成 Jaxpr → MLIR bytecode → 交回编译器。</text>
+      <text x="2655" y="1458" class="small">使用的是分片阶段的专门契约；输入输出不是完整 HloModuleProto。</text>
+      <path d="M2967 1310V1360" class="flow" />
+      <path d="M3687 1310V1360" class="flow" />
+      <a href="../../../upstream/jax/jax/_src/custom_partitioning.py#L265">
+        <text x="2630" y="1533" class="detail" style="fill:#256a8a;text-decoration:underline">源码：custom_partitioning 文档、def_partition 与 per-shard lowering</text>
+      </a>
+    </g>
+    <g id="xla-interface-c">
+      <rect id="c-panel" x="2600" y="1640" width="1455" height="690" rx="12" fill="#ffffff" stroke="#b5c5d6" stroke-width="1.6" />
+      <text x="2630" y="1684" class="heading">C · 原生 FFI：custom_call 的一种用法</text>
+      <text x="2630" y="1721" class="small">此卡展示原生函数集成；Pallas TPU 的 custom_call 携带 kernel IR，路径见左上方。</text>
+      <rect id="ffi-register" x="2630" y="1755" width="675" height="150" rx="12" fill="#f5f1fb" stroke="#a696c5" stroke-width="1.6" />
+      <text x="2655" y="1793" class="small">jax.ffi.register_ffi_target(name, fn, platform=...)</text>
+      <text x="2655" y="1830" class="small">fn：持有原生函数指针的 PyCapsule / stage handler 字典</text>
+      <text x="2655" y="1867" class="small">内部使用 xla_client.register_custom_call_target</text>
+      <rect id="ffi-call" x="3350" y="1755" width="674" height="150" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.6" />
+      <text x="3375" y="1793" class="small">jax.ffi.ffi_call(target_name, result_shape_dtypes, ...)</text>
+      <text x="3375" y="1830" class="small">描述目标名称、参数与结果签名、layout / alias 等</text>
+      <text x="3375" y="1867" class="small">在 JAX 函数中建立外部调用</text>
+      <rect id="ffi-custom-call-ir" x="3350" y="1960" width="674" height="115" rx="12" fill="#f0f7ec" stroke="#a1b98b" stroke-width="1.6" />
+      <text x="3375" y="1996" class="small">ffi_call primitive → lowering → StableHLO custom_call</text>
+      <text x="3375" y="2034" class="small">编译器识别目标名称 / ABI，生成后端调用</text>
+      <rect id="ffi-runtime" x="2630" y="2130" width="1395" height="105" rx="12" fill="#eef8fa" stroke="#78afb9" stroke-width="1.6" />
+      <text x="2655" y="2166" class="small">executable → 已注册的原生 handler / 外部 kernel → 返回计算结果</text>
+      <text x="2655" y="2201" class="small">这是原生函数集成；HLO Python hook 则在编译中处理程序表示。平台需要匹配其 target 与 ABI 支持。</text>
+      <path d="M3687 1905V1960" class="flow" />
+      <path d="M3687 2075V2130" class="flow" />
+      <path d="M2967 1905V2130" class="config" />
+      <a href="../../../upstream/jax/jax/_src/ffi.py#L47">
+        <text x="2630" y="2288" class="detail" style="fill:#256a8a;text-decoration:underline">源码：register_ffi_target → register_custom_call_target；ffi_call_lowering</text>
+      </a>
+    </g>
+    <g id="xla-interface-d">
+      <rect id="d-panel" x="2600" y="2400" width="1455" height="1650" rx="12" fill="#ffffff" stroke="#b5c5d6" stroke-width="1.6" />
+      <text x="2630" y="2444" class="heading">D · 编译期 HLO 变换与 HLO 编辑对象</text>
+      <text x="2630" y="2481" class="small">位置：后端 HLO pipeline 内；主图已展开 CPU 直接注册与 TPU PJRT 扩展注册两条路径。</text>
+      <rect id="hlo-hook-api-family" x="2630" y="2515" width="1395" height="240" rx="12" fill="#fbeef5" stroke="#ad4f7c" stroke-width="1.6" />
+      <text x="2655" y="2554" class="pin">from jax.extend import xla</text>
+      <text x="2655" y="2592" class="pin">xla.register_hlo_module_transformation(callback, name=..., stage=..., platforms=...)</text>
+      <text x="2655" y="2630" class="pin">xla.clear_hlo_module_transformation(name, stage=..., platforms=...)</text>
+      <text x="2655" y="2675" class="small">同一 stage 的多个回调按注册顺序运行；清除接口按 name / stage / platform 移除注册。</text>
+      <text x="2655" y="2709" class="small">当前 PipelineStage 只有下方两个枚举；选择 cpu 直接注册，tpu 经 plugin 扩展，其他 plugin 需支持对应扩展。</text>
+      <rect id="pre-scheduler-interface" x="2630" y="2810" width="415" height="260" rx="12" fill="#fbeef5" stroke="#ad4f7c" stroke-width="1.6" />
+      <text x="2650" y="2850" class="small">PRE_SCHEDULER</text>
+      <text x="2650" y="2890" class="small">HLO 调度前挂点</text>
+      <text x="2650" y="2930" class="small">可用于 HLO 图改写</text>
+      <text x="2650" y="2970" class="small">不表示所有 HLO 优化之前</text>
+      <text x="2650" y="3010" class="small">具体插入位置由后端决定</text>
+      <rect id="schedule-interface" x="3090" y="2810" width="260" height="260" rx="12" fill="#fffaf3" stroke="#c99149" stroke-width="1.6" />
+      <text x="3110" y="2850" class="small">HLO schedule</text>
+      <text x="3110" y="2890" class="small">建立指令执行次序</text>
+      <text x="3110" y="2930" class="small">前后仍可有其他 passes</text>
+      <text x="3110" y="2970" class="small">不是机器指令调度</text>
+      <rect id="post-scheduler-interface" x="3395" y="2810" width="629" height="260" rx="12" fill="#fbeef5" stroke="#ad4f7c" stroke-width="1.6" />
+      <text x="3420" y="2850" class="small">POST_SCHEDULER</text>
+      <text x="3420" y="2890" class="small">已有 HloSchedule 后的挂点</text>
+      <text x="3420" y="2930" class="small">可检查 / 修改指令次序；必须保持数据依赖等约束</text>
+      <text x="3420" y="2970" class="small">CPU：在 CreateBufferAssignment 之前调用</text>
+      <text x="3420" y="3010" class="small">CPU 已实测；TPU 有源码测试定义，本次未运行</text>
+      <path d="M3045 2940H3090" class="flow" />
+      <path d="M3350 2940H3395" class="flow" />
+      <text x="2630" y="3115" class="pin">callback(bytes) → HloModule.from_serialized_hlo_module_proto(bytes) → 以下内部 HLO 对象</text>
+      <rect id="hlo-module-editor" x="2630" y="3150" width="675" height="445" rx="12" fill="#f0f7ec" stroke="#a1b98b" stroke-width="1.6" />
+      <text x="2655" y="3191" class="small">HloModule / HloComputation / HloInstruction</text>
+      <text x="2655" y="3234" class="small">from jax._src.lib import hlo  （内部入口）</text>
+      <text x="2655" y="3277" class="small">module.computations() → computation.instructions()</text>
+      <text x="2655" y="3320" class="small">instruction.opcode / operands() / users()</text>
+      <text x="2655" y="3363" class="small">computation.create_unary_instruction(opcode, operand)</text>
+      <text x="2655" y="3406" class="small">computation.replace_instruction(old, new)</text>
+      <text x="2655" y="3449" class="small">instruction.set_frontend_attribute(key, value)</text>
+      <text x="2655" y="3492" class="small">用例：遍历图、替换指令、调整编译属性</text>
+      <rect id="hlo-schedule-editor" x="3350" y="3150" width="674" height="445" rx="12" fill="#f0f7ec" stroke="#a1b98b" stroke-width="1.6" />
+      <text x="3375" y="3191" class="small">HloSchedule</text>
+      <text x="3375" y="3234" class="small">schedule = module.schedule()</text>
+      <text x="3375" y="3277" class="small">schedule.sequence(computation) → 指令列表</text>
+      <text x="3375" y="3320" class="small">schedule.set_sequence(computation, instructions)</text>
+      <text x="3375" y="3363" class="small">schedule.update() / schedule.verify()</text>
+      <text x="3375" y="3406" class="small">module.set_schedule(schedule)</text>
+      <text x="3375" y="3449" class="small">用例：在依赖约束内调整 async start / done 次序</text>
+      <text x="3375" y="3492" class="small">内部绑定不代表稳定的跨版本兼容承诺</text>
+      <text x="2630" y="3640" class="small">返回 module.as_serialized_hlo_module_proto() → 桥接层更新编译中的 HLO；返回 None → 不更新。</text>
+      <text x="2630" y="3674" class="small">只修改导出得到的 HLO 副本不会自动影响 executable；编译期写回需要通过已注册的 callback 返回 bytes。</text>
+      <rect id="standalone-hlo-pass-bindings" x="2630" y="3740" width="1395" height="250" rx="12" fill="#fff8ed" stroke="#c8a16b" stroke-width="1.6" />
+      <text x="2655" y="3780" class="small">源码中的独立 HLO pass Python 绑定：本地未安装</text>
+      <text x="2655" y="3820" class="small">_hlo_pass.HloDCE / CallInliner / FlattenCallGraph / TupleSimplifier</text>
+      <text x="2655" y="3860" class="small">HloPassInterface.run(module) → bool（是否修改）；作用于显式传入的 HloModule。</text>
+      <text x="2655" y="3900" class="small">本地 import jaxlib._hlo_pass → ModuleNotFoundError；因此不把它列为当前可直接调用的接口。</text>
+      <a href="../../../upstream/xla/xla/python/_hlo_pass.pyi#L17">
+        <text x="2655" y="3963" class="detail" style="fill:#256a8a;text-decoration:underline">源码：xla/python/_hlo_pass.pyi 与 hlo_pass.cc；HLO 对象接口见 _hlo.pyi:531</text>
+      </a>
+      <a href="../../../upstream/jax/jax/_src/xla_transform.py#L27">
+        <text x="2630" y="4024" class="detail" style="fill:#256a8a;text-decoration:underline">挂点来源：xla_transform.py:27；CPU cpu_compiler.cc:1178 / 1833；GPU gpu_compiler.cc:1026 / 3286</text>
+      </a>
+      <text x="2630" y="3139" class="detail">此回调处理外层 HloModuleProto；Pallas body 内封装的 Mosaic MLIR 是另一套表示。</text>
+    </g>
+    <g id="xla-interface-e">
+      <rect id="e-panel" x="2600" y="4120" width="1455" height="510" rx="12" fill="#ffffff" stroke="#b5c5d6" stroke-width="1.6" />
+      <text x="2630" y="4164" class="heading">E · 只读 IR 导出与编译结果分析</text>
+      <text x="2630" y="4201" class="small">用途：观察 lowering 和 executable；不注册 pass，也不向当前编译流水线写回修改。</text>
+      <rect id="lowered-readonly-api" x="2630" y="4235" width="675" height="270" rx="12" fill="#fff8ed" stroke="#c8a16b" stroke-width="1.6" />
+      <text x="2655" y="4275" class="small">lowered = jax.jit(f).lower(...)</text>
+      <text x="2655" y="4318" class="small">lowered.compiler_ir("stablehlo") → MLIR module</text>
+      <text x="2655" y="4361" class="small">lowered.compiler_ir("hlo") → XlaComputation</text>
+      <text x="2655" y="4404" class="small">lowered.as_text("stablehlo" / "hlo") → 文本</text>
+      <text x="2655" y="4447" class="small">hlo 导出是显式转换分支；对应主图①</text>
+      <rect id="compiled-readonly-api" x="3350" y="4235" width="674" height="270" rx="12" fill="#eef8fa" stroke="#78afb9" stroke-width="1.6" />
+      <text x="3375" y="4275" class="small">compiled = lowered.compile()</text>
+      <text x="3375" y="4318" class="small">compiled.as_text() → 编译后程序文本</text>
+      <text x="3375" y="4361" class="small">compiled.cost_analysis() / memory_analysis()</text>
+      <text x="3375" y="4404" class="small">compiled.runtime_executable() → 底层 executable</text>
+      <text x="3375" y="4447" class="small">后端可能不提供部分表示或分析；对应主图②</text>
+      <a href="../../../upstream/jax/jax/_src/stages.py#L649">
+        <text x="2630" y="4575" class="detail" style="fill:#256a8a;text-decoration:underline">源码：Lowered.compiler_ir / Compiled 分析接口；具体返回值由后端支持决定</text>
+      </a>
+    </g>
+    <text x="2600" y="4675" class="detail">核对：JAX 2d66622450e2 / XLA dcf304bc5dca；.venv 已检查 API 导出，CPU HLO hook 已执行；其他接口未新增目标设备执行。</text>
+  </g>
+  <a href="#xla-interface-a">
+    <circle cx="270" cy="721" r="17" fill="#20344d" />
+    <text x="270" y="727" class="small" text-anchor="middle" style="fill:#fff;font-weight:700">A</text>
+  </a>
+  <path d="M287 721H325" class="config" />
+  <a href="#xla-interface-b" transform="translate(0 800)">
+    <circle cx="270" cy="3540" r="17" fill="#20344d" />
+    <text x="270" y="3546" class="small" text-anchor="middle" style="fill:#fff;font-weight:700">B</text>
+  </a>
+  <path d="M287 3540H325" class="config" transform="translate(0 800)" />
+  <a href="#xla-interface-c">
+    <circle cx="270" cy="792" r="17" fill="#20344d" />
+    <text x="270" y="798" class="small" text-anchor="middle" style="fill:#fff;font-weight:700">C</text>
+  </a>
+  <path d="M287 792H325" class="config" />
+  <a href="#xla-interface-d" transform="translate(0 800)">
+    <circle cx="2460" cy="2870" r="17" fill="#20344d" />
+    <text x="2460" y="2876" class="small" text-anchor="middle" style="fill:#fff;font-weight:700">D</text>
+  </a>
+  <a href="#xla-interface-e" transform="translate(0 800)">
+    <circle cx="2460" cy="1220" r="17" fill="#20344d" />
+    <text x="2460" y="1226" class="small" text-anchor="middle" style="fill:#fff;font-weight:700">E</text>
+  </a>
+  <a href="#xla-interface-e" transform="translate(0 800)">
+    <circle cx="2460" cy="1628" r="17" fill="#20344d" />
+    <text x="2460" y="1634" class="small" text-anchor="middle" style="fill:#fff;font-weight:700">E</text>
+  </a>
+  <g id="stack-glossary" transform="translate(0 800)">
+    <path d="M55 4805H4045" fill="none" stroke="#b5c5d6" stroke-width="1.5" />
+    <text x="55" y="4838" class="title">术语速查</text>
+    <text x="55" y="4868" class="small">缩写、职责与表示层次；每行一个词条，末尾链接指向定义依据。</text>
+    <g id="glossary-jax-transforms">
+      <text x="55" y="4905" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">jit / grad / vmap：</tspan>
+        <tspan>jit：将函数计算暂存为可编译程序，并复用编译结果。grad：构造导数计算；vmap：将标量式计算变成批量计算。这些变换可组合、嵌套，并使用 primitive 的对应规则。</tspan>
+        <a href="../../../upstream/jax/jax/_src/api.py#L204">
+          <title>源码：jax/jax/_src/api.py:204</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-jaxpr">
+      <text x="55" y="4943" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">Tracing / Jaxpr：</tspan>
+        <tspan>Tracing：用 tracer 跟踪 Python 中发生的 JAX 运算。Jaxpr：记录 primitive 方程、变量、类型及 effects 的程序表示。它处于 JAX 前端，后续通过 lowering 转成 MLIR。</tspan>
+        <a href="../../../upstream/jax/jax/_src/core.py#L1">
+          <title>源码：jax/jax/_src/core.py:1</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-primitive">
+      <text x="55" y="4981" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">Primitive（基础操作）：</tspan>
+        <tspan>Jaxpr 中的一种基础操作，例如 dot_general。可定义形状 / 类型推导、自动微分、批量化和 lowering 规则。一个 primitive 不一定对应一条最终机器指令。</tspan>
+        <a href="../../../upstream/jax/jax/_src/core.py#L1">
+          <title>源码：jax/jax/_src/core.py:1</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-lowering">
+      <text x="55" y="5019" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">Lowering（逐层转换）：</tspan>
+        <tspan>将程序逐层转换为更具体的表示。普通 JAX 可生成 StableHLO；Pallas kernel 则生成 Mosaic TPU MLIR，再封装为外层 custom_call。两者都经过 MLIR lowering。</tspan>
+        <a href="../../../upstream/jax/jax/_src/interpreters/mlir.py#L1003">
+          <title>源码：jax/jax/_src/interpreters/mlir.py:1003</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-mlir">
+      <text x="55" y="5057" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">MLIR / dialect（方言）：</tspan>
+        <tspan>MLIR：构造多层 IR、分析与转换 pass 的编译基础设施。dialect：其中一组操作、类型和属性的定义。同一 MLIR module 可以同时包含多种方言的操作。</tspan>
+        <a href="../../../upstream/xla/xla/mlir_hlo/README.md#L86">
+          <title>源码：xla/xla/mlir_hlo/README.md:86</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-dialects">
+      <text x="55" y="5095" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">StableHLO / MHLO / sdy：</tspan>
+        <tspan>StableHLO：面向机器学习计算交换、带兼容性约定的方言。MHLO：XLA 中的 HLO 风格 MLIR 方言，并非本图必经中转层。sdy：Shardy 用于表达分片信息与相关操作的 MLIR 方言。</tspan>
+        <a href="../../../upstream/stablehlo/README.md#L1">
+          <title>源码：stablehlo/README.md:1</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-hlo">
+      <text x="55" y="5133" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">XLA HLO / HloModuleProto：</tspan>
+        <tspan>HLO：XLA 的内部计算图表示；HloModule 包含 computations。每个 HloComputation 包含 HloInstruction，表达运算和依赖。HloModuleProto 是序列化格式；这套 HLO 对象不是 MLIR 方言。</tspan>
+        <a href="../../../upstream/xla/xla/hlo/ir/hlo_module.h#L95">
+          <title>源码：xla/xla/hlo/ir/hlo_module.h:95</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-passes">
+      <text x="55" y="5171" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">Pass / pipeline：</tspan>
+        <tspan>pass：对程序进行一次分析或转换，如简化、DCE、分片。pipeline：按规定次序组织的一组 passes，可嵌套或重复运行。具体启用哪些 pass、先后顺序如何，由后端和配置决定。</tspan>
+        <a href="../../../upstream/xla/xla/hlo/pass/hlo_pass_pipeline.h#L1">
+          <title>源码：xla/xla/hlo/pass/hlo_pass_pipeline.h:1</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-schedule">
+      <text x="55" y="5209" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">HloSchedule / PRE / POST_SCHEDULER：</tspan>
+        <tspan>HloSchedule：为 computation 中的 HLO 指令安排执行次序。PRE / POST_SCHEDULER：分别位于 HLO 调度前 / 后的挂点。PRE 不表示所有优化之前；POST 不表示最终机器指令调度之后。</tspan>
+        <a href="../../../upstream/jax/jax/_src/xla_transform.py#L27">
+          <title>源码：jax/jax/_src/xla_transform.py:27</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-buffer-assignment">
+      <text x="55" y="5247" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">Buffer assignment（内存分配规划）：</tspan>
+        <tspan>将程序中的值映射到内存分配及其偏移，分析哪些空间可复用。规划依赖值的存活期、别名关系和指令调度等信息。它是编译器的内存计划；实际内存由运行时管理。</tspan>
+        <a href="../../../upstream/xla/xla/service/buffer_assignment.h#L1">
+          <title>源码：xla/xla/service/buffer_assignment.h:1</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-llvm">
+      <text x="55" y="5285" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">LLVM / codegen：</tspan>
+        <tspan>LLVM：提供低层 IR、优化与目标代码生成等基础设施。codegen：将后端表示生成目标代码或 runtime / 库调用。本图 CPU 与部分 GPU 路径使用 LLVM，不能据此推定 TPU 路径。</tspan>
+        <a href="../../../upstream/llvm-project/README.md#L1">
+          <title>源码：llvm-project/README.md:1</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-executable">
+      <text x="55" y="5323" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">Executable / loaded executable：</tspan>
+        <tspan>executable：后端编译得到的可执行程序对象及相关元数据。loaded executable：已为所选设备准备好、可提交执行的对象。编译、加载和执行是不同动作，接口也可以合并其中部分步骤。</tspan>
+        <a href="../../../upstream/xla/xla/python/ifrt/executable.h#L171">
+          <title>源码：xla/xla/python/ifrt/executable.h:171</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-ifrt">
+      <text x="55" y="5361" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">IFRT · Interim Framework Runtime：</tspan>
+        <tspan>面向 JAX 等框架的高层运行时 API，统一数组、编译与执行对象。Array 可代表跨多个设备分片的一个逻辑数组。本图通过 IFRT 的 PJRT 实现向下调用 PJRT；IFRT 不是 HLO pass。</tspan>
+        <a href="../../../upstream/xla/xla/python/ifrt/README.md#L1">
+          <title>源码：xla/xla/python/ifrt/README.md:1</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-pjrt">
+      <text x="55" y="5399" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">PJRT（底层设备运行时 API）：</tspan>
+        <tspan>提供 client、device、buffer、compile / load / execute 等接口。具体后端 provider 实现这些接口，并接入编译器和设备运行时。IFRT 位于其上层；本图 TPU provider 通过 libtpu plugin 接入。</tspan>
+        <a href="../../../upstream/xla/xla/python/pjrt_ifrt/pjrt_client.h#L128">
+          <title>源码：xla/xla/python/pjrt_ifrt/pjrt_client.h:128</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-array-buffer">
+      <text x="55" y="5437" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">IFRT Array / PJRT Buffer：</tspan>
+        <tspan>IFRT Array：一个逻辑数组，带有 shape、dtype 和 sharding。在 PJRT 实现中，它可由多个设备上的 PjRtBuffer 组成。PjRtBuffer：底层的一份设备数据；其 ready 状态需单独等待。</tspan>
+        <a href="../../../upstream/xla/xla/python/ifrt/array.h#L64">
+          <title>源码：xla/xla/python/ifrt/array.h:64</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-runtime-future">
+      <text x="55" y="5475" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">Runtime / future（异步完成状态）：</tspan>
+        <tspan>runtime：管理数据传输、可执行程序、执行提交和完成通知。future：代表稍后才会就绪的结果 / 状态，也可携带错误。拿到输出数组句柄，不一定意味着设备已完成计算。</tspan>
+        <a href="../../../upstream/xla/xla/python/ifrt/executable.h#L272">
+          <title>源码：xla/xla/python/ifrt/executable.h:272</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-ffi">
+      <text x="55" y="5513" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">FFI / custom_call：</tspan>
+        <tspan>FFI（Foreign Function Interface）连接外部原生函数。custom_call 是由实现定义语义的 IR 操作；它既可调用原生 target，也可像 TPU Pallas 一样携带序列化 kernel IR。</tspan>
+        <a href="../../../upstream/jax/jax/_src/ffi.py#L47">
+          <title>源码：jax/jax/_src/ffi.py:47</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-plugin">
+      <text x="55" y="5551" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">PJRT C API / plugin：</tspan>
+        <tspan>C API：通过 C 兼容结构体和函数指针表定义 PJRT 调用约定。plugin：提供这些入口的后端实现，可独立加载。本图 libtpu 提供 TPU plugin；跨此边界不意味着发生 IR 转换。</tspan>
+        <a href="../../../upstream/xla/xla/pjrt/c/pjrt_c_api.h#L1">
+          <title>源码：xla/xla/pjrt/c/pjrt_c_api.h:1</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-shardy">
+      <text x="55" y="5589" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">Shardy / SPMD：</tspan>
+        <tspan>Shardy：基于 MLIR 的张量分片表示、传播与相关编译设施。SPMD（Single Program, Multiple Data）：多设备执行同一程序，分别处理各自的数据分片，按需要加入通信。</tspan>
+        <a href="../../../upstream/shardy/README.md#L1">
+          <title>源码：shardy/README.md:1</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-triton">
+      <text x="55" y="5627" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">Triton：</tspan>
+        <tspan>编写高效自定义计算 kernel 的语言和编译器。本图中由部分 XLA GPU 融合代码生成路径使用。GPU 也有其他 emitter 和库调用路径。</tspan>
+        <a href="../../../upstream/triton/README.md#L24">
+          <title>源码：triton/README.md:24</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-libtpu">
+      <text x="55" y="5665" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">libtpu：</tspan>
+        <tspan>以二进制库 / wheel 分发，包含 XLA TPU 编译器、runtime 和驱动。JAX 通过 TPU PJRT plugin 接口使用它。二进制边界不等于源码归属边界，内部可包含开源 XLA 实现。</tspan>
+        <a href="https://docs.cloud.google.com/tpu/docs/troubleshooting/trouble-tf#debug_logs">
+          <title>架构依据：Google Cloud · libtpu 组成</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [依据]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-mosaic">
+      <text x="55" y="5703" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">Mosaic TPU MLIR / LLO：术语边界：</tspan>
+        <tspan>Mosaic TPU MLIR 是 Pallas TPU kernel lowering 的产物，可序列化到 custom_call 的 body。LLO 属于仍待匹配目标版本证据的 TPU 后端部分，不能将两者等同。</tspan>
+        <a href="../../../upstream/jax/jax/_src/pallas/mosaic/lowering.py#L15">
+          <title>源码：jax/jax/_src/pallas/mosaic/lowering.py:15</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-xprof">
+      <text x="55" y="5741" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">XProf / trace：</tspan>
+        <tspan>XProf：读取性能采集数据，提供时间线、算子与内存等分析。trace：记录执行活动及时间等信息；可用事件取决于后端。它在观测侧，读到的事件也不能直接代替硬件执行细节证据。</tspan>
+        <a href="../../../upstream/tooling/xprof/README.md#L1">
+          <title>源码：tooling/xprof/README.md:1</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        </a>
+      </text>
+    </g>
+    <g id="glossary-pin">
+      <text x="55" y="5779" class="glossary-body">
+        <tspan style="font-weight:700;fill:#20344d">Pin / VERSION-SKEW：</tspan>
+        <tspan>pin：锁定的源码 revision 或依赖版本，以本仓库 lock 文件为准。VERSION-SKEW：运行时二进制与所引用源码不匹配的记录标记。源码检查、CPU 执行与真实 TPU 执行是不同层次的证据。</tspan>
+        <a href="../../../upstream-sources.lock">
+          <title>本地依据：upstream-sources.lock / AGENTS.md</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [依据]</tspan>
+        </a>
+      </text>
+    </g>
+    <text x="55" y="5830" class="small">读图例子：一个分片 jax.Array → IFRT Array → 多个 PJRT buffers；编译请求经 IFRT / PJRT 交给后端，执行完成后再使结果就绪。</text>
+  </g>
+  <g id="mlir-layer">
+    <rect id="mlir-representations" x="300" y="895" width="2230" height="700" rx="12" fill="#f5f1fb" stroke="#a696c5" stroke-width="1.6" />
+    <text x="325" y="936" class="heading">MLIR：外层 module 与 kernel payload</text>
+    <text x="1010" y="936" class="pin" xml:space="preserve">LLVM/MLIR pin：75a45c373407</text>
+    <text x="325" y="968" class="small">StableHLO、sdy 与 Mosaic 使用的方言都基于 MLIR；下方右框是对 body 的显式解码观察。</text>
+    <rect id="stablehlo" x="325" y="995" width="1240" height="550" rx="12" fill="#eef8fa" stroke="#78afb9" stroke-width="1.6" />
+    <text x="350" y="1032" class="heading">外层 StableHLO module</text>
+    <text x="780" y="1032" class="pin" xml:space="preserve">StableHLO pin：7b1b15781ccb</text>
+    <rect id="ordinary-stablehlo-ops" x="350" y="1070" width="395" height="210" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.6" />
+    <text x="370" y="1110" class="component">普通 JAX 运算</text>
+    <text x="370" y="1150" class="small">stablehlo.dot_general / add / ...</text>
+    <text x="370" y="1182" class="small">计算可直接表示为外层算子。</text>
+    <text x="370" y="1214" class="small">Pallas 加法例子的外层</text>
+    <text x="370" y="1246" class="small">没有 stablehlo.add。</text>
+    <rect id="pallas-stablehlo-custom-call" x="790" y="1070" width="750" height="390" rx="12" fill="#fff" stroke="#78afb9" stroke-width="1.6" />
+    <text x="812" y="1108" class="component">Pallas 调用节点：stablehlo.custom_call</text>
+    <text x="812" y="1142" class="pin" xml:space="preserve">@tpu_custom_call(%arg0, %arg1) → tensor&lt;8x128xf32&gt;</text>
+    <text x="812" y="1172" class="pin" xml:space="preserve">kernel_name = "pallas_add"</text>
+    <rect id="pallas-body-envelope" x="812" y="1195" width="705" height="220" rx="12" fill="#fff8ed" stroke="#c8a16b" stroke-width="1.6" />
+    <text x="835" y="1230" class="pin" xml:space="preserve">backend_config = {</text>
+    <text x="835" y="1260" class="pin" xml:space="preserve">  "custom_call_config": {</text>
+    <text x="835" y="1290" class="pin" xml:space="preserve">    "body": "TUzvUg...（Base64 内容省略）",</text>
+    <text x="835" y="1320" class="pin" xml:space="preserve">    "serialization_format": 1,</text>
+    <text x="835" y="1350" class="pin" xml:space="preserve">    "needs_layout_passes": true</text>
+    <text x="835" y="1380" class="pin" xml:space="preserve">  } }</text>
+    <text x="812" y="1442" class="detail">为便于阅读将 JSON 展开；实际 MLIR 属性是带转义的字符串。</text>
+    <text x="350" y="1490" class="small">custom_call 定义由后端解释的操作；其配置可以携带 kernel IR。</text>
+    <text x="350" y="1519" class="small">body 是已 lowering 的 Mosaic MLIR bytecode，尚不是最终 TPU 机器码。</text>
+    <rect id="shardy" x="1600" y="995" width="905" height="195" rx="12" fill="#eef8fa" stroke="#78afb9" stroke-width="1.6" />
+    <text x="1625" y="1033" class="heading">Shardy / sdy</text>
+    <text x="1950" y="1033" class="pin" xml:space="preserve">2832731619ff</text>
+    <text x="1625" y="1074" class="small">sdy：MLIR 中的分片表示；Shardy 还提供分片传播等 passes。</text>
+    <text x="1625" y="1107" class="small">外层程序的分片信息，与 Pallas 的 grid / BlockSpec / kernel 规则分别处理。</text>
+    <text x="1625" y="1140" class="small">这些表示和规则共同参与编译，不表示所有 kernel 都可被任意自动分片。</text>
+    <rect id="decoded-mosaic-payload" x="1600" y="1250" width="905" height="295" rx="12" fill="#f0f7ec" stroke="#a1b98b" stroke-width="1.6" />
+    <text x="1625" y="1289" class="component">解码 body：实际 Mosaic kernel IR</text>
+    <text x="1625" y="1331" class="pin" xml:space="preserve">func.func @pallas_add(... memref&lt;8x128xf32, ...&gt;)</text>
+    <text x="1625" y="1365" class="pin" xml:space="preserve">  vector.load ...</text>
+    <text x="1625" y="1399" class="pin" xml:space="preserve">  %2 = arith.addf %0, %1 : vector&lt;8x128xf32&gt;</text>
+    <text x="1625" y="1433" class="pin" xml:space="preserve">  tpu.vector_store ...</text>
+    <text x="1625" y="1480" class="detail">摘要省略类型与索引；加法位于 kernel IR 内。Mosaic TPU MLIR 不是 LLO。</text>
+    <a href="../examples/pallas_add.mosaic.mlir">
+      <text x="1625" y="1520" class="detail" style="fill:#256a8a;text-decoration:underline">打开从该 body 解码得到的完整 Mosaic MLIR</text>
+    </a>
+    <path d="M1517 1320H1600" class="query" />
+    <a href="../examples/pallas_add.stablehlo.mlir">
+      <text x="350" y="1576" class="detail" style="fill:#256a8a;text-decoration:underline">完整 StableHLO（保留 Base64）</text>
+    </a>
+    <a href="../../../upstream/jax/jax/_src/tpu_custom_call.py#L243">
+      <text x="790" y="1576" class="detail" style="fill:#256a8a;text-decoration:underline">源码：MLIR bytecode → Base64 → backend_config</text>
+    </a>
+  </g>
+  <path d="M2485 560H2520V982H1240V1070" class="flow" />
+  <g id="outer-program-submission">
+    <rect id="outer-mlir-program" x="300" y="1640" width="1030" height="170" rx="12" fill="#eff6ff" stroke="#88a9d0" stroke-width="1.6" />
+    <text x="325" y="1678" class="component">提交的是外层 MLIR 程序；Pallas payload 随 custom_call 一起传递</text>
+    <text x="325" y="1714" class="small">编译调度提交 module 与 CompileOptions → jaxlib / IFRT / PJRT。</text>
+    <text x="325" y="1745" class="small">IFRT HloProgram 在本路径中持有 MLIR，不是这里先创建一个 XLA HloModule。</text>
+    <text x="325" y="1776" class="small">PJRT C API 序列化外层程序为 "mlir"；TPU 后端再处理外层程序与 kernel。</text>
+  </g>
+  <path d="M815 1595V1640" class="flow" />
+  <path d="M815 1810V1865" class="flow" />
+</svg>

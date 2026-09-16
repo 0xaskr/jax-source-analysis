@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="670" viewBox="0 0 920 670" role="img" aria-labelledby="title desc">
+<title id="title">编译控制链</title>
+<desc id="desc">compiler.backend_compile_and_load → jaxlib PyClient；jaxlib PyClient → IFRT default compiler；IFRT default compiler → PjRtCompiler 实现；PjRtCompiler 实现 → PJRT provider；PJRT provider → CPU provider；PJRT provider → C API adapter；C API adapter → TPU plugin</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5 L0 10Z" fill="#64748b"/></marker></defs>
+<style>text{font-family:"Noto Sans CJK SC","Microsoft YaHei",sans-serif;font-size:18px;fill:#172b4d}.edge{fill:none;stroke:#64748b;stroke-width:2;marker-end:url(#arrow)}.node{fill:#eff6ff;stroke:#7098c4;stroke-width:1.5}.pending{fill:#fff7ed;stroke:#c58a40;stroke-width:1.5;stroke-dasharray:6 4}</style>
+<rect width="920" height="670" fill="white"/>
+<path class="edge" d="M 460.0 83 V 99.0 H 460.0 V 115"/>
+<path class="edge" d="M 460.0 173 V 189.0 H 460.0 V 205"/>
+<path class="edge" d="M 460.0 263 V 279.0 H 460.0 V 295"/>
+<path class="edge" d="M 460.0 353 V 369.0 H 460.0 V 385"/>
+<path class="edge" d="M 460.0 443 V 469.0 H 230.0 V 495"/>
+<path class="edge" d="M 460.0 443 V 469.0 H 690.0 V 495"/>
+<path class="edge" d="M 690.0 553 V 569.0 H 690.0 V 585"/>
+<rect class="node" x="205" y="25" width="510" height="58" rx="10"/>
+<text x="460.0" y="54.0" text-anchor="middle" dominant-baseline="central">compiler.backend_compile_and_load</text>
+<rect class="node" x="205" y="115" width="510" height="58" rx="10"/>
+<text x="460.0" y="144.0" text-anchor="middle" dominant-baseline="central">jaxlib PyClient</text>
+<rect class="node" x="205" y="205" width="510" height="58" rx="10"/>
+<text x="460.0" y="234.0" text-anchor="middle" dominant-baseline="central">IFRT default compiler</text>
+<rect class="node" x="205" y="295" width="510" height="58" rx="10"/>
+<text x="460.0" y="324.0" text-anchor="middle" dominant-baseline="central">PjRtCompiler 实现</text>
+<rect class="node" x="205" y="385" width="510" height="58" rx="10"/>
+<text x="460.0" y="414.0" text-anchor="middle" dominant-baseline="central">PJRT provider</text>
+<rect class="node" x="25" y="495" width="410" height="58" rx="10"/>
+<text x="230.0" y="524.0" text-anchor="middle" dominant-baseline="central">CPU provider</text>
+<rect class="node" x="485" y="495" width="410" height="58" rx="10"/>
+<text x="690.0" y="524.0" text-anchor="middle" dominant-baseline="central">C API adapter</text>
+<rect class="node" x="485" y="585" width="410" height="58" rx="10"/>
+<text x="690.0" y="614.0" text-anchor="middle" dominant-baseline="central">TPU plugin</text>
+</svg>

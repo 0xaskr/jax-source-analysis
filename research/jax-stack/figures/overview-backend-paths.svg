@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="906" viewBox="0 0 1080 906" role="img" aria-labelledby="title desc">
+<title id="title">程序表示与后端分支</title>
+<desc id="desc">matmul + jit / grad / vmap → Jaxpr 与 primitive 规则；Jaxpr 与 primitive 规则 → JAX MLIR lowering：StableHLO / sdy；JAX MLIR lowering：StableHLO / sdy → jaxlib / IFRT / PJRT 编译接口；jaxlib / IFRT / PJRT 编译接口 → CPU：MLIR 导入与 HLO passes；CPU：MLIR 导入与 HLO passes → schedule / buffer assignment；schedule / buffer assignment → CPU emitter：MLIR / LLVM IR / runtime 调用；CPU emitter：MLIR / LLVM IR / runtime 调用 → 原生代码与 executable；原生代码与 executable → CPU load / execute；jaxlib / IFRT / PJRT 编译接口 → TPU PJRT C API / libtpu plugin；TPU PJRT C API / libtpu plugin → 待取得匹配证据： TPU 编译器、LLO 与 runtime；待取得匹配证据： TPU 编译器、LLO 与 runtime → 待验证：指定 TPU 硬件执行</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5 L0 10Z" fill="#64748b"/></marker></defs>
+<style>text{font-family:"Noto Sans CJK SC","Microsoft YaHei",sans-serif;font-size:18px;fill:#172b4d}.edge{fill:none;stroke:#64748b;stroke-width:2;marker-end:url(#arrow)}.node{fill:#eff6ff;stroke:#7098c4;stroke-width:1.5}.pending{fill:#fff7ed;stroke:#c58a40;stroke-width:1.5;stroke-dasharray:6 4}</style>
+<rect width="1080" height="906" fill="white"/>
+<path class="edge" d="M 540.0 83 V 99.0 H 540.0 V 115"/>
+<path class="edge" d="M 540.0 173 V 189.0 H 540.0 V 205"/>
+<path class="edge" d="M 540.0 263 V 279.0 H 540.0 V 295"/>
+<path class="edge" d="M 540.0 353 V 379.0 H 275.0 V 405"/>
+<path class="edge" d="M 275.0 469 V 487.0 H 275.0 V 505"/>
+<path class="edge" d="M 275.0 569 V 587.0 H 275.0 V 605"/>
+<path class="edge" d="M 275.0 681 V 699.0 H 275.0 V 717"/>
+<path class="edge" d="M 275.0 781 V 799.0 H 275.0 V 817"/>
+<path class="edge" d="M 540.0 353 V 379.0 H 805.0 V 405"/>
+<path class="edge" d="M 805.0 469 V 487.0 H 805.0 V 505"/>
+<path class="edge" d="M 805.0 581 V 599.0 H 805.0 V 617"/>
+<rect class="node" x="285" y="25" width="510" height="58" rx="10"/>
+<text x="540.0" y="54.0" text-anchor="middle" dominant-baseline="central">matmul + jit / grad / vmap</text>
+<rect class="node" x="285" y="115" width="510" height="58" rx="10"/>
+<text x="540.0" y="144.0" text-anchor="middle" dominant-baseline="central">Jaxpr 与 primitive 规则</text>
+<rect class="node" x="285" y="205" width="510" height="58" rx="10"/>
+<text x="540.0" y="234.0" text-anchor="middle" dominant-baseline="central">JAX MLIR lowering：StableHLO / sdy</text>
+<rect class="node" x="285" y="295" width="510" height="58" rx="10"/>
+<text x="540.0" y="324.0" text-anchor="middle" dominant-baseline="central">jaxlib / IFRT / PJRT 编译接口</text>
+<rect class="node" x="25" y="405" width="500" height="64" rx="10"/>
+<text x="275.0" y="437.0" text-anchor="middle" dominant-baseline="central">CPU：MLIR 导入与 HLO passes</text>
+<rect class="node" x="25" y="505" width="500" height="64" rx="10"/>
+<text x="275.0" y="537.0" text-anchor="middle" dominant-baseline="central">schedule / buffer assignment</text>
+<rect class="node" x="25" y="605" width="500" height="76" rx="10"/>
+<text x="275.0" y="643.0" text-anchor="middle" dominant-baseline="central">CPU emitter：MLIR / LLVM IR / runtime 调用</text>
+<rect class="node" x="25" y="717" width="500" height="64" rx="10"/>
+<text x="275.0" y="749.0" text-anchor="middle" dominant-baseline="central">原生代码与 executable</text>
+<rect class="node" x="25" y="817" width="500" height="64" rx="10"/>
+<text x="275.0" y="849.0" text-anchor="middle" dominant-baseline="central">CPU load / execute</text>
+<rect class="node" x="555" y="405" width="500" height="64" rx="10"/>
+<text x="805.0" y="437.0" text-anchor="middle" dominant-baseline="central">TPU PJRT C API / libtpu plugin</text>
+<rect class="pending" x="555" y="505" width="500" height="76" rx="10"/>
+<text x="805.0" y="529.5" text-anchor="middle" dominant-baseline="central">待取得匹配证据：</text>
+<text x="805.0" y="556.5" text-anchor="middle" dominant-baseline="central">TPU 编译器、LLO 与 runtime</text>
+<rect class="pending" x="555" y="617" width="500" height="64" rx="10"/>
+<text x="805.0" y="649.0" text-anchor="middle" dominant-baseline="central">待验证：指定 TPU 硬件执行</text>
+</svg>

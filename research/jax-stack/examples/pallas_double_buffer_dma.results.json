@@ -1,0 +1,114 @@
+{
+  "jax": "0.11.1.dev20260818+2d66622450",
+  "jaxlib": "0.11.1",
+  "host_backend": "cpu",
+  "lowering_platform": "tpu",
+  "tpu_compiled": false,
+  "tpu_executed": false,
+  "hardware_overlap_measured": false,
+  "lowering": {
+    "num_tiles": 5,
+    "shape": [
+      40,
+      128
+    ],
+    "grid": [],
+    "pallas_calls": 1,
+    "outer_custom_calls": 1,
+    "payload_bytes": 4794,
+    "base64_characters": 6392,
+    "vmem_buffer_shapes": [
+      [
+        2,
+        8,
+        128
+      ],
+      [
+        2,
+        8,
+        128
+      ],
+      [
+        2,
+        8,
+        128
+      ]
+    ],
+    "vmem_buffer_bytes": 24576,
+    "dma_semaphores": 6,
+    "mosaic_static_op_counts": {
+      "arith.addf": 1,
+      "arith.addi": 4,
+      "arith.cmpi": 4,
+      "arith.constant": 73,
+      "arith.extui": 2,
+      "arith.index_cast": 3,
+      "arith.muli": 6,
+      "arith.remsi": 11,
+      "arith.subi": 1,
+      "builtin.module": 1,
+      "func.func": 1,
+      "func.return": 1,
+      "scf.for": 1,
+      "scf.if": 2,
+      "scf.yield": 5,
+      "tpu.enqueue_dma": 5,
+      "tpu.memref_slice": 30,
+      "tpu.memref_squeeze": 20,
+      "tpu.vector_store": 1,
+      "tpu.wait_dma2": 5,
+      "vector.load": 3,
+      "vector.shape_cast": 4
+    }
+  },
+  "interpreter_cases": [
+    {
+      "tiles": 1,
+      "dma_mode": "eager",
+      "exact_match": true,
+      "races_found": false
+    },
+    {
+      "tiles": 2,
+      "dma_mode": "eager",
+      "exact_match": true,
+      "races_found": false
+    },
+    {
+      "tiles": 5,
+      "dma_mode": "eager",
+      "exact_match": true,
+      "races_found": false
+    },
+    {
+      "tiles": 6,
+      "dma_mode": "eager",
+      "exact_match": true,
+      "races_found": false
+    },
+    {
+      "tiles": 1,
+      "dma_mode": "on_wait",
+      "exact_match": true,
+      "races_found": false
+    },
+    {
+      "tiles": 2,
+      "dma_mode": "on_wait",
+      "exact_match": true,
+      "races_found": false
+    },
+    {
+      "tiles": 5,
+      "dma_mode": "on_wait",
+      "exact_match": true,
+      "races_found": false
+    },
+    {
+      "tiles": 6,
+      "dma_mode": "on_wait",
+      "exact_match": true,
+      "races_found": false
+    }
+  ]
+}
