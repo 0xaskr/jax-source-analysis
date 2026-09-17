@@ -1,0 +1,154 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1900" height="1800" viewBox="0 0 1900 1800" role="img">
+<defs><marker id="ah" markerWidth="11" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L11,4 L0,8 z" fill="#444444"/></marker></defs>
+<rect width="1900" height="1800" fill="#ffffff"/>
+<text x="950.0" y="44" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="27" fill="#111111" text-anchor="middle" font-weight="700">matmul lowering 全链路源码走读</text>
+<text x="950.0" y="72" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="13.5" fill="#555555" text-anchor="middle">纵向 = 流水线层次　·　左列 = 单个 matmul 经过的链路　·　右列 = 中间产物的观察点　·　实线框 = 本次核对源码　·　虚线框 = 闭源或版本错配材料</text>
+<rect x="34" y="112" width="1166" height="196" rx="14" fill="#e8f1fb" opacity="0.42"/><text x="52" y="137" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="14.5" font-weight="700" fill="#4a4a4a">① Python 前端　—— matmul 只做形状规约，不产生新数学</text>
+<rect x="34" y="326" width="1166" height="252" rx="14" fill="#f5f1fb" opacity="0.42"/><text x="52" y="351" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="14.5" font-weight="700" fill="#4a4a4a">② Primitive 与规则　—— 四条变换规则各自独立注册</text>
+<rect x="34" y="596" width="1166" height="204" rx="14" fill="#fdf0e3" opacity="0.42"/><text x="52" y="621" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="14.5" font-weight="700" fill="#4a4a4a">③ Lowering　—— 直接发出 stablehlo.dot_general</text>
+<rect x="34" y="818" width="1166" height="178" rx="14" fill="#eaf6ea" opacity="0.42"/><text x="52" y="843" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="14.5" font-weight="700" fill="#4a4a4a">④ MLIR → HLO　—— 不经过 MHLO</text>
+<rect x="34" y="1014" width="1166" height="268" rx="14" fill="#e9f6f8" opacity="0.42"/><text x="52" y="1039" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="14.5" font-weight="700" fill="#4a4a4a">⑤ CPU HLO pipeline　—— 两段，围绕 layout assignment 切分</text>
+<rect x="34" y="1300" width="1166" height="112" rx="14" fill="#ededed" opacity="0.42"/><text x="52" y="1325" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="14.5" font-weight="700" fill="#4a4a4a">⑥ Runtime</text>
+<rect x="1180" y="112" width="690" height="1300" rx="14" fill="#fbfbfb" stroke="#c9c9c9" stroke-width="1.6"/>
+<text x="1525.0" y="142" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="18" fill="#333333" text-anchor="middle" font-weight="700">中间产物在哪里观察</text>
+<g>
+<rect x="70" y="164" width="520" height="128" rx="10" fill="#e8f1fb" stroke="#2f6fb0" stroke-width="2.2"/>
+<text x="330.0" y="189" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="17" font-weight="700" fill="#1b1b1b" text-anchor="middle">jax.numpy.matmul　tensor_contractions.py:138</text>
+<text x="330.0" y="207.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12.5" fill="#3a3a3a" text-anchor="middle">squeeze → dot_general → transpose → expand_dims</text>
+<text x="330.0" y="224.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12.5" fill="#3a3a3a" text-anchor="middle">纯 Python 组合，不是 primitive；Jaxpr 里没有 matmul</text>
+<text x="330.0" y="241.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12.5" fill="#3a3a3a" text-anchor="middle">形状错的代价落在 transpose，不在 dot</text>
+</g>
+<g>
+<rect x="620" y="164" width="540" height="128" rx="10" fill="#e8f1fb" stroke="#2f6fb0" stroke-width="2.2"/>
+<text x="890.0" y="189" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="17" font-weight="700" fill="#1b1b1b" text-anchor="middle">lax.dot_general :2530　→　lax.dot :2546</text>
+<text x="890.0" y="207.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12.5" fill="#3a3a3a" text-anchor="middle">dot_general 是 dot 的别名（一行转发）</text>
+<text x="890.0" y="224.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12.5" fill="#3a3a3a" text-anchor="middle">dot :2625 → dot_general_p.bind（:2624 先 auto_insert_reshard）</text>
+<text x="890.0" y="241.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12.5" fill="#3a3a3a" text-anchor="middle">docstring 断言：lowers directly to stablehlo.dot_general</text>
+</g>
+<g>
+<rect x="70" y="378" width="700" height="88" rx="10" fill="#f5f1fb" stroke="#6b4fbb" stroke-width="2.2"/>
+<text x="420.0" y="403" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="17" font-weight="700" fill="#1b1b1b" text-anchor="middle">dot_general_p = standard_primitive(...)　lax.py:6072</text>
+<text x="420.0" y="421.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12.5" fill="#3a3a3a" text-anchor="middle">standard_primitive（lax/utils.py:46）只建 impl + abstract_eval</text>
+<text x="420.0" y="438.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12.5" fill="#3a3a3a" text-anchor="middle">本身不含 lowering；具体 lower 到哪由③的规则决定</text>
+</g>
+<g>
+<rect x="70" y="486" width="1090" height="88" rx="10" fill="#f5f1fb" stroke="#6b4fbb" stroke-width="2.2"/>
+<text x="615.0" y="511" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="17" font-weight="700" fill="#1b1b1b" text-anchor="middle">四条变换规则各自独立注册　——　jit / grad / vmap 挂在不同位置</text>
+<text x="615.0" y="529.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12.5" fill="#3a3a3a" text-anchor="middle">shape :5685　·　sharding :5764　·　remat :6102　·　pp :6120</text>
+<text x="615.0" y="546.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12.5" fill="#3a3a3a" text-anchor="middle">grad：ad.defbilinear :6114　→　VJP 本身又是一个 dot_general（双线性）</text>
+<text x="615.0" y="563.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12.5" fill="#3a3a3a" text-anchor="middle">vmap：fancy_primitive_batchers :6119　→　重算 dimension_numbers，产出一个高秩 dot</text>
+</g>
+<g>
+<rect x="70" y="648" width="700" height="136" rx="10" fill="#fdf0e3" stroke="#c8791f" stroke-width="2.2"/>
+<text x="420.0" y="673" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="16" font-weight="700" fill="#1b1b1b" text-anchor="middle">_dot_general_lower　lax.py:6266</text>
+<text x="420.0" y="691.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12.5" fill="#3a3a3a" text-anchor="middle">hlo.DotDimensionNumbers.get :6274 → hlo.dot_general :6280</text>
+<text x="420.0" y="708.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12.5" fill="#3a3a3a" text-anchor="middle">hlo 就是 stablehlo：dialects/__init__.py:62  `stablehlo as hlo`</text>
+<text x="420.0" y="725.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12.5" fill="#3a3a3a" text-anchor="middle">lower_with_sharding_in_types :6289；按需 convert :6291</text>
+<text x="420.0" y="742.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12.5" fill="#3a3a3a" text-anchor="middle">注册：默认 :6294 ／ cpu+tpu :6296-6299（共用同一函数体）</text>
+</g>
+<g>
+<rect x="800" y="648" width="360" height="136" rx="10" fill="#fbeaea" stroke="#b23b3b" stroke-width="2.2"/>
+<text x="980.0" y="673" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="15" font-weight="700" fill="#1b1b1b" text-anchor="middle">_handle_dot_precision :6193</text>
+<text x="980.0" y="691.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="11.5" fill="#3a3a3a" text-anchor="middle">全链路唯一的平台分叉点</text>
+<text x="980.0" y="708.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="11.5" fill="#3a3a3a" text-anchor="middle">混合 float/int：TPU 不转换，CPU/GPU 转换</text>
+<text x="980.0" y="725.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="11.5" fill="#3a3a3a" text-anchor="middle">混合 fp8：TPU 转换，CPU/GPU 显式排除</text>
+<text x="980.0" y="742.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="11.5" fill="#3a3a3a" text-anchor="middle">CPU 拒绝不支持的 DotAlgorithm（会静默忽略，故前端先拦）</text>
+</g>
+<g>
+<rect x="70" y="870" width="1090" height="110" rx="10" fill="#eaf6ea" stroke="#3d8b40" stroke-width="2.2"/>
+<text x="615.0" y="895" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="16" font-weight="700" fill="#1b1b1b" text-anchor="middle">lower_jaxpr_to_module mlir.py:1327　→　MlirToXlaComputation mlir_to_hlo.cc:99</text>
+<text x="615.0" y="913.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12" fill="#3a3a3a" text-anchor="middle">ConvertStablehloToHloWithOptions stablehlo.cc:187</text>
+<text x="615.0" y="930.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12" fill="#3a3a3a" text-anchor="middle">direct_stablehlo_to_hlo = true（stablehlo.cc:115）⇒ 直接 StableHLO → HLO，不经过 MHLO</text>
+<text x="615.0" y="947.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12" fill="#3a3a3a" text-anchor="middle">同名陷阱：`_cached_lowering_to_hlo` 名字含 HLO，实际调用 MLIR lowering</text>
+</g>
+<g>
+<rect x="70" y="1066" width="520" height="200" rx="10" fill="#e9f6f8" stroke="#1f8a99" stroke-width="2.2"/>
+<text x="330.0" y="1091" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="15" font-weight="700" fill="#1b1b1b" text-anchor="middle">layout assignment 之前　cpu_compiler.cc:694</text>
+<text x="330.0" y="1109.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12" fill="#3a3a3a" text-anchor="middle">DotDecomposer ×2（归一 dot 规范形）</text>
+<text x="330.0" y="1126.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12" fill="#3a3a3a" text-anchor="middle">BatchDotSimplification</text>
+<text x="330.0" y="1143.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12" fill="#3a3a3a" text-anchor="middle">OneDnnOpsRewriter</text>
+<text x="330.0" y="1160.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12" fill="#3a3a3a" text-anchor="middle">CallInliner / FloatNormalization / ResultCaster</text>
+</g>
+<g>
+<rect x="610" y="1066" width="550" height="200" rx="10" fill="#e9f6f8" stroke="#1f8a99" stroke-width="2.2"/>
+<text x="885.0" y="1091" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="15" font-weight="700" fill="#1b1b1b" text-anchor="middle">layout assignment 之后　cpu_compiler.cc:1010</text>
+<text x="885.0" y="1109.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="11.5" fill="#3a3a3a" text-anchor="middle">LibraryRewriter :329 fuse_dot_ ← matmul 交给库(Eigen/oneDNN)的转折点</text>
+<text x="885.0" y="1126.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="11.5" fill="#3a3a3a" text-anchor="middle">OneDnnContractionRewriter / DotDecomposer</text>
+<text x="885.0" y="1143.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="11.5" fill="#3a3a3a" text-anchor="middle">CpuInstructionFusion / CpuMultiOutputFusion（fusion）</text>
+<text x="885.0" y="1160.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="11.5" fill="#3a3a3a" text-anchor="middle">ApplyXlaTransforms :1178(PRE) / :1833(POST) = Python HLO hook 落点</text>
+<text x="885.0" y="1177.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="11.5" fill="#3a3a3a" text-anchor="middle">OptimizeInputOutputBufferAlias / CopyInsertion / HloDCE</text>
+</g>
+<g>
+<rect x="70" y="1352" width="1090" height="44" rx="10" fill="#ededed" stroke="#666666" stroke-width="2.2"/>
+<text x="615.0" y="1377" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="13.5" font-weight="700" fill="#1b1b1b" text-anchor="middle">DotThunk　xla/backends/cpu/runtime/dot_thunk.h:33　——　未被融合/库改写吃掉的 dot 落到这里，由 Eigen contraction 执行</text>
+</g>
+<line x1="330" y1="292" x2="330" y2="378" stroke="#444444" stroke-width="2.0" marker-end="url(#ah)"/>
+<line x1="760" y1="292" x2="760" y2="378" stroke="#444444" stroke-width="2.0" marker-end="url(#ah)"/>
+<line x1="305" y1="466" x2="305" y2="486" stroke="#444444" stroke-width="2.0" marker-end="url(#ah)"/>
+<line x1="420" y1="574" x2="420" y2="648" stroke="#444444" stroke-width="2.0" marker-end="url(#ah)"/>
+<line x1="760" y1="574" x2="900" y2="648" stroke="#444444" stroke-width="2.0" marker-end="url(#ah)"/>
+<text x="830.0" y="592" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12" fill="#444444" text-anchor="middle">平台分支</text>
+<line x1="420" y1="784" x2="420" y2="870" stroke="#444444" stroke-width="2.0" marker-end="url(#ah)"/>
+<line x1="420" y1="980" x2="420" y2="1066" stroke="#444444" stroke-width="2.0" marker-end="url(#ah)"/>
+<line x1="420" y1="1266" x2="420" y2="1352" stroke="#444444" stroke-width="2.0" marker-end="url(#ah)"/>
+<line x1="330" y1="1396" x2="330" y2="1450" stroke="#444444" stroke-width="2.0" marker-end="url(#ah)"/>
+<g>
+<rect x="1210" y="112" width="640" height="196" rx="10" fill="#fdf6e3" stroke="#a0871f" stroke-width="2.2"/>
+<text x="1530.0" y="137" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="16" font-weight="700" fill="#1b1b1b" text-anchor="middle">① Jaxpr</text>
+<text x="1530.0" y="155.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12.5" fill="#3a3a3a" text-anchor="middle">jax.make_jaxpr(f)(...)</text>
+<text x="1530.0" y="172.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12.5" fill="#3a3a3a" text-anchor="middle">Python 层 primitive 方程</text>
+<text x="1530.0" y="189.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12.5" fill="#3a3a3a" text-anchor="middle">边界：不是 backend HLO</text>
+</g>
+<g>
+<rect x="1210" y="326" width="640" height="252" rx="10" fill="#fdf6e3" stroke="#a0871f" stroke-width="2.2"/>
+<text x="1530.0" y="351" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="16" font-weight="700" fill="#1b1b1b" text-anchor="middle">② StableHLO / 导出 HLO</text>
+<text x="1530.0" y="369.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12" fill="#3a3a3a" text-anchor="middle">Lowered.as_text("stablehlo")　默认方言</text>
+<text x="1530.0" y="386.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12" fill="#3a3a3a" text-anchor="middle">Lowered.as_text("hlo")　显式转换分支</text>
+<text x="1530.0" y="403.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12" fill="#3a3a3a" text-anchor="middle">stages.py:271 只支持这两种，其他抛 ValueError</text>
+<text x="1530.0" y="420.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12" fill="#3a3a3a" text-anchor="middle">compiler_ir 自述：不是可靠序列化</text>
+</g>
+<g>
+<rect x="1210" y="596" width="640" height="204" rx="10" fill="#fdf6e3" stroke="#a0871f" stroke-width="2.2"/>
+<text x="1530.0" y="621" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="16" font-weight="700" fill="#1b1b1b" text-anchor="middle">③ 后端 pass 边界</text>
+<text x="1530.0" y="639.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12" fill="#3a3a3a" text-anchor="middle">--xla_dump_to=DIR --xla_dump_hlo_as_text</text>
+<text x="1530.0" y="656.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12" fill="#3a3a3a" text-anchor="middle">--xla_dump_hlo_pass_re=.+</text>
+<text x="1530.0" y="673.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12" fill="#3a3a3a" text-anchor="middle">陷阱：用 .* 会跳过未改变 HLO 的 pass dump</text>
+</g>
+<g>
+<rect x="1210" y="818" width="640" height="178" rx="10" fill="#fdf6e3" stroke="#a0871f" stroke-width="2.2"/>
+<text x="1530.0" y="843" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="15" font-weight="700" fill="#1b1b1b" text-anchor="middle">④ 编译后程序 / emitter</text>
+<text x="1530.0" y="861.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="11.5" fill="#3a3a3a" text-anchor="middle">compiled.as_text()</text>
+<text x="1530.0" y="878.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="11.5" fill="#3a3a3a" text-anchor="middle">--xla_dump_emitter_re=mlir-fusion|llvm</text>
+<text x="1530.0" y="895.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="11.5" fill="#3a3a3a" text-anchor="middle">cost_analysis / memory_analysis（静态估计）</text>
+</g>
+<g opacity="0.55">
+<rect x="1210" y="1014" width="640" height="268" rx="10" fill="#f4f4f4" stroke="#9a9a9a" stroke-width="2.2"/>
+<text x="1530.0" y="1039" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="15" font-weight="700" fill="#1b1b1b" text-anchor="middle">⑤ 已有 capture（REPLAY-OFFLINE）</text>
+<text x="1530.0" y="1057.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="11.5" fill="#3a3a3a" text-anchor="middle">matmul-pass-walkthrough.md：640 边界 / 22 组叶子改写</text>
+<text x="1530.0" y="1074.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="11.5" fill="#3a3a3a" text-anchor="middle">cpu-executable-and-trace.md：11 thunk / 33 配对事件</text>
+<text x="1530.0" y="1091.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="11.5" fill="#3a3a3a" text-anchor="middle">上述材料来自换 pin 之前的构建，相对本图是 VERSION-SKEW</text>
+</g>
+<g>
+<rect x="1210" y="1300" width="640" height="112" rx="10" fill="#fdf6e3" stroke="#a0871f" stroke-width="2.2"/>
+<text x="1530.0" y="1325" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="15" font-weight="700" fill="#1b1b1b" text-anchor="middle">证据说明</text>
+<text x="1530.0" y="1343.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="11.5" fill="#3a3a3a" text-anchor="middle">本图全部锚点为 SOURCE-ONLY</text>
+<text x="1530.0" y="1360.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="11.5" fill="#3a3a3a" text-anchor="middle">行号按 jax-v0.11.1 核对，换 pin 前已漂移</text>
+</g>
+<g>
+<rect x="50" y="1450" width="1130" height="200" rx="10" fill="#f5f1fb" stroke="#6b4fbb" stroke-width="2.2"/>
+<text x="615.0" y="1475" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="15" font-weight="700" fill="#1b1b1b" text-anchor="middle">对比：Pallas 路径在同一层的分叉</text>
+<text x="615.0" y="1493.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12" fill="#3a3a3a" text-anchor="middle">普通 JAX：matmul → dot_general_p → stablehlo.dot_general（XLA 直接看得见 dot）</text>
+<text x="615.0" y="1510.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12" fill="#3a3a3a" text-anchor="middle">Pallas：pallas_call → pallas_call_p → 内层 Mosaic TPU MLIR → 序列化进外层 custom_call 的 backend_config</text>
+<text x="615.0" y="1527.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12" fill="#3a3a3a" text-anchor="middle">关键后果：kernel 计算体藏在 custom_call payload 里，外层 HLO pass（DotDecomposer / LibraryRewriter）看不到 kernel 内部运算</text>
+<text x="615.0" y="1544.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12" fill="#3a3a3a" text-anchor="middle">Mosaic TPU MLIR ≠ LLO</text>
+</g>
+<g>
+<rect x="1210" y="1450" width="640" height="200" rx="10" fill="#fbeaea" stroke="#b23b3b" stroke-width="2.2"/>
+<text x="1530.0" y="1475" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="15" font-weight="700" fill="#1b1b1b" text-anchor="middle">本次未验证</text>
+<text x="1530.0" y="1493.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="11.5" fill="#3a3a3a" text-anchor="middle">平台分叉（③右）仅为源码结论，未在各平台实测类型组合</text>
+<text x="1530.0" y="1510.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="11.5" fill="#3a3a3a" text-anchor="middle">CPU pass 列表按源码顺序列出，未验证某次编译实际启用顺序</text>
+<text x="1530.0" y="1527.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="11.5" fill="#3a3a3a" text-anchor="middle">DotThunk/Eigen 运行路径只有换 pin 前的证据</text>
+<text x="1530.0" y="1544.0" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="11.5" fill="#3a3a3a" text-anchor="middle">TPU 侧不可见：PJRT_Client_Compile 之后进入闭源 libtpu</text>
+</g>
+<text x="70" y="1716" font-family="Noto Sans CJK SC, Noto Sans CJK JP, DejaVu Sans, sans-serif" font-size="12.5" fill="#555555" text-anchor="start">固定 revision：JAX 2d66622450e2（jax-v0.11.1）· XLA dcf304bc5dca　|　本图由 render_matmul_walkthrough.py 生成，锚点经 --check 对源码复核</text>
+</svg>

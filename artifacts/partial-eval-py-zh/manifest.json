@@ -1,0 +1,42 @@
+[
+  {
+    "chunk": "chunk_00.py",
+    "start": 1,
+    "end": 451,
+    "lines": 451,
+    "comment_lines": 29,
+    "quote_markers": 6
+  },
+  {
+    "chunk": "chunk_01.py",
+    "start": 452,
+    "end": 960,
+    "lines": 509,
+    "comment_lines": 19,
+    "quote_markers": 10
+  },
+  {
+    "chunk": "chunk_02.py",
+    "start": 961,
+    "end": 1442,
+    "lines": 482,
+    "comment_lines": 25,
+    "quote_markers": 4
+  },
+  {
+    "chunk": "chunk_03.py",
+    "start": 1443,
+    "end": 1896,
+    "lines": 454,
+    "comment_lines": 29,
+    "quote_markers": 0
+  },
+  {
+    "chunk": "chunk_04.py",
+    "start": 1897,
+    "end": 2428,
+    "lines": 532,
+    "comment_lines": 15,
+    "quote_markers": 4
+  }
+]

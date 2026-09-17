@@ -11,7 +11,9 @@
 
 JAX 大框内按职责展开：数值 API、程序变换、Primitive 规则、Tracing/Jaxpr、
 数组与分片、MLIR lowering、编译与执行调度，以及 Pallas 和工具入口。
-实线展示 `jit / lower` 主路径中的程序表示或调用流向；紫色虚线表示规则或配置输入。
+蓝色实线展示 `jit / lower` 的表示转换及 Compile / Load；橙色实线单独展示已加载
+executable 的 Execute，经原生实现或 C API plugin 进入 runtime / 设备，再返回 buffers
+和完成状态。紫色虚线表示规则或配置输入；棕色点划线表示尚未确认具体接入阶段的推断关系。
 `grad` / `vmap` 使用 primitive 的微分与批量化规则，Pallas 注册自己的变换与 lowering
 规则；mesh / sharding 配置进入 lowering 和编译调度。实际 tracing 与变换可以嵌套，
 图中按职责归组，不表示这些操作只能各执行一次。
@@ -29,7 +31,8 @@ HLO 优化与分片之后分别进入 CPU/GPU 的调度、buffer assignment 和 
 这些方框按职责分组，具体 pass 顺序取决于后端与配置，调度之后也可能继续运行 HLO passes。
 
 Shardy 除了提供分片表示，也提供由 XLA 调用的传播 passes。Triton 位于部分 XLA GPU
-代码生成路径，XProf 位于性能数据分析侧。libtpu 的 `0.0.46.*` 是固定 JAX 源码的
+代码生成路径。Host、编译 pass、设备执行三类 profiler 事件汇入采集 session / XSpace，
+再交给 XProf 分析；实际可采集事件取决于后端与配置。libtpu 的 `0.0.46.*` 是固定 JAX 源码的
 依赖约束，不是本地已安装 wheel 的精确版本。
 
 ### 默认 TPU 提交路径与开源 HLO 条件分支
@@ -68,8 +71,9 @@ StableHLO 兼容展开等 MLIR passes，再以 `mlir` 格式调用 plugin。没�
 XlaTransform 扩展支持。实际新编译经过
 挂点时才运行 callback。回调本身在宿主 Python 中运行，处理 XLA HLO，而不是 StableHLO
 或设备 kernel。`POST_SCHEDULER` 也不能解释为最终 LLO/VLIW 指令调度之后。
-[TPU 调度变换测试定义](../../upstream/jax/tests/xla_transform_test.py#L451)覆盖了这一用法；
-本次没有执行该 TPU 测试或用户的 DSA 变换函数。
+[TPU 调度变换测试定义](../../upstream/jax/tests/xla_transform_test.py#L452)覆盖了这一用法，
+其中回调为同文件的 [schedule_async_ops](../../upstream/jax/tests/xla_transform_test.py#L366)。
+图中使用该上游测试作为示例，本次没有执行该 TPU 测试。
 
 本地 `.venv`（JAX `0.11.1.dev20260818+2d66622450`、jaxlib `0.11.1`）已执行一个
 独立的 CPU 探针：关闭持久编译缓存，注册 `POST_SCHEDULER` 回调，编译并执行
@@ -92,7 +96,12 @@ SVG 最右侧按接口的作用阶段展开输入、处理对象和下游，主�
 | D | [`jax.extend.xla`](../../upstream/jax/jax/extend/xla.py#L20) | 注册与清除 HLO callback；当前仅有 `PRE_SCHEDULER`、`POST_SCHEDULER` 两个阶段。CPU 调度后挂点已实测。 |
 | D 内部对象 | [`HloModule / HloComputation / HloInstruction / HloSchedule`](../../upstream/xla/xla/python/_hlo.pyi#L531) | 由 `jax._src.lib.hlo` 访问，支持遍历、替换指令、属性修改及调度读写；本地绑定可用。修改后须通过 callback 返回序列化 bytes 才写回当前编译。 |
 | D 源码绑定 | [`_hlo_pass`](../../upstream/xla/xla/python/_hlo_pass.pyi#L17) | 源码声明 `HloDCE`、`CallInliner`、`FlattenCallGraph`、`TupleSimplifier` 的 `run(module)`；本地 `import jaxlib._hlo_pass` 报 `ModuleNotFoundError`，不是当前已安装接口。 |
-| E | [`Lowered.compiler_ir`](../../upstream/jax/jax/_src/stages.py#L665) / [`Compiled` 分析接口](../../upstream/jax/jax/_src/stages.py#L732) | 导出 StableHLO/HLO、读取编译后文本、成本与内存分析、取得底层 executable；具体支持由后端决定，不是可写 HLO hook。 |
+| E | [`Lowered.compiler_ir`](../../upstream/jax/jax/_src/stages.py#L665) / [`Compiled` 分析接口](../../upstream/jax/jax/_src/stages.py#L732) | 检查 StableHLO、导出 HLO、读取编译结果与分析；当前 StableHLO module 是内部可变对象，不能统一视为只读快照。 |
+
+当前 [`MeshComputation.stablehlo`](../../upstream/jax/jax/_src/interpreters/pxla.py#L1224)
+直接返回 `self._hlo`。在首次 `compile()` 前原地改写 `compiler_ir("stablehlo")` 返回的
+module 可以改变编译结果；这描述当前实现，不是稳定的编辑 API，也不会改变已经编译的
+executable。`compiler_ir("hlo")` 则另行转换得到 `XlaComputation`，`as_text()` 返回文本。
 
 `PRE_SCHEDULER` 只规定在 HLO 调度前，不表示位于所有 HLO 优化之前。固定源码的
 [CPU 插入点](../../upstream/xla/xla/service/cpu/cpu_compiler.cc#L1178)与
@@ -108,6 +117,8 @@ TPU 分支同样包含 **HLO 导入、HLO 优化与分片、TPU 后端编译**�
 明确说明 TPU HLO pipeline 包含多核分片、BF16 处理和操作合法化等阶段。
 这里确认的是架构阶段；目标 libtpu 版本的具体 pass 顺序、LLO 与 runtime 实现仍需
 匹配源码或实际 dump 核对，本次没有新增 TPU 编译或执行验证。
+图中 Mosaic 后端处理使用单独的推断线型，不再从某个编号 HLO 阶段分出或回并；
+具体接入位置及与外层编译结果集成的阶段尚未确认。
 
 图中源码 pin 已与当前 `upstream-sources.lock` 和各 checkout HEAD 核对。
 关系依据：JAX 的 [API 与变换入口](../../upstream/jax/jax/_src/api.py)、

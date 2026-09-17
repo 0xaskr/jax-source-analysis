@@ -1,0 +1,189 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="2800" viewBox="0 0 2000 2800" role="img" aria-labelledby="title desc">
+<title id="title">JAX tracing 的源码实现：Python、Tracer、Trace 与 Jaxpr</title>
+<desc id="desc">沿固定 JAX 0.11.1 源码，展开创建 DynamicJaxprTrace、构造输入 Tracer、调用 Python 函数、Primitive.bind 分派、抽象求值、记录 TracingEqn、返回输出 Tracer和汇总 Jaxpr 的循环。区分当前 Trace 与 Tracer 内的引用，并列出普通求值、自动微分、批量化等其他解释器。</desc>
+<defs>
+<marker id="flow-head" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0 0L10 4L0 8Z" fill="#42658c"/></marker>
+<marker id="return-head" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0 0L10 4L0 8Z" fill="#208779"/></marker>
+</defs>
+<style>
+text{font-family:"Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#20344d;font-size:21px}
+.title{font-size:35px;font-weight:700}.heading{font-size:26px;font-weight:700}
+.small{font-size:18px;fill:#51677e}.code{font-family:"DejaVu Sans Mono","Noto Sans CJK SC",monospace;font-size:20px}
+.side-code{font-family:"DejaVu Sans Mono","Noto Sans CJK SC",monospace;font-size:18px}
+.source{font-size:18px;fill:#236c94;text-decoration:underline}
+.flow{fill:none;stroke:#42658c;stroke-width:2.5;marker-end:url(#flow-head)}
+.return{fill:none;stroke:#208779;stroke-width:2.5;stroke-dasharray:9 6;marker-end:url(#return-head)}
+</style>
+<rect width="2000" height="2800" fill="white"/>
+<text x="50" y="56" class="title" >JAX tracing：底层代码如何把 Python 计算变成 Jaxpr</text>
+<text x="50" y="94" class="small" >固定源码：JAX 2d66622450e2 · jax-v0.11.1　｜　展开普通数组的 staging 路径；代码片段省略检查与元数据参数</text>
+<g id="example"><rect x="50" y="125" width="1210" height="245" rx="14" fill="#f4f8fc" stroke="#87aace" stroke-width="1.6"/>
+<text x="74" y="165" class="heading" >贯穿示例：输入只给 shape / dtype</text>
+</g>
+<text x="74" y="207" class="code" xml:space="preserve">def f(x, w):</text>
+<text x="74" y="241" class="code" xml:space="preserve">    y = lax.dot(x, w)</text>
+<text x="74" y="275" class="code" xml:space="preserve">    return lax.add(y, jnp.float32(1))</text>
+<text x="74" y="337" class="" >x: float32[2,3]　　w: float32[3,4]　　预期输出: float32[2,4]</text>
+<g id="roles"><rect x="1340" y="125" width="610" height="245" rx="14" fill="#f5f1fb" stroke="#ab99c5" stroke-width="1.6"/>
+<text x="1364" y="165" class="heading" >三个对象，三个职责</text>
+</g>
+<text x="1364" y="208" class="" >Primitive：操作定义与规则入口</text>
+<text x="1364" y="250" class="" >Tracer：在 Python 中流动的值代理</text>
+<text x="1364" y="292" class="" >Trace：解释、变换或记录这些操作</text>
+<text x="1364" y="337" class="small" >本图的 Trace = DynamicJaxprTrace</text>
+<text x="76" y="414" class="" >入口：make_jaxpr / 需要 tracing 的 JIT 分支 → _trace_for_jit → pe.trace_to_jaxpr</text>
+<a href="../../../upstream/jax/jax/_src/pjit.py#L549"><title>jax/_src/pjit.py:549</title>
+<text x="76" y="449" class="source" >pjit.py:549 → partial_eval.py:2127 的缓存包装；未命中时进入 trace_to_jaxpr_nocache</text>
+</a>
+<g id="create-trace"><rect x="50" y="490" width="1210" height="250" rx="14" fill="#eff6ff" stroke="#87aace" stroke-width="1.6"/>
+<text x="74" y="530" class="heading" >① 创建 Trace、frame 与输入 Tracer</text>
+</g>
+<text x="74" y="574" class="code" xml:space="preserve">parent = core.trace_ctx.trace</text>
+<text x="74" y="608" class="code" xml:space="preserve">trace = DynamicJaxprTrace(debug_info, parent_trace=parent)</text>
+<text x="74" y="642" class="code" xml:space="preserve">in_tracers = in_avals.map(partial(trace.new_arg, ...))</text>
+<text x="74" y="683" class="" >new_arg：newvar(aval) → DynamicJaxprTracer(trace, aval, var) → frame.invars.append(var)</text>
+<a href="../../../upstream/jax/jax/_src/interpreters/partial_eval.py#L2048"><title>jax/_src/interpreters/partial_eval.py:2048</title>
+<text x="74" y="716" class="source" >partial_eval.py:2048 / 2062 / 2082；new_arg:1668</text>
+</a>
+<path d="M655 740V790" class="flow"/>
+<g id="call-python"><rect x="50" y="790" width="1210" height="230" rx="14" fill="#eff6ff" stroke="#87aace" stroke-width="1.6"/>
+<text x="74" y="830" class="heading" >② 设置当前 Trace，然后实际调用 Python 函数</text>
+</g>
+<text x="74" y="874" class="code" xml:space="preserve">with core.set_current_trace(trace):</text>
+<text x="74" y="908" class="code" xml:space="preserve">    args, kwargs = in_tracers.unflatten()</text>
+<text x="74" y="942" class="code" xml:space="preserve">    ans_pytree = fun(*args, **kwargs)</text>
+<a href="../../../upstream/jax/jax/_src/interpreters/partial_eval.py#L2084"><title>jax/_src/interpreters/partial_eval.py:2084</title>
+<text x="74" y="992" class="source" >partial_eval.py:2084–2093；上下文进入/恢复：core.py:1468</text>
+</a>
+<path d="M655 1020V1070" class="flow"/>
+<g id="primitive-bind"><rect x="50" y="1070" width="1210" height="280" rx="14" fill="#f5f1fb" stroke="#ab99c5" stroke-width="1.6"/>
+<text x="74" y="1110" class="heading" >③ lax.dot → dot_general_p.bind：交给当前 Trace</text>
+</g>
+<text x="74" y="1154" class="code" xml:space="preserve">c_arg = dtypes.canonicalize_value(arg); aval = typeof(c_arg)</text>
+<text x="74" y="1188" class="code" xml:space="preserve">prev_trace = trace_ctx.trace; trace_ctx.set_trace(None)</text>
+<text x="74" y="1222" class="code" xml:space="preserve">try:     return self.bind_with_trace(prev_trace, args, avals, params)</text>
+<text x="74" y="1256" class="code" xml:space="preserve">finally: trace_ctx.set_trace(prev_trace)</text>
+<text x="74" y="1290" class="code" xml:space="preserve">bind_with_trace → trace.process_primitive(self, args, params)</text>
+<a href="../../../upstream/jax/jax/_src/core.py#L679"><title>jax/_src/core.py:679</title>
+<text x="74" y="1320" class="source" >core.py:679 / 721 / 728；dot 的调用点：lax/lax.py:2625</text>
+</a>
+<path d="M655 1350V1400" class="flow"/>
+<g id="abstract-eval"><rect x="50" y="1400" width="1210" height="250" rx="14" fill="#edf8f2" stroke="#80b39b" stroke-width="1.6"/>
+<text x="74" y="1440" class="heading" >④ process_primitive：推导输出的抽象信息</text>
+</g>
+<text x="74" y="1484" class="code" xml:space="preserve">inputs = to_jaxpr_tracer(...)  # 输入 Tracer 或常量</text>
+<text x="74" y="1518" class="code" xml:space="preserve">out_avals, effects = _cached_abstract_eval(primitive, *avals, **params)</text>
+<text x="74" y="1560" class="" >standard_abstract_eval 调用 shape / dtype / sharding / VMA / UR 等规则</text>
+<text x="74" y="1596" class="" >本例得到输出 aval = float32[2,4]；无需读取输入矩阵里的具体数值</text>
+<a href="../../../upstream/jax/jax/_src/interpreters/partial_eval.py#L1750"><title>jax/_src/interpreters/partial_eval.py:1750</title>
+<text x="74" y="1627" class="source" >partial_eval.py:1736 / 1750；规则组合：lax/utils.py:193</text>
+</a>
+<path d="M655 1650V1700" class="flow"/>
+<g id="record-eqn"><rect x="50" y="1700" width="1210" height="280" rx="14" fill="#edf8f2" stroke="#80b39b" stroke-width="1.6"/>
+<text x="74" y="1740" class="heading" >⑤ 创建方程与输出 Tracer，继续 Python 计算</text>
+</g>
+<text x="74" y="1784" class="code" xml:space="preserve">outvars = [frame.newvar(aval) for aval in out_avals]</text>
+<text x="74" y="1818" class="code" xml:space="preserve">eqn = TracingEqn(inputs, outvars, primitive, params, effects, ...)</text>
+<text x="74" y="1852" class="code" xml:space="preserve">out_tracers = [DynamicJaxprTracer(trace, aval, var, parent=eqn), ...]</text>
+<text x="74" y="1886" class="code" xml:space="preserve">frame.add_eqn(eqn); return out_tracers[0]</text>
+<text x="74" y="1928" class="" >Python 的 y 接到新 Tracer；随后的 lax.add 再走一次 ③ → ④ → ⑤</text>
+<a href="../../../upstream/jax/jax/_src/interpreters/partial_eval.py#L1674"><title>jax/_src/interpreters/partial_eval.py:1674</title>
+<text x="74" y="1959" class="source" >partial_eval.py:1674 make_eqn → :1791 add_eqn / :1792 返回</text>
+</a>
+<path d="M1260 1810H1300V922H1260" class="return"/>
+<text x="1290" y="1635" class="small" transform="rotate(-90 1290 1635)">返回 Tracer</text>
+<path d="M655 1980V2030" class="flow"/>
+<g id="finish-jaxpr"><rect x="50" y="2030" width="1210" height="250" rx="14" fill="#eff6ff" stroke="#87aace" stroke-width="1.6"/>
+<text x="74" y="2070" class="heading" >⑥ Python 函数返回后，汇总程序</text>
+</g>
+<text x="74" y="2112" class="" >退出 set_current_trace，恢复先前的 Trace；整理输出 Tracer 与常量</text>
+<text x="74" y="2152" class="code" xml:space="preserve">jaxpr, consts = trace.frame.to_jaxpr(trace, out_tracers, ...)</text>
+<text x="74" y="2186" class="code" xml:space="preserve">get_eqns(): TracingEqn → JaxprEqn（输入/输出改用 Var 或 Literal）</text>
+<text x="74" y="2220" class="code" xml:space="preserve">Jaxpr(constvars, invars, outvars, eqns, effects, ...)</text>
+<a href="../../../upstream/jax/jax/_src/interpreters/partial_eval.py#L2120"><title>jax/_src/interpreters/partial_eval.py:2120</title>
+<text x="74" y="2254" class="source" >partial_eval.py:2120；frame.get_eqns:1505 / frame.to_jaxpr:1517</text>
+</a>
+<path d="M655 2280V2330" class="flow"/>
+<g id="jaxpr-result"><rect x="50" y="2330" width="1210" height="250" rx="14" fill="#f0f7ec" stroke="#96ad7d" stroke-width="1.6"/>
+<text x="74" y="2370" class="heading" >本地 make_jaxpr 实际输出</text>
+</g>
+<text x="74" y="2415" class="code" xml:space="preserve">{ lambda ; a:f32[2,3] b:f32[3,4]. let</text>
+<text x="74" y="2448" class="code" xml:space="preserve">    c:f32[2,4] = dot_general[dimension_numbers=(([1],[0]),([],[]))] a b</text>
+<text x="74" y="2481" class="code" xml:space="preserve">    d:f32[2,4] = add c 1.0:f32[]</text>
+<text x="74" y="2514" class="code" xml:space="preserve">  in (d,) }</text>
+<text x="74" y="2555" class="small" >方程保存 primitive、操作数、静态参数和输出类型；此处得到 Jaxpr，尚未生成 StableHLO。</text>
+<g id="frame-state"><rect x="1340" y="490" width="610" height="330" rx="14" fill="#f4f8fc" stroke="#87aace" stroke-width="1.6"/>
+<text x="1364" y="530" class="heading" >Trace 管理本次记录状态</text>
+</g>
+<text x="1364" y="574" class="side-code" xml:space="preserve">DynamicJaxprTrace</text>
+<text x="1364" y="606" class="side-code" xml:space="preserve">  frame: JaxprStackFrame</text>
+<text x="1364" y="638" class="side-code" xml:space="preserve">    invars = [a, b]</text>
+<text x="1364" y="670" class="side-code" xml:space="preserve">    tracing_eqns = [dot_eqn, add_eqn]</text>
+<text x="1364" y="702" class="side-code" xml:space="preserve">    constvar_to_val = {...}</text>
+<text x="1364" y="734" class="side-code" xml:space="preserve">  parent_trace = 外层上下文</text>
+<a href="../../../upstream/jax/jax/_src/interpreters/partial_eval.py#L1474"><title>jax/_src/interpreters/partial_eval.py:1474</title>
+<text x="1364" y="794" class="source" >frame: partial_eval.py:1474；trace:1623</text>
+</a>
+<g id="tracer-state"><rect x="1340" y="865" width="610" height="350" rx="14" fill="#f5f1fb" stroke="#ab99c5" stroke-width="1.6"/>
+<text x="1364" y="905" class="heading" >Tracer 携带当前值的描述</text>
+</g>
+<text x="1364" y="949" class="side-code" xml:space="preserve">t_x._trace → 本次 DynamicJaxprTrace</text>
+<text x="1364" y="983" class="side-code" xml:space="preserve">t_x.aval   → float32[2,3] 等抽象信息</text>
+<text x="1364" y="1017" class="side-code" xml:space="preserve">t_x.val    → 输入变量 a</text>
+<text x="1364" y="1051" class="side-code" xml:space="preserve">t_y.val    → 输出变量 c</text>
+<text x="1364" y="1085" class="side-code" xml:space="preserve">t_y.parent → 产生 c 的 TracingEqn</text>
+<text x="1364" y="1137" class="small" >对本图的动态输入，Tracer 不持有矩阵数值。</text>
+<text x="1364" y="1167" class="small" >常量可作为 Literal 或 constvar 进入方程。</text>
+<a href="../../../upstream/jax/jax/_src/interpreters/partial_eval.py#L1365"><title>jax/_src/interpreters/partial_eval.py:1365</title>
+<text x="1364" y="1194" class="source" >DynamicJaxprTracer:1365；常量处理:1693</text>
+</a>
+<g id="rules"><rect x="1340" y="1260" width="610" height="370" rx="14" fill="#fff8ed" stroke="#c6a16a" stroke-width="1.6"/>
+<text x="1364" y="1300" class="heading" >Primitive 的规则从哪里来？</text>
+</g>
+<text x="1364" y="1344" class="side-code" xml:space="preserve">dot_general_p = standard_primitive(...)</text>
+<text x="1364" y="1378" class="side-code" xml:space="preserve">  def_impl → dispatch.apply_primitive</text>
+<text x="1364" y="1412" class="side-code" xml:space="preserve">  def_abstract_eval</text>
+<text x="1364" y="1446" class="side-code" xml:space="preserve">    → standard_abstract_eval</text>
+<text x="1364" y="1500" class="small" >微分、batching、MLIR lowering 另行注册。</text>
+<a href="../../../upstream/jax/jax/_src/lax/utils.py#L46"><title>jax/_src/lax/utils.py:46</title>
+<text x="1364" y="1541" class="source" >standard_primitive：lax/utils.py:46</text>
+</a>
+<a href="../../../upstream/jax/jax/_src/lax/lax.py#L6072"><title>jax/_src/lax/lax.py:6072</title>
+<text x="1364" y="1574" class="source" >dot_general_p：lax/lax.py:6072 / 6114</text>
+</a>
+<a href="../../../upstream/jax/jax/_src/lax/lax.py#L6294"><title>jax/_src/lax/lax.py:6294</title>
+<text x="1364" y="1607" class="source" >StableHLO lowering 注册：lax.py:6294</text>
+</a>
+<g id="other-traces"><rect x="1340" y="1675" width="610" height="350" rx="14" fill="#f5f1fb" stroke="#ab99c5" stroke-width="1.6"/>
+<text x="1364" y="1715" class="heading" >同一个 bind，不同的解释器</text>
+</g>
+<text x="1364" y="1758" class="" >EvalTrace → 调用 primitive.impl</text>
+<text x="1364" y="1800" class="" >DynamicJaxprTrace → 记录程序</text>
+<text x="1364" y="1842" class="" >JVP / Linearize Trace → 自动微分</text>
+<text x="1364" y="1884" class="" >BatchTrace → 应用批量化规则</text>
+<text x="1364" y="1930" class="small" >嵌套变换通过相应的父级 Trace 继续处理。</text>
+<text x="1364" y="1960" class="small" >本图只展开构建 Jaxpr 的 Trace。</text>
+<a href="../../../upstream/jax/jax/_src/core.py#L1290"><title>jax/_src/core.py:1290</title>
+<text x="1364" y="1994" class="source" >core.py:1290；ad.py / batching.py</text>
+</a>
+<g id="python-semantics"><rect x="1340" y="2070" width="610" height="510" rx="14" fill="#fff8ed" stroke="#c6a16a" stroke-width="1.6"/>
+<text x="1364" y="2110" class="heading" >Python 语句在 tracing 时如何执行？</text>
+</g>
+<text x="1364" y="2151" class="" >Python 函数体照常运行；JAX 操作进入 bind。</text>
+<text x="1364" y="2196" class="" >x.shape / x.dtype 可以来自 aval。</text>
+<text x="1364" y="2241" class="" >if scalar &gt; 0 需要具体的 bool 值；</text>
+<text x="1364" y="2274" class="" >动态 Tracer 无法提供这个值时会报错。</text>
+<text x="1364" y="2320" class="" >动态分支应使用 lax.cond 等控制流操作。</text>
+<text x="1364" y="2366" class="" >普通 Python print 等副作用发生在追踪时。</text>
+<text x="1364" y="2412" class="small" >本地 CPU 复验：同 shape 两次、新 shape 一次，</text>
+<text x="1364" y="2444" class="small" >示例函数的 Python tracing 次数为 1、1、2。</text>
+<text x="1364" y="2480" class="small" >动态 Python if：TracerBoolConversionError</text>
+<a href="../../../upstream/jax/jax/_src/core.py#L1092"><title>jax/_src/core.py:1092</title>
+<text x="1364" y="2534" class="source" >Tracer.__bool__：core.py:1092</text>
+</a>
+<path d="M50 2622H1950" stroke="#b6c8d9"/>
+<text x="50" y="2662" class="" >后续编译阶段：Jaxpr → MLIR / StableHLO → XLA 后端编译 → executable</text>
+<text x="50" y="2702" class="small" >读图边界：实线为本例调用/记录流程，绿色虚线为返回 Python 的 Tracer；省略常量折叠、特殊 staging rule 和高层类型分支。</text>
+<text x="50" y="2737" class="small" >此图依据固定源码及本地 make_jaxpr / CPU probe；不表示已执行 TPU 编译或设备验证。所有蓝色源码引用均可点击。</text>
+<text x="50" y="2772" class="small" >JAX revision：2d66622450e2c8633cda2307688ef7aa294bd6eb</text>
+</svg>

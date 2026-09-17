@@ -1,0 +1,196 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1760" height="1348" viewBox="0 0 1760 1348" font-family="'Noto Sans CJK SC', 'Source Han Sans SC', 'Microsoft YaHei', 'WenQuanYi Micro Hei', 'sans-serif'">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="40" y="46" font-size="27" font-weight="700" fill="#12263f">JAX 上下游链路 — 从用户函数到硬件执行</text>
+<text x="40" y="74" font-size="14" fill="#5a6a7d">上行为上游依赖，中部为 JAX 自身的处理链，下行为下游消费者；标注为关键源码位置（相对 upstream/jax 或 upstream/xla）。</text>
+<rect x="40" y="104" width="1680" height="138" rx="10" fill="#f7f9fc" stroke="#dbe4ee"/>
+<rect x="40" y="104" width="6" height="138" rx="3" fill="#5b3a8e"/>
+<text x="56" y="125" font-size="14" font-weight="700" fill="#5b3a8e">上游依赖 · UPSTREAM</text>
+<rect x="74.0" y="128" width="223.7" height="92" rx="8" fill="#ffffff" stroke="#5b3a8e" stroke-opacity="0.45"/>
+<text x="86.0" y="158" font-size="13.5" font-weight="700" fill="#1f2b3a">xla (openxla/xla)</text>
+<text x="86.0" y="182" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">编译与运行时</text>
+<text x="86.0" y="199" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">xla/python · service · pjrt</text>
+<rect x="311.7" y="128" width="223.7" height="92" rx="8" fill="#ffffff" stroke="#5b3a8e" stroke-opacity="0.45"/>
+<text x="323.7" y="158" font-size="13.5" font-weight="700" fill="#1f2b3a">stablehlo</text>
+<text x="323.7" y="182" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">可移植算子集</text>
+<text x="323.7" y="199" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">JAX 的 MLIR 出口方言</text>
+<rect x="549.4" y="128" width="223.7" height="92" rx="8" fill="#ffffff" stroke="#5b3a8e" stroke-opacity="0.45"/>
+<text x="561.4" y="158" font-size="13.5" font-weight="700" fill="#1f2b3a">shardy</text>
+<text x="561.4" y="182" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">张量分片传播</text>
+<text x="561.4" y="199" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">sdy 方言与 partitioner</text>
+<rect x="787.1" y="128" width="223.7" height="92" rx="8" fill="#ffffff" stroke="#5b3a8e" stroke-opacity="0.45"/>
+<text x="799.1" y="158" font-size="13.5" font-weight="700" fill="#1f2b3a">llvm-project</text>
+<text x="799.1" y="182" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">CPU/GPU 代码生成</text>
+<text x="799.1" y="199" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">LLVM IR → 机器码</text>
+<rect x="1024.9" y="128" width="223.7" height="92" rx="8" fill="#ffffff" stroke="#5b3a8e" stroke-opacity="0.45"/>
+<text x="1036.9" y="158" font-size="13.5" font-weight="700" fill="#1f2b3a">triton</text>
+<text x="1036.9" y="182" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">GPU kernel DSL</text>
+<text x="1036.9" y="199" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">Pallas-Triton 后端</text>
+<rect x="1262.6" y="128" width="223.7" height="92" rx="8" fill="#ffffff" stroke="#5b3a8e" stroke-opacity="0.45"/>
+<text x="1274.6" y="158" font-size="13.5" font-weight="700" fill="#1f2b3a">Mosaic</text>
+<text x="1274.6" y="182" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">TPU 方言在 XLA</text>
+<text x="1274.6" y="199" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">GPU 方言在 jaxlib</text>
+<rect x="1500.3" y="128" width="223.7" height="92" rx="8" fill="#ffffff" stroke="#5b3a8e" stroke-opacity="0.45"/>
+<text x="1512.3" y="158" font-size="13.5" font-weight="700" fill="#1f2b3a">Python 依赖</text>
+<text x="1512.3" y="182" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">numpy · ml_dtypes</text>
+<text x="1512.3" y="199" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">scipy · opt_einsum</text>
+<path d="M 880.0 242 L 880.0 258" stroke="#5b3a8e" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="40" y="258" width="1680" height="138" rx="10" fill="#f7f9fc" stroke="#dbe4ee"/>
+<rect x="40" y="258" width="6" height="138" rx="3" fill="#2f6fb0"/>
+<text x="56" y="279" font-size="14" font-weight="700" fill="#2f6fb0">JAX Python 公共 API · USER API</text>
+<rect x="74.0" y="282" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#2f6fb0" stroke-opacity="0.45"/>
+<text x="86.0" y="312" font-size="13.5" font-weight="700" fill="#1f2b3a">jax.jit / jax.grad / jax.vmap</text>
+<text x="86.0" y="336" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">jax/_src/api.py</text>
+<text x="86.0" y="353" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">用户变换入口</text>
+<rect x="406.8" y="282" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#2f6fb0" stroke-opacity="0.45"/>
+<text x="418.8" y="312" font-size="13.5" font-weight="700" fill="#1f2b3a">jax.numpy · jax.lax · jax.nn</text>
+<text x="418.8" y="336" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">jax/_src/numpy · lax · nn</text>
+<text x="418.8" y="353" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">域前端与算子</text>
+<rect x="739.6" y="282" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#2f6fb0" stroke-opacity="0.45"/>
+<text x="751.6" y="312" font-size="13.5" font-weight="700" fill="#1f2b3a">jax.sharding · jax.export</text>
+<text x="751.6" y="336" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">jax/_src/sharding_impls.py</text>
+<text x="751.6" y="353" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">export/_export.py</text>
+<rect x="1072.4" y="282" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#2f6fb0" stroke-opacity="0.45"/>
+<text x="1084.4" y="312" font-size="13.5" font-weight="700" fill="#1f2b3a">jax.experimental.pallas</text>
+<text x="1084.4" y="336" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">jax/_src/pallas/pallas_call.py</text>
+<text x="1084.4" y="353" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">自定义 kernel</text>
+<rect x="1405.2" y="282" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#2f6fb0" stroke-opacity="0.45"/>
+<text x="1417.2" y="312" font-size="13.5" font-weight="700" fill="#1f2b3a">jax.extend · jax.stages</text>
+<text x="1417.2" y="336" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">无兼容保证的扩展与阶段对象</text>
+<path d="M 880.0 396 L 880.0 412" stroke="#2f6fb0" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="40" y="412" width="1680" height="138" rx="10" fill="#f7f9fc" stroke="#dbe4ee"/>
+<rect x="40" y="412" width="6" height="138" rx="3" fill="#2f9e6b"/>
+<text x="56" y="433" font-size="14" font-weight="700" fill="#2f9e6b">追踪与变换 · TRACING &amp; TRANSFORMS</text>
+<rect x="74.0" y="436" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#2f9e6b" stroke-opacity="0.45"/>
+<text x="86.0" y="466" font-size="13.5" font-weight="700" fill="#1f2b3a">core.Tracer / Primitive.bind</text>
+<text x="86.0" y="490" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">jax/_src/core.py</text>
+<text x="86.0" y="507" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">抽象值 + 追踪器内核</text>
+<rect x="406.8" y="436" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#2f9e6b" stroke-opacity="0.45"/>
+<text x="418.8" y="466" font-size="13.5" font-weight="700" fill="#1f2b3a">partial_eval</text>
+<text x="418.8" y="490" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">jax/_src/interpreters/partial_eval.py</text>
+<text x="418.8" y="507" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">追踪为 Jaxpr（jit 前端）</text>
+<rect x="739.6" y="436" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#2f9e6b" stroke-opacity="0.45"/>
+<text x="751.6" y="466" font-size="13.5" font-weight="700" fill="#1f2b3a">ad</text>
+<text x="751.6" y="490" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">jax/_src/interpreters/ad.py</text>
+<text x="751.6" y="507" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">JVP / VJP / linearize</text>
+<rect x="1072.4" y="436" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#2f9e6b" stroke-opacity="0.45"/>
+<text x="1084.4" y="466" font-size="13.5" font-weight="700" fill="#1f2b3a">batching</text>
+<text x="1084.4" y="490" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">jax/_src/interpreters/batching.py</text>
+<text x="1084.4" y="507" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">vmap 变换</text>
+<rect x="1405.2" y="436" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#2f9e6b" stroke-opacity="0.45"/>
+<text x="1417.2" y="466" font-size="13.5" font-weight="700" fill="#1f2b3a">pjit + pxla</text>
+<text x="1417.2" y="490" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">jax/_src/pjit.py · interpreters/pxla.py</text>
+<text x="1417.2" y="507" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">分片解析与网格执行</text>
+<path d="M 880.0 550 L 880.0 566" stroke="#2f9e6b" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="40" y="566" width="1680" height="138" rx="10" fill="#f7f9fc" stroke="#dbe4ee"/>
+<rect x="40" y="566" width="6" height="138" rx="3" fill="#c07a2b"/>
+<text x="56" y="587" font-size="14" font-weight="700" fill="#c07a2b">IR 与降级 · LOWERING</text>
+<rect x="74.0" y="590" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#c07a2b" stroke-opacity="0.45"/>
+<text x="86.0" y="620" font-size="13.5" font-weight="700" fill="#1f2b3a">core.Jaxpr</text>
+<text x="86.0" y="644" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">jax/_src/core.py</text>
+<text x="86.0" y="661" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">平台无关中间表示</text>
+<rect x="406.8" y="590" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#c07a2b" stroke-opacity="0.45"/>
+<text x="418.8" y="620" font-size="13.5" font-weight="700" fill="#1f2b3a">mlir.lower_jaxpr_to_module</text>
+<text x="418.8" y="644" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">jax/_src/interpreters/mlir.py:1327</text>
+<text x="418.8" y="661" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">jaxpr → MLIR 模块</text>
+<rect x="739.6" y="590" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#c07a2b" stroke-opacity="0.45"/>
+<text x="751.6" y="620" font-size="13.5" font-weight="700" fill="#1f2b3a">StableHLO + sdy</text>
+<text x="751.6" y="644" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">稳定算子集 + 分片标注</text>
+<text x="751.6" y="661" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">use_shardy_partitioner 开关</text>
+<rect x="1072.4" y="590" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#c07a2b" stroke-opacity="0.45"/>
+<text x="1084.4" y="620" font-size="13.5" font-weight="700" fill="#1f2b3a">MLIR pass pipeline</text>
+<text x="1084.4" y="644" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">sdy-lift-inlined-meshes</text>
+<text x="1084.4" y="661" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">内建与 JAX 注册的 pass</text>
+<rect x="1405.2" y="590" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#c07a2b" stroke-opacity="0.45"/>
+<text x="1417.2" y="620" font-size="13.5" font-weight="700" fill="#1f2b3a">Stages: Lowered / Compiled</text>
+<text x="1417.2" y="644" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">jax/_src/stages.py</text>
+<text x="1417.2" y="661" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">lower() / compile() 对象</text>
+<path d="M 880.0 704 L 880.0 720" stroke="#c07a2b" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="40" y="720" width="1680" height="138" rx="10" fill="#f7f9fc" stroke="#dbe4ee"/>
+<rect x="40" y="720" width="6" height="138" rx="3" fill="#8a4b08"/>
+<text x="56" y="741" font-size="14" font-weight="700" fill="#8a4b08">jaxlib C++ 扩展 · C++ BINDINGS</text>
+<rect x="74.0" y="744" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#8a4b08" stroke-opacity="0.45"/>
+<text x="86.0" y="774" font-size="13.5" font-weight="700" fill="#1f2b3a">jax_jit.cc / pjit.cc</text>
+<text x="86.0" y="798" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">调用缓存、参数展平</text>
+<text x="86.0" y="815" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">快速分派路径</text>
+<rect x="406.8" y="744" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#8a4b08" stroke-opacity="0.45"/>
+<text x="418.8" y="774" font-size="13.5" font-weight="700" fill="#1f2b3a">xla_compiler.cc</text>
+<text x="418.8" y="798" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">MLIR 模块 → XLA 编译</text>
+<rect x="739.6" y="744" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#8a4b08" stroke-opacity="0.45"/>
+<text x="751.6" y="774" font-size="13.5" font-weight="700" fill="#1f2b3a">py_client.cc</text>
+<text x="751.6" y="798" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">IFRT/PJRT 客户端</text>
+<text x="751.6" y="815" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">Compile / CompileAndLoad</text>
+<rect x="1072.4" y="744" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#8a4b08" stroke-opacity="0.45"/>
+<text x="1084.4" y="774" font-size="13.5" font-weight="700" fill="#1f2b3a">py_executable.cc / py_array.cc</text>
+<text x="1084.4" y="798" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">可执行对象与设备数组</text>
+<rect x="1405.2" y="744" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#8a4b08" stroke-opacity="0.45"/>
+<text x="1417.2" y="774" font-size="13.5" font-weight="700" fill="#1f2b3a">cpu/ gpu/ cuda/ rocm/ oneapi</text>
+<text x="1417.2" y="798" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">后端 kernel 与厂商库绑定</text>
+<path d="M 880.0 858 L 880.0 874" stroke="#8a4b08" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="40" y="874" width="1680" height="138" rx="10" fill="#f7f9fc" stroke="#dbe4ee"/>
+<rect x="40" y="874" width="6" height="138" rx="3" fill="#c44a63"/>
+<text x="56" y="895" font-size="14" font-weight="700" fill="#c44a63">XLA 编译与运行时 · XLA</text>
+<rect x="74.0" y="898" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#c44a63" stroke-opacity="0.45"/>
+<text x="86.0" y="928" font-size="13.5" font-weight="700" fill="#1f2b3a">xla/python</text>
+<text x="86.0" y="952" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">Python 绑定：xla_builder</text>
+<text x="86.0" y="969" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">hlo · ops · profiler · ifrt</text>
+<rect x="406.8" y="898" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#c44a63" stroke-opacity="0.45"/>
+<text x="418.8" y="928" font-size="13.5" font-weight="700" fill="#1f2b3a">xla/service HLO passes</text>
+<text x="418.8" y="952" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">优化、布局、fusion</text>
+<text x="418.8" y="969" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">Shardy partitioner</text>
+<rect x="739.6" y="898" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#c44a63" stroke-opacity="0.45"/>
+<text x="751.6" y="928" font-size="13.5" font-weight="700" fill="#1f2b3a">xla/pjrt runtime</text>
+<text x="751.6" y="952" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">PjRtClient / PjRtExecutable</text>
+<text x="751.6" y="969" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">设备内存与执行</text>
+<rect x="1072.4" y="898" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#c44a63" stroke-opacity="0.45"/>
+<text x="1084.4" y="928" font-size="13.5" font-weight="700" fill="#1f2b3a">xla/backends · xla/tpu</text>
+<text x="1084.4" y="952" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">cpu · gpu · interpreter</text>
+<text x="1084.4" y="969" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">TPU 相关在 xla/tpu</text>
+<rect x="1405.2" y="898" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#c44a63" stroke-opacity="0.45"/>
+<text x="1417.2" y="928" font-size="13.5" font-weight="700" fill="#1f2b3a">PJRT 插件</text>
+<text x="1417.2" y="952" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">jax_plugins 的 initialize()</text>
+<text x="1417.2" y="969" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">libtpu / xla_cuda_plugin</text>
+<path d="M 880.0 1012 L 880.0 1028" stroke="#c44a63" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="40" y="1028" width="1680" height="138" rx="10" fill="#f7f9fc" stroke="#dbe4ee"/>
+<rect x="40" y="1028" width="6" height="138" rx="3" fill="#39424f"/>
+<text x="56" y="1049" font-size="14" font-weight="700" fill="#39424f">硬件 · HARDWARE</text>
+<rect x="74.0" y="1052" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#39424f" stroke-opacity="0.45"/>
+<text x="86.0" y="1082" font-size="13.5" font-weight="700" fill="#1f2b3a">CPU</text>
+<text x="86.0" y="1106" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">x86 / ARM</text>
+<text x="86.0" y="1123" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">oneDNN · XNNPACK · Eigen</text>
+<rect x="406.8" y="1052" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#39424f" stroke-opacity="0.45"/>
+<text x="418.8" y="1082" font-size="13.5" font-weight="700" fill="#1f2b3a">NVIDIA GPU</text>
+<text x="418.8" y="1106" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">CUDA · cuBLAS/cuDNN</text>
+<text x="418.8" y="1123" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">cuSPARSE · cuSolver</text>
+<rect x="739.6" y="1052" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#39424f" stroke-opacity="0.45"/>
+<text x="751.6" y="1082" font-size="13.5" font-weight="700" fill="#1f2b3a">AMD GPU</text>
+<text x="751.6" y="1106" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">ROCm · hipBLAS</text>
+<rect x="1072.4" y="1052" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#39424f" stroke-opacity="0.45"/>
+<text x="1084.4" y="1082" font-size="13.5" font-weight="700" fill="#1f2b3a">Intel GPU</text>
+<text x="1084.4" y="1106" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">oneAPI · SyCL</text>
+<rect x="1405.2" y="1052" width="318.8" height="92" rx="8" fill="#ffffff" stroke="#39424f" stroke-opacity="0.45"/>
+<text x="1417.2" y="1082" font-size="13.5" font-weight="700" fill="#1f2b3a">TPU</text>
+<text x="1417.2" y="1106" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">libtpu · Mosaic</text>
+<text x="1417.2" y="1123" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">Pallas TPU kernel</text>
+<path d="M 880.0 1166 L 880.0 1182" stroke="#39424f" stroke-width="2.4" marker-end="url(#arrow)"/>
+<rect x="40" y="1182" width="1680" height="138" rx="10" fill="#f7f9fc" stroke="#dbe4ee"/>
+<rect x="40" y="1182" width="6" height="138" rx="3" fill="#12395e"/>
+<text x="56" y="1203" font-size="14" font-weight="700" fill="#12395e">下游消费者 · DOWNSTREAM</text>
+<rect x="74.0" y="1206" width="402.0" height="92" rx="8" fill="#ffffff" stroke="#12395e" stroke-opacity="0.45"/>
+<text x="86.0" y="1236" font-size="13.5" font-weight="700" fill="#1f2b3a">建模框架</text>
+<text x="86.0" y="1260" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">Flax · Equinox · Haiku</text>
+<text x="86.0" y="1277" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">Keras 3 · JAX-CNN</text>
+<rect x="490.0" y="1206" width="402.0" height="92" rx="8" fill="#ffffff" stroke="#12395e" stroke-opacity="0.45"/>
+<text x="502.0" y="1236" font-size="13.5" font-weight="700" fill="#1f2b3a">训练与优化</text>
+<text x="502.0" y="1260" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">Optax · Orbax</text>
+<text x="502.0" y="1277" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">Levanter · MaxText · T5X</text>
+<rect x="906.0" y="1206" width="402.0" height="92" rx="8" fill="#ffffff" stroke="#12395e" stroke-opacity="0.45"/>
+<text x="918.0" y="1236" font-size="13.5" font-weight="700" fill="#1f2b3a">推理与服务</text>
+<text x="918.0" y="1260" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">SGLang-JAX · vLLM-JAX</text>
+<text x="918.0" y="1277" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">Pathways · jax2tf/TF</text>
+<rect x="1322.0" y="1206" width="402.0" height="92" rx="8" fill="#ffffff" stroke="#12395e" stroke-opacity="0.45"/>
+<text x="1334.0" y="1236" font-size="13.5" font-weight="700" fill="#1f2b3a">生态工具</text>
+<text x="1334.0" y="1260" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">jaxtyping · jaxlie</text>
+<text x="1334.0" y="1277" font-size="11.5" fill="#63718a" font-family="'JetBrains Mono', 'DejaVu Sans Mono', 'Noto Sans Mono CJK SC', 'Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'Menlo', 'monospace'">blackjax · numpyro</text>
+<path d="M 880.0 1320 L 880.0 1336" stroke="#12395e" stroke-width="2.4" marker-end="url(#arrow)"/>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#5a6a7d"/></marker></defs>
+</svg>

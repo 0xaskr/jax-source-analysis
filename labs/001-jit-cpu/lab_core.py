@@ -39,12 +39,6 @@ class CacheObservation:
   result: list[float]
 
   def as_row(self) -> dict[str, object]:
-    jax_xla.register_hlo_module_transformation(
-                transform_dsa_sparse_gather_schedule,
-                name=_DSA_OVERLAP_TRANSFORM_NAME,
-                stage=jax_xla.PipelineStage.POST_SCHEDULER,
-                platforms="tpu",
-            )
     return {
         "调用": self.call,
         "输入 shape": str(self.shape),

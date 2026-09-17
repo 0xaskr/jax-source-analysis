@@ -1,0 +1,358 @@
+{
+  "$schema": "../schema/build-jaxlib.schema.json",
+  "attempts": [
+    {
+      "child_process": {
+        "boot_id": "175393b0-600d-4c2c-80ae-73802cdd8aa6",
+        "cmdline_sha256": "1e71c87b7fbb7ddd1361a02c07e69444a56cb5985f16b2e8f84a7082cf53d003",
+        "pid": 196,
+        "start_time_ticks": 25711687
+      },
+      "command": {
+        "argv": [
+          "../../.venv/bin/python",
+          "-S",
+          "build/build.py",
+          "build",
+          "--wheels=jaxlib",
+          "--python_version=3.12",
+          "--local_xla_path=../xla",
+          "--output_path=../../artifacts/builds/kickoff-tpu-source-003/attempts/0001/wheels",
+          "--bazel_path=./bazel-7.7.1-linux-x86_64",
+          "--clang_path=/usr/bin/clang",
+          "--bazel_startup_options=--nosystem_rc",
+          "--bazel_startup_options=--nohome_rc",
+          "--bazel_startup_options=--batch",
+          "--bazel_startup_options=--host_jvm_args=-Xmx3g",
+          "--bazel_startup_options=--output_user_root=/home/askr/github/jax-source-analysis/artifacts/builds/kickoff-tpu-bazel-cache",
+          "--bazel_options=--jobs=2",
+          "--bazel_options=--lockfile_mode=off",
+          "--bazel_options=--local_cpu_resources=4",
+          "--bazel_options=--local_ram_resources=8000",
+          "--bazel_options=--//jaxlib/tools:jaxlib_git_hash=2d66622450e2c8633cda2307688ef7aa294bd6eb",
+          "--verbose"
+        ],
+        "cwd": "upstream/jax",
+        "shell": "../../.venv/bin/python -S build/build.py build --wheels=jaxlib --python_version=3.12 --local_xla_path=../xla --output_path=../../artifacts/builds/kickoff-tpu-source-003/attempts/0001/wheels --bazel_path=./bazel-7.7.1-linux-x86_64 --clang_path=/usr/bin/clang --bazel_startup_options=--nosystem_rc --bazel_startup_options=--nohome_rc --bazel_startup_options=--batch --bazel_startup_options=--host_jvm_args=-Xmx3g --bazel_startup_options=--output_user_root=/home/askr/github/jax-source-analysis/artifacts/builds/kickoff-tpu-bazel-cache --bazel_options=--jobs=2 --bazel_options=--lockfile_mode=off --bazel_options=--local_cpu_resources=4 --bazel_options=--local_ram_resources=8000 --bazel_options=--//jaxlib/tools:jaxlib_git_hash=2d66622450e2c8633cda2307688ef7aa294bd6eb --verbose"
+      },
+      "ended_at": "2026-09-17T06:31:31.289669Z",
+      "environment": {
+        "fixed": {
+          "HOME": "artifacts/builds/kickoff-tpu-source-003/attempts/0001/home",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONNOUSERSITE": "1",
+          "TMPDIR": "artifacts/builds/kickoff-tpu-source-003/attempts/0001/tmp",
+          "TZ": "UTC"
+        },
+        "inherited_names": []
+      },
+      "error": null,
+      "exit_code": 0,
+      "generated_bazelrc": {
+        "path": "artifacts/builds/kickoff-tpu-source-003/attempts/0001/generated.jax_configure.bazelrc",
+        "sha256": "f0f471b6cff9b791141fe49a524b1319e37e82c41d54113fbbd2a9dc9c888d41",
+        "size_bytes": 673
+      },
+      "log_artifact": {
+        "path": "artifacts/builds/kickoff-tpu-source-003/attempts/0001/build.log",
+        "sha256": "508a004f5a2ba717a46af3474bd0322c96e4b1f08d0aa73064f621082f83a23e",
+        "size_bytes": 19889
+      },
+      "number": 1,
+      "paths": {
+        "attempt_dir": "artifacts/builds/kickoff-tpu-source-003/attempts/0001",
+        "generated_bazelrc_archive": "artifacts/builds/kickoff-tpu-source-003/attempts/0001/generated.jax_configure.bazelrc",
+        "home_dir": "artifacts/builds/kickoff-tpu-source-003/attempts/0001/home",
+        "log": "artifacts/builds/kickoff-tpu-source-003/attempts/0001/build.log",
+        "tmp_dir": "artifacts/builds/kickoff-tpu-source-003/attempts/0001/tmp",
+        "wheel_dir": "artifacts/builds/kickoff-tpu-source-003/attempts/0001/wheels"
+      },
+      "started_at": "2026-09-17T06:27:19.632387Z",
+      "status": "build-succeeded",
+      "wheels": [
+        {
+          "path": "artifacts/builds/kickoff-tpu-source-003/attempts/0001/wheels/jaxlib-0.11.1.dev0+selfbuilt-cp312-cp312-manylinux_2_27_x86_64.whl",
+          "sha256": "3154402aad93f776b8f1254ef4108b279baa7bf3d22b2c8ab15bab3efb59ef85",
+          "size_bytes": 87469008
+        }
+      ],
+      "wrapper_process": {
+        "boot_id": "175393b0-600d-4c2c-80ae-73802cdd8aa6",
+        "cmdline_sha256": "c9a8f93dd6049a49a3c9eb33cf11cd924902bea45f1ea8586af9c750ce1da321",
+        "pid": 7,
+        "start_time_ticks": 25711579
+      }
+    }
+  ],
+  "build_config": {
+    "bazel_options": [
+      "--jobs=2",
+      "--lockfile_mode=off",
+      "--local_cpu_resources=4",
+      "--local_ram_resources=8000",
+      "--//jaxlib/tools:jaxlib_git_hash=2d66622450e2c8633cda2307688ef7aa294bd6eb"
+    ],
+    "bazel_startup_options": [
+      "--nosystem_rc",
+      "--nohome_rc",
+      "--batch",
+      "--host_jvm_args=-Xmx3g",
+      "--output_user_root=/home/askr/github/jax-source-analysis/artifacts/builds/kickoff-tpu-bazel-cache"
+    ],
+    "cwd": "upstream/jax",
+    "dry_run": false,
+    "environment_policy": {
+      "fixed": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TZ": "UTC"
+      },
+      "inherited_names": [],
+      "per_attempt_directories": {
+        "HOME": "home",
+        "TMPDIR": "tmp"
+      }
+    },
+    "jobs": 2,
+    "python_executable": ".venv/bin/python"
+  },
+  "build_id": "kickoff-tpu-source-003",
+  "created_at": "2026-09-17T06:27:19.438635Z",
+  "dry_run": false,
+  "input_fingerprint_sha256": "094368d875be289d6f20126ca26d65d3db8ca5fdb3f91c03db7cbe1fce3ac515",
+  "inputs": {
+    "analysis_repository_commit": "6f53af31a393c1524981751a3b21fa0008d1b6f4",
+    "build_config": {
+      "bazel_options": [
+        "--jobs=2",
+        "--lockfile_mode=off",
+        "--local_cpu_resources=4",
+        "--local_ram_resources=8000",
+        "--//jaxlib/tools:jaxlib_git_hash=2d66622450e2c8633cda2307688ef7aa294bd6eb"
+      ],
+      "bazel_startup_options": [
+        "--nosystem_rc",
+        "--nohome_rc",
+        "--batch",
+        "--host_jvm_args=-Xmx3g",
+        "--output_user_root=/home/askr/github/jax-source-analysis/artifacts/builds/kickoff-tpu-bazel-cache"
+      ],
+      "cwd": "upstream/jax",
+      "dry_run": false,
+      "environment_policy": {
+        "fixed": {
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONNOUSERSITE": "1",
+          "TZ": "UTC"
+        },
+        "inherited_names": [],
+        "per_attempt_directories": {
+          "HOME": "home",
+          "TMPDIR": "tmp"
+        }
+      },
+      "jobs": 2,
+      "python_executable": ".venv/bin/python"
+    },
+    "build_id": "kickoff-tpu-source-003",
+    "files": {
+      ".python-version": {
+        "exists": true,
+        "kind": "file",
+        "sha256": "fa682ae9d943f5c8076e68335c9ba3ab4d063ad035c07ac6928653dd4ac50af7",
+        "size_bytes": 7
+      },
+      "manifests/schema/build-jaxlib.schema.json": {
+        "exists": true,
+        "kind": "file",
+        "sha256": "4cb94ef237267b1d651c8fc3c033d906b80593730e937390f6ebd70b0e59eef8",
+        "size_bytes": 19943
+      },
+      "pyproject.toml": {
+        "exists": true,
+        "kind": "file",
+        "sha256": "3ab69082648ed4b165e1b262b1c4d037c9121b21f4877f468d1ca446fd3fc4c2",
+        "size_bytes": 481
+      },
+      "tools/build-jaxlib.py": {
+        "exists": true,
+        "kind": "file",
+        "sha256": "371e73779311eb4c12435eecef1057be20c4db78b5d25f34ed261160011ab03a",
+        "size_bytes": 89949
+      },
+      "tools/check-jaxlib-build-env.py": {
+        "exists": true,
+        "kind": "file",
+        "sha256": "ba9e58cbb0a89ed3979822a2520911b8dfd588a07e7c8b23f5331f9e240fdfe2",
+        "size_bytes": 20695
+      },
+      "upstream-sources.lock": {
+        "exists": true,
+        "kind": "file",
+        "sha256": "66f96578a170de578fd6dd03e85979f321d4cb2f3e7c2d1be810ea6938f705ed",
+        "size_bytes": 14340
+      },
+      "upstream/jax/.bazelrc": {
+        "exists": true,
+        "kind": "file",
+        "sha256": "2a597f1027aa1827bb432b1d4afcab4143206f32155ab082cf4b5d6986ee2c77",
+        "size_bytes": 28574
+      },
+      "upstream/jax/.bazelrc.user": {
+        "exists": false,
+        "kind": "missing",
+        "sha256": null,
+        "size_bytes": null
+      },
+      "upstream/jax/.bazelversion": {
+        "exists": true,
+        "kind": "file",
+        "sha256": "2080871d1a0d5cc3d3a304acff946cb083f90a6cae0b8291fe399b1d4fd83369",
+        "size_bytes": 6
+      },
+      "upstream/jax/MODULE.bazel.lock": {
+        "exists": false,
+        "kind": "missing",
+        "sha256": null,
+        "size_bytes": null
+      },
+      "upstream/jax/build/build.py": {
+        "exists": true,
+        "kind": "file",
+        "sha256": "b5c6490f8e987e8e9e893c9c0e784f536823e0ca5dfd97a085766533f935ca6c",
+        "size_bytes": 27445
+      },
+      "uv.lock": {
+        "exists": true,
+        "kind": "file",
+        "sha256": "3f66f573c5603aeeaa182175ae0e531d0672c70e616bc009fd9565a8a0deaa63",
+        "size_bytes": 150179
+      }
+    },
+    "source_patches": [],
+    "sources": {
+      "jax": {
+        "commit": "2d66622450e2c8633cda2307688ef7aa294bd6eb",
+        "dirty": false,
+        "exists": true,
+        "expected_commit": "2d66622450e2c8633cda2307688ef7aa294bd6eb",
+        "ignored": [
+          ".jax_configure.bazelrc",
+          "bazel-7.7.1-linux-x86_64",
+          "bazel-bin",
+          "bazel-jax",
+          "bazel-out",
+          "bazel-testlogs"
+        ],
+        "ignored_returncode": 0,
+        "index_flags": [],
+        "index_flags_returncode": 0,
+        "path": "upstream/jax",
+        "status": [],
+        "status_returncode": 0,
+        "top_level": "upstream/jax"
+      },
+      "xla": {
+        "commit": "dcf304bc5dca1932b99f740b911dbd73631a1a69",
+        "dirty": false,
+        "exists": true,
+        "expected_commit": "dcf304bc5dca1932b99f740b911dbd73631a1a69",
+        "ignored": [],
+        "ignored_returncode": 0,
+        "index_flags": [],
+        "index_flags_returncode": 0,
+        "path": "upstream/xla",
+        "status": [],
+        "status_returncode": 0,
+        "top_level": "upstream/xla"
+      }
+    },
+    "toolchain": {
+      "bazel": {
+        "path": "upstream/jax/bazel-7.7.1-linux-x86_64",
+        "resolved_path": "upstream/jax/bazel-7.7.1-linux-x86_64",
+        "returncode": 0,
+        "sha256": "115a1b62be95f29e5821d4dddffba1b058905a48019b499919c285e7f708d5e2",
+        "version": "bazel 7.7.1"
+      },
+      "clang": {
+        "path": "/usr/bin/clang",
+        "resolved_path": "/usr/lib/llvm-18/bin/clang",
+        "returncode": 0,
+        "sha256": "8ef402d453d1ba4902e4ee0f0f847f6cfa01400c95aa43c24e97818b9c0e3f45",
+        "version": "Ubuntu clang version 18.1.3 (1ubuntu1)"
+      },
+      "clangxx": {
+        "path": "/usr/bin/clang++",
+        "resolved_path": "/usr/lib/llvm-18/bin/clang",
+        "returncode": 0,
+        "sha256": "8ef402d453d1ba4902e4ee0f0f847f6cfa01400c95aa43c24e97818b9c0e3f45",
+        "version": "Ubuntu clang version 18.1.3 (1ubuntu1)"
+      },
+      "git": {
+        "path": "/usr/bin/git",
+        "resolved_path": "/usr/bin/git",
+        "returncode": 0,
+        "sha256": "2a8c18fbf43da9f692d75474c72bea9dfd796c260b0f3dfe456376abc3bbd668",
+        "version": "git version 2.43.0"
+      },
+      "python": {
+        "base_executable": "/usr/bin/python3.12",
+        "base_resolved_path": "/usr/bin/python3.12",
+        "base_sha256": "1643dacd9feaedc58f3cc581e4d22577dfe25c09b10282936186ccf0f2e61118",
+        "base_size_bytes": 8020928,
+        "executable": ".venv/bin/python",
+        "resolved_executable": "/usr/bin/python3.12",
+        "version": "3.12.3"
+      }
+    }
+  },
+  "kind": "jaxlib-cpu-source-build",
+  "paths": {
+    "artifact_dir": "artifacts/builds/kickoff-tpu-source-003",
+    "build_lock": "artifacts/builds/kickoff-tpu-source-003/.build-id.lock",
+    "generated_bazelrc": "upstream/jax/.jax_configure.bazelrc",
+    "global_lock": "artifacts/builds/.jaxlib-build.lock",
+    "manifest": "manifests/build-fingerprints/kickoff-tpu-source-003.json"
+  },
+  "preflight": {
+    "blockers": [],
+    "ok": true,
+    "waived_blockers": []
+  },
+  "result": {
+    "attempt_number": 1,
+    "error": null,
+    "exit_code": 0,
+    "generated_bazelrc": {
+      "path": "artifacts/builds/kickoff-tpu-source-003/attempts/0001/generated.jax_configure.bazelrc",
+      "sha256": "f0f471b6cff9b791141fe49a524b1319e37e82c41d54113fbbd2a9dc9c888d41",
+      "size_bytes": 673
+    },
+    "wheels": [
+      {
+        "path": "artifacts/builds/kickoff-tpu-source-003/attempts/0001/wheels/jaxlib-0.11.1.dev0+selfbuilt-cp312-cp312-manylinux_2_27_x86_64.whl",
+        "sha256": "3154402aad93f776b8f1254ef4108b279baa7bf3d22b2c8ab15bab3efb59ef85",
+        "size_bytes": 87469008
+      }
+    ]
+  },
+  "runtime_validation": {
+    "checked_at": null,
+    "evidence": [],
+    "notes": "A successful build still requires isolated install and runtime validation.",
+    "status": "not-run"
+  },
+  "schema_version": "1.0",
+  "status": "build-succeeded",
+  "updated_at": "2026-09-17T06:31:31.289669Z"
+}

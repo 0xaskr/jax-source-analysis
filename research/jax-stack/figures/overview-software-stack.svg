@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="4100" height="6680" viewBox="0 0 4100 6680" role="img" aria-labelledby="title desc">
   <title id="title">JAX 软件栈：组件位置与上下游关系</title>
-  <desc id="desc">JAX 前端分开展示普通 primitive lowering 与 Pallas TPU kernel lowering。Pallas kernel Jaxpr 生成 Mosaic TPU MLIR，序列化为 bytecode 与 Base64 后，存入外层 stablehlo.custom_call 的 backend_config.custom_call_config.body。实际 8x128 float32 加法例子展示 payload 及解码后的 arith.addf。外层 MLIR 经 jaxlib / IFRT / PJRT 提交；libtpu 内区分外层 HLO 与 Mosaic kernel 路径。CPU HLO hook 与 Pallas 离线 lowering 已验证，TPU 编译执行未验证。右侧保留条件分支及扩展接口，底部保留小字号逐行术语。</desc>
+  <desc id="desc">JAX 前端分开展示普通 primitive lowering 与 Pallas TPU kernel lowering。Pallas kernel Jaxpr 生成 Mosaic TPU MLIR，序列化为 bytecode 与 Base64 后，存入外层 stablehlo.custom_call 的 backend_config.custom_call_config.body。实际 8x128 float32 加法例子展示 payload 及反序列化后的 arith.addf。外层 MLIR 经 jaxlib / IFRT / PJRT 提交；libtpu 内区分外层 HLO 与 Mosaic kernel 路径。CPU HLO hook 与 Pallas 离线 lowering 已验证，TPU 编译执行未验证。右侧保留条件分支及扩展接口，底部保留小字号逐行术语。</desc>
   <defs>
     <marker id="a" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
       <path d="M0 0L9 4.5L0 9Z" fill="#526b88" />
@@ -20,7 +20,14 @@
     <marker id="transform-arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
       <path d="M0 0L9 4.5L0 9Z" fill="#ad4f7c" />
     </marker>
+    <marker id="execute-arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0 0L9 4.5L0 9Z" fill="#b56428" />
+    </marker>
+    <marker id="inferred-arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+      <path d="M0 0L9 4.5L0 9Z" fill="#8d7958" />
+    </marker>
   </defs>
+  <style>.execute{fill:none;stroke:#b56428;stroke-width:2.4;marker-end:url(#execute-arrow)}.inferred{fill:none;stroke:#8d7958;stroke-width:2;stroke-dasharray:4 7;marker-end:url(#inferred-arrow)}</style>
   <style>text{font-family:"Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#20344d;font-size:19px}.title{font-size:32px;font-weight:700}.heading{font-size:25px;font-weight:700}.small{font-size:17px;fill:#52677e}.pin{font-family:"DejaVu Sans Mono",monospace;font-size:17px;fill:#52677e}.flow{fill:none;stroke:#526b88;stroke-width:2.3;marker-end:url(#a)}.data{fill:none;stroke:#318b80;stroke-width:2;stroke-dasharray:2 6;marker-end:url(#c)}.component{font-size:22px;font-weight:700}.detail{font-size:16px;fill:#52677e}.config{fill:none;stroke:#8571b2;stroke-width:2;stroke-dasharray:7 5;marker-end:url(#rule-arrow)}.response{fill:none;stroke:#317f9a;stroke-width:2;stroke-dasharray:9 4;marker-end:url(#response-arrow)}.query{fill:none;stroke:#a57125;stroke-width:2;stroke-dasharray:11 6;marker-end:url(#query-arrow)}.transform-call{fill:none;stroke:#ad4f7c;stroke-width:2.5;marker-end:url(#transform-arrow)}.transform-return{fill:none;stroke:#ad4f7c;stroke-width:2.5;stroke-dasharray:10 5;marker-end:url(#transform-arrow)}.glossary-body{font-size:16px;fill:#52677e}#stack-glossary .title{font-size:24px}#stack-glossary .small{font-size:14px}#stack-glossary .detail{font-size:13px}</style>
   <rect width="4100" height="6680" fill="#fff" />
   <text x="35" y="48" class="title" text-anchor="start">JAX 软件栈：组件位置与上下游关系</text>
@@ -39,7 +46,7 @@
       <rect id="tpu-hlo-ir" x="1015" y="2610" width="295" height="120" rx="12" fill="#f0f7ec" stroke="#c99149" stroke-width="1.6" />
       <text x="1033" y="2647" class="component">2 · HLO</text>
       <text x="1033" y="2683" class="small">外层 HLO 可含 custom-call</text>
-      <text x="1033" y="2714" class="detail">Pallas body 进入右侧 Mosaic 路径</text>
+      <text x="1033" y="2714" class="detail">Pallas 调用携带 kernel payload</text>
       <rect id="tpu-hlo-passes" x="1015" y="2780" width="295" height="250" rx="12" fill="#f0f7ec" stroke="#c99149" stroke-width="1.6" />
       <text x="1033" y="2817" class="component">3 · HLO 优化与分片</text>
       <text x="1033" y="2855" class="small">多核分片 / 模型并行</text>
@@ -53,9 +60,9 @@
       <text x="1033" y="3441" class="detail">LLO 细节与完整 pass 顺序</text>
       <text x="1033" y="3473" class="detail">待匹配目标 libtpu 版本</text>
       <rect id="tpu-load-runtime" x="1015" y="3520" width="295" height="130" rx="12" fill="#fffaf3" stroke="#c99149" stroke-width="1.6" />
-      <text x="1033" y="3557" class="component">7 · 加载与运行</text>
+      <text x="1033" y="3557" class="component">7 · 编译产物 / 加载</text>
       <text x="1033" y="3593" class="detail">加载 TPU executable</text>
-      <text x="1033" y="3628" class="detail">执行提交与设备完成事件</text>
+      <text x="1033" y="3628" class="detail">执行见橙色 runtime 路径</text>
       <path d="M1162 2560V2610" class="flow" />
       <path d="M1162 2730V2780" class="flow" />
       <path d="M1162 3030V3070" class="flow" />
@@ -64,12 +71,12 @@
       <a href="https://openxla.org/xla/hlo_passes#tpu-specific-hlo-pass-examples">
         <text x="1015" y="3740" class="detail" style="fill:#256a8a;text-decoration:underline">OpenXLA · HLO Passes</text>
       </a>
-      <text x="1015" y="3780" class="detail">目标版本的 pass 启用与顺序</text>
-      <text x="1015" y="3810" class="detail">仍需构建证据或实际 dump 核对</text>
-      <text x="1015" y="3840" class="detail">内部执行不代表实现全部闭源</text>
       <a href="https://docs.cloud.google.com/tpu/docs/troubleshooting/trouble-tf#debug_logs">
         <text x="1015" y="3760" class="detail" style="fill:#256a8a;text-decoration:underline">Google Cloud · libtpu 组成</text>
       </a>
+      <text x="1015" y="3780" class="detail">目标版本的 pass 启用与顺序</text>
+      <text x="1015" y="3810" class="detail">仍需构建证据或实际 dump 核对</text>
+      <text x="1015" y="3840" class="detail">内部执行不代表实现全部闭源</text>
       <rect id="tpu-hlo-schedule" x="1015" y="3070" width="295" height="100" rx="12" fill="#fffaf3" stroke="#c99149" stroke-width="1.6" />
       <text x="1033" y="3107" class="component">4 · HLO 调度</text>
       <text x="1033" y="3139" class="small">生成 HloSchedule / 指令次序</text>
@@ -80,7 +87,7 @@
       <path d="M1162 3170V3210" class="flow" />
       <path d="M1162 3300V3335" class="flow" />
       <g id="libtpu-mosaic-kernel-branch">
-        <text x="1395" y="2782" class="small">Pallas：Mosaic 专用路径</text>
+        <text x="1395" y="2782" class="small">Mosaic 路径（架构示意）</text>
         <rect id="mosaic-backend-import" x="1395" y="2810" width="245" height="155" rx="12" fill="#fffaf3" stroke="#c99149" stroke-width="1.6" />
         <text x="1410" y="2844" class="detail">识别 tpu_custom_call</text>
         <text x="1410" y="2875" class="detail">读取 backend_config</text>
@@ -96,10 +103,11 @@
         <text x="1410" y="3326" class="detail">kernel 后端代码生成</text>
         <text x="1410" y="3358" class="detail">与外层程序编译结果集成</text>
         <text x="1410" y="3390" class="detail">形成可加载的 executable</text>
-        <path d="M1310 2680H1320V2885H1395" class="flow" />
-        <path d="M1517 2965V3030" class="flow" />
-        <path d="M1517 3225V3290" class="flow" />
-        <path d="M1395 3380H1310" class="flow" />
+        <path d="M1517 2965V3030" class="inferred" />
+        <text x="1533" y="3004" class="detail">推断关系</text>
+        <path d="M1517 3225V3290" class="inferred" />
+        <text x="1533" y="3264" class="detail">推断关系</text>
+        <text x="1395" y="3460" class="detail">与外层回并的位置未确认</text>
         <text x="1395" y="3490" class="detail">本次确认到：</text>
         <text x="1395" y="3522" class="detail">宿主离线 lowering、</text>
         <text x="1395" y="3554" class="detail">payload 提取与解码。</text>
@@ -110,7 +118,7 @@
         <a href="https://docs.jax.dev/en/latest/pallas/design/design.html#lowering-pallas-to-mosaic-for-tpu">
           <text x="1395" y="3750" class="detail" style="fill:#256a8a;text-decoration:underline">JAX · Pallas / Mosaic 设计</text>
         </a>
-        <text x="1395" y="2802" class="detail">具体接入阶段与次序待核对</text>
+        <text x="1395" y="2802" class="detail">接入 / 回并阶段未确认</text>
       </g>
     </g>
     <g id="pjrt-components">
@@ -202,21 +210,42 @@
       <path d="M495 637V715" class="flow" />
       <path d="M1135 637V715" class="flow" />
       <path d="M572 1040V1125" class="flow" />
-      <path d="M1057 1040V1125" class="flow" />
+      <path d="M1057 1040V1125" class="execute" />
       <path d="M487 1420V1485H525V1595" class="flow" />
       <path d="M487 1485H1010V1595" class="flow" />
       <path d="M965 1360H940" class="flow" />
-      <path d="M755 1915H730V1960H705" class="response" />
       <path d="M525 2075V2170H1310V592H1285" class="response" />
       <path d="M1265 2040H1275V1670H1265" class="config" />
       <path d="M525 1775V1805H315V2245H625V2275" class="flow" />
       <path d="M1162 2120V2275" class="flow" />
       <text x="345" y="2200" class="detail">蓝色虚线：输出对象 / 就绪状态返回</text>
-      <path d="M815 637V695H1070V715" class="flow" />
+      <path d="M815 637V695H1070V715" class="execute" />
       <path d="M1010 2120V2230H780V2275" class="flow" />
-      <text x="795" y="2254" class="detail">GPU plugin（可选）</text>
-      <path d="M1125 1420V1515" class="flow" />
-      <text x="1140" y="1484" class="detail">Execute 分派</text>
+      <text x="795" y="2254" class="detail">GPU plugin 编译</text>
+      <path d="M1285 1380H1340V1902H1265" class="execute" />
+    </g>
+    <g id="execution-runtime-path">
+      <rect x="1395" y="1420" width="255" height="635" rx="12" fill="#fff8ef" stroke="#b56428" stroke-width="1.6" />
+      <text x="1410" y="1458" class="small" style="font-weight:700">Execute：已加载对象</text>
+      <text x="1410" y="1488" class="detail">复用 executable，直接执行</text>
+      <rect id="native-execute" x="1415" y="1530" width="215" height="110" rx="10" fill="#fff" stroke="#b56428" />
+      <text x="1430" y="1558" class="small">原生 CPU / GPU</text>
+      <text x="1430" y="1591" class="detail">PjRtLoadedExecutable</text>
+      <text x="1430" y="1621" class="detail">Execute / ExecuteSharded</text>
+      <rect id="plugin-execute" x="1415" y="1690" width="215" height="110" rx="10" fill="#fff" stroke="#b56428" />
+      <text x="1430" y="1721" class="small">TPU / GPU plugin</text>
+      <text x="1430" y="1753" class="detail">C ABI Execute →</text>
+      <text x="1430" y="1783" class="detail">plugin 已加载 executable</text>
+      <rect id="device-execution" x="1415" y="1860" width="215" height="125" rx="10" fill="#fff" stroke="#b56428" />
+      <text x="1430" y="1892" class="small">后端 runtime / 设备</text>
+      <text x="1430" y="1926" class="detail">执行输入 buffers 上的计算</text>
+      <text x="1430" y="1960" class="detail">输出 buffers / 完成事件</text>
+      <path d="M1285 1340H1360V1580H1415" class="execute" />
+      <path d="M1265 1930H1375V1745H1415" class="execute" />
+      <path d="M1522 1640V1660H1640V1920H1630" class="execute" />
+      <path d="M1522 1800V1860" class="execute" />
+      <path d="M1630 1970H1660V2085H1350V2188H525V2075" class="response" />
+      <text x="1410" y="2025" class="detail">完成 / 就绪返回左侧接口</text>
     </g>
     <g id="xla-hlo-details" transform="translate(0 1680)">
       <rect id="xla" x="300" y="595" width="650" height="1385" rx="12" fill="#eff6ff" stroke="#88a9d0" stroke-width="1.5" />
@@ -298,14 +327,14 @@
       <text x="325" y="1131">LLVM IR → 优化 → 目标代码生成</text>
       <text x="325" y="1167" class="small">CPU 原生代码；GPU 目标代码再经工具链汇编 / 链接</text>
     </g>
-    <text x="340" y="2240" class="detail" text-anchor="start">原生 provider → XLA</text>
-    <text x="995" y="2254" class="detail" text-anchor="start">TPU PJRT C API</text>
+    <text x="340" y="2240" class="detail" text-anchor="start">原生 provider → XLA 编译</text>
+    <text x="995" y="2254" class="detail" text-anchor="start">TPU Compile / Load</text>
     <rect x="300" y="3925" width="275" height="70" rx="13" fill="#f1f4f7" stroke="#a5b3c0" stroke-width="1.6" />
-    <text x="437.5" y="3968" class="" text-anchor="middle">CPU executable / 执行</text>
+    <text x="437.5" y="3968" class="" text-anchor="middle">CPU executable</text>
     <rect x="600" y="3925" width="350" height="70" rx="13" fill="#f1f4f7" stroke="#a5b3c0" stroke-width="1.6" />
-    <text x="775.0" y="3968" class="" text-anchor="middle">GPU executable / 执行</text>
+    <text x="775.0" y="3968" class="" text-anchor="middle">GPU executable</text>
     <rect x="995" y="3925" width="335" height="70" rx="13" fill="#f1f4f7" stroke="#a5b3c0" stroke-width="1.6" />
-    <text x="1162.5" y="3968" class="" text-anchor="middle">TPU executable / 执行</text>
+    <text x="1162.5" y="3968" class="" text-anchor="middle">TPU executable</text>
     <path d="M 450 3625 V 3715" class="flow" />
     <text x="465" y="3696" class="small">LLVM IR</text>
     <path d="M 450 3845 V 3925" class="flow" />
@@ -315,7 +344,41 @@
     <path d="M 925 3560 H 975 V 3880 H 875 V 3925" class="flow" />
     <text x="888" y="3910" class="small">其他路径 / 库调用</text>
     <path d="M1162 3650V3670H1320V3880H1162V3925" class="flow" />
-    <text x="300" y="4050" class="small" text-anchor="start">硬件执行是架构终点；画出路径不代表已在对应设备上完成验证。</text>
+    <text x="300" y="4050" class="small" text-anchor="start">蓝色编译路径产出 executable；橙色 Execute 路径复用已加载对象，在后端 runtime / 设备上执行。</text>
+    <g id="profiler-event-sources">
+      <rect x="1395" y="500" width="255" height="815" rx="12" fill="#edf8f5" stroke="#7bb1a8" stroke-width="1.6" />
+      <text x="1410" y="539" class="small" style="font-weight:700">Profiler：三类事件来源</text>
+      <text x="1410" y="571" class="detail">按采集配置记录并汇集</text>
+      <rect id="host-profile-events" x="1415" y="600" width="215" height="140" rx="10" fill="#fff" stroke="#7bb1a8" />
+      <text x="1430" y="633" class="small">Host 事件</text>
+      <text x="1430" y="667" class="detail">Python / 宿主运行时</text>
+      <text x="1430" y="699" class="detail" style="font-size:14px">TraceAnnotation / TraceMe</text>
+      <a href="../../../upstream/jax/jax/_src/profiler.py">
+        <text x="1430" y="725" class="detail" style="fill:#256a8a;text-decoration:underline">源码：jax.profiler</text>
+      </a>
+      <rect id="compiler-profile-events" x="1415" y="790" width="215" height="140" rx="10" fill="#fff" stroke="#7bb1a8" />
+      <text x="1430" y="823" class="small">编译 pass 事件</text>
+      <text x="1430" y="856" class="detail">XLA HloPassPipeline</text>
+      <text x="1430" y="888" class="detail">TraceMe(pass-&gt;name())</text>
+      <a href="../../../upstream/xla/xla/hlo/pass/hlo_pass_pipeline.cc#L188">
+        <text x="1430" y="915" class="detail" style="fill:#256a8a;text-decoration:underline">源码：pass 执行标记</text>
+      </a>
+      <rect id="device-profile-events" x="1415" y="980" width="215" height="140" rx="10" fill="#fff" stroke="#7bb1a8" />
+      <text x="1430" y="1013" class="small">设备执行事件</text>
+      <text x="1430" y="1046" class="detail">后端 profiler / 设备 trace</text>
+      <text x="1430" y="1079" class="detail">事件支持依赖后端与配置</text>
+      <a href="../profiling.md">
+        <text x="1430" y="1105" class="detail" style="fill:#256a8a;text-decoration:underline">三类证据与验证边界</text>
+      </a>
+      <rect id="profile-data-collection" x="1415" y="1180" width="215" height="90" rx="10" fill="#fff" stroke="#7bb1a8" />
+      <text x="1430" y="1215" class="small">采集 session / XSpace</text>
+      <text x="1430" y="1248" class="detail">按 plane / event 保存</text>
+      <path d="M1415 670H1405V1225H1415" class="data" />
+      <path d="M1630 860H1640V1225H1630" class="data" />
+      <path d="M1522 1120V1180" class="data" />
+      <path d="M1630 1250H1665V2355H1650" class="data" />
+      <text x="1410" y="1300" class="detail">汇集后交给 XProf 分析</text>
+    </g>
     <rect x="1395" y="2115" width="255" height="570" rx="13" fill="#edf8f5" stroke="#7bb1a8" stroke-width="1.6" />
     <text x="1415" y="2156" class="heading" text-anchor="start">XProf</text>
     <text x="1415" y="2192" class="pin" text-anchor="start">68dba1826c37</text>
@@ -328,17 +391,19 @@
     <text x="1415" y="2560" class="small" text-anchor="start">可用事件由后端与</text>
     <text x="1415" y="2590" class="small" text-anchor="start">采集配置决定</text>
     <text x="1415" y="2650" class="small" text-anchor="start">不参与程序编译分派</text>
-    <path d="M437 3995V4020H1695V2625H1650" class="data" />
-    <path d="M 775 3995 V 4020 M 1162 3995 V 4020" fill="none" stroke="#318b80" stroke-width="2" stroke-dasharray="2 6" />
-    <text x="1382" y="3935" class="small" text-anchor="start">运行采集数据</text>
+    <path d="M1630 1945H1690V1050H1630" class="data" />
     <path d="M 35 4085 H 90" class="flow" />
-    <text x="105" y="4092" class="small" text-anchor="start">表示流 / 调用</text>
+    <text x="105" y="4092" class="small" text-anchor="start">表示转换 / Compile / Load</text>
     <path d="M 440 4085 H 495" class="data" />
     <text x="510" y="4092" class="small" text-anchor="start">性能采集数据</text>
     <rect x="1005" y="4070" width="42" height="27" rx="13" fill="#fff6e9" stroke="#c99149" stroke-width="1.6" stroke-dasharray="8 5" />
     <text x="1060" y="4092" class="small" text-anchor="start">libtpu 二进制边界</text>
     <text x="1320" y="4092" class="small" text-anchor="start">pin: upstream-sources.lock</text>
-    <text x="1415" y="2270" class="small">来自 jax.profiler 采集</text>
+    <path d="M1775 4085H1830" class="inferred" />
+    <text x="1850" y="4092" class="small">推断关系；接入 / 回并阶段未确认</text>
+    <path d="M2600 4085H2655" class="execute" />
+    <text x="2675" y="4092" class="small">Execute：复用已加载 executable</text>
+    <text x="1415" y="2270" class="small">来自三类 profiler 事件</text>
   </g>
   <g id="jax-components">
     <rect id="jax" x="300" y="110" width="2230" height="760" rx="12" fill="#eff6ff" stroke="#88a9d0" stroke-width="1.5" />
@@ -433,8 +498,8 @@
       <text x="1415" y="712" class="small">pallas_call_p 本身已注册 mlir.register_lowering；内部 kernel 走 Mosaic MLIR lowering。</text>
       <text x="1415" y="743" class="small">外层用 stablehlo.custom_call 表达调用，kernel 的计算逻辑以序列化 IR 随调用传递。</text>
       <text x="1415" y="774" class="small">本次离线输出：1 个 custom_call；body 为 1372 字符 Base64 / 1029 字节 MLIR bytecode。</text>
-      <a href="../examples/pallas_add_stablehlo.py">
-        <text x="1415" y="814" class="detail" style="fill:#256a8a;text-decoration:underline">复现脚本与完整 IR：pallas_add_stablehlo.py</text>
+      <a href="../examples/pallas_add_stablehlo.py#L48">
+        <text x="1415" y="814" class="detail" style="fill:#256a8a;text-decoration:underline">复现：pallas_add_stablehlo.py:48–60</text>
       </a>
       <a href="../../../upstream/jax/jax/_src/pallas/mosaic/pallas_call_registration.py#L435">
         <text x="1930" y="814" class="detail" style="fill:#256a8a;text-decoration:underline">源码：TPU lowering → Mosaic module</text>
@@ -492,8 +557,8 @@
     <path d="M1775 2640H1830" class="response" />
     <text x="1850" y="2646" class="detail">蓝色虚线：编译结果 / 元数据处理</text>
     <path d="M1330 965H1700V1315H1755" class="query" />
-    <path d="M1285 2320H1710V1700H1755" class="query" />
-    <path d="M1285 1625H1680V2070H1755" class="response" />
+    <path d="M1285 2320H1335V2000H1710V1700H1755" class="query" />
+    <path d="M1285 1625H1337V1585H1680V2070H1755" class="response" />
     <rect id="registered-hlo-transform" x="1755" y="2800" width="750" height="1450" rx="12" fill="#fbeef5" stroke="#ad4f7c" stroke-width="1.6" />
     <text x="1775" y="2841" class="heading">④ 编译期可写 HLO hook（注册后触发）</text>
     <text x="1775" y="2876" class="detail">POST_SCHEDULER 指 HLO 调度之后；不是最终机器指令调度。</text>
@@ -526,10 +591,14 @@
     <text x="1795" y="3548" class="component">实际触发：所选后端编译到达 HLO 调度后挂点</text>
     <text x="1795" y="3585" class="detail">CPU 与 TPU 回调均在宿主 Python 中运行；注册按 platforms 选择。</text>
     <text x="1795" y="3620" class="detail">已有 executable 缓存命中通常不发生新编译，也不会重新触发该 hook。</text>
-    <text x="1795" y="3653" class="detail">CPU hook 已实测；TPU 测试定义见 xla_transform_test.py:451，未运行。</text>
+    <a href="../../../upstream/jax/tests/xla_transform_test.py#L452">
+      <text x="1795" y="3653" class="detail" style="fill:#256a8a;text-decoration:underline">TPU 测试：upstream/jax/tests/xla_transform_test.py:452（未运行）</text>
+    </a>
     <rect id="python-hlo-transform-callback" x="1775" y="3750" width="710" height="240" rx="12" fill="#fff" stroke="#ad4f7c" stroke-width="1.6" />
-    <text x="1795" y="3788" class="component">宿主 Python：TPU 用户变换示例</text>
-    <text x="1795" y="3825" class="component">transform_dsa_sparse_gather_schedule</text>
+    <text x="1795" y="3788" class="component">宿主 Python：TPU 测试中的变换示例</text>
+    <a href="../../../upstream/jax/tests/xla_transform_test.py#L366">
+      <text x="1795" y="3825" class="component" style="fill:#256a8a;text-decoration:underline">schedule_async_ops（同文件 :366）</text>
+    </a>
     <text x="1795" y="3870" class="small">输入：序列化的 HloModuleProto bytes（可包含 HLO schedule）</text>
     <text x="1795" y="3910" class="detail">函数解析 / 改写 HLO 或 schedule，返回修改后的 bytes，或返回 None。</text>
     <text x="1795" y="3950" class="detail">这个回调参与编译；不是运行在 TPU 设备上的 kernel。</text>
@@ -704,22 +773,28 @@
     </g>
     <g id="xla-interface-e">
       <rect id="e-panel" x="2600" y="4120" width="1455" height="510" rx="12" fill="#ffffff" stroke="#b5c5d6" stroke-width="1.6" />
-      <text x="2630" y="4164" class="heading">E · 只读 IR 导出与编译结果分析</text>
-      <text x="2630" y="4201" class="small">用途：观察 lowering 和 executable；不注册 pass，也不向当前编译流水线写回修改。</text>
-      <rect id="lowered-readonly-api" x="2630" y="4235" width="675" height="270" rx="12" fill="#fff8ed" stroke="#c8a16b" stroke-width="1.6" />
+      <text x="2630" y="4164" class="heading">E · IR 检查、导出与编译结果分析</text>
+      <text x="2630" y="4201" class="small">接口用于检查与诊断；对象可变性取决于表示和实现，不能统一视为只读快照。</text>
+      <rect id="lowered-ir-api" x="2630" y="4235" width="675" height="270" rx="12" fill="#fff8ed" stroke="#c8a16b" stroke-width="1.6" />
       <text x="2655" y="4275" class="small">lowered = jax.jit(f).lower(...)</text>
-      <text x="2655" y="4318" class="small">lowered.compiler_ir("stablehlo") → MLIR module</text>
-      <text x="2655" y="4361" class="small">lowered.compiler_ir("hlo") → XlaComputation</text>
-      <text x="2655" y="4404" class="small">lowered.as_text("stablehlo" / "hlo") → 文本</text>
-      <text x="2655" y="4447" class="small">hlo 导出是显式转换分支；对应主图①</text>
-      <rect id="compiled-readonly-api" x="3350" y="4235" width="674" height="270" rx="12" fill="#eef8fa" stroke="#78afb9" stroke-width="1.6" />
+      <text x="2655" y="4306" class="small">lowered.compiler_ir("stablehlo") → 内部可变 MLIR module</text>
+      <text x="2655" y="4337" class="small">当前 pin 返回同一对象，并非只读副本。</text>
+      <text x="2655" y="4368" class="small">首次 compile 前原地改写，可改变编译结果。</text>
+      <text x="2655" y="4399" class="small">lowered.compiler_ir("hlo") → 新导出的 XlaComputation</text>
+      <text x="2655" y="4430" class="small">lowered.as_text("stablehlo" / "hlo") → 文本</text>
+      <text x="2655" y="4461" class="small">HLO 导出是显式转换分支；对应主图①。</text>
+      <rect id="compiled-analysis-api" x="3350" y="4235" width="674" height="270" rx="12" fill="#eef8fa" stroke="#78afb9" stroke-width="1.6" />
       <text x="3375" y="4275" class="small">compiled = lowered.compile()</text>
       <text x="3375" y="4318" class="small">compiled.as_text() → 编译后程序文本</text>
       <text x="3375" y="4361" class="small">compiled.cost_analysis() / memory_analysis()</text>
       <text x="3375" y="4404" class="small">compiled.runtime_executable() → 底层 executable</text>
       <text x="3375" y="4447" class="small">后端可能不提供部分表示或分析；对应主图②</text>
-      <a href="../../../upstream/jax/jax/_src/stages.py#L649">
+      <text x="2630" y="4536" class="detail">原地改写描述当前实现，不是稳定的编辑 API，也不会改变已编译的 executable。</text>
+      <a href="../../../upstream/jax/jax/_src/stages.py#L665">
         <text x="2630" y="4575" class="detail" style="fill:#256a8a;text-decoration:underline">源码：Lowered.compiler_ir / Compiled 分析接口；具体返回值由后端支持决定</text>
+      </a>
+      <a href="../../../upstream/jax/jax/_src/interpreters/pxla.py#L1224">
+        <text x="2630" y="4605" class="detail" style="fill:#256a8a;text-decoration:underline">当前对象身份：MeshComputation.stablehlo 返回 self._hlo；后续首次 compile 使用该 module</text>
       </a>
     </g>
     <text x="2600" y="4675" class="detail">核对：JAX 2d66622450e2 / XLA dcf304bc5dca；.venv 已检查 API 导出，CPU HLO hook 已执行；其他接口未新增目标设备执行。</text>
@@ -1001,7 +1076,7 @@
     <rect id="mlir-representations" x="300" y="895" width="2230" height="700" rx="12" fill="#f5f1fb" stroke="#a696c5" stroke-width="1.6" />
     <text x="325" y="936" class="heading">MLIR：外层 module 与 kernel payload</text>
     <text x="1010" y="936" class="pin" xml:space="preserve">LLVM/MLIR pin：75a45c373407</text>
-    <text x="325" y="968" class="small">StableHLO、sdy 与 Mosaic 使用的方言都基于 MLIR；下方右框是对 body 的显式解码观察。</text>
+    <text x="325" y="968" class="small">StableHLO、sdy 与 Mosaic 使用的方言都基于 MLIR；下方右框是对 body 的显式解析与反序列化观察。</text>
     <rect id="stablehlo" x="325" y="995" width="1240" height="550" rx="12" fill="#eef8fa" stroke="#78afb9" stroke-width="1.6" />
     <text x="350" y="1032" class="heading">外层 StableHLO module</text>
     <text x="780" y="1032" class="pin" xml:space="preserve">StableHLO pin：7b1b15781ccb</text>
@@ -1032,14 +1107,15 @@
     <text x="1625" y="1107" class="small">外层程序的分片信息，与 Pallas 的 grid / BlockSpec / kernel 规则分别处理。</text>
     <text x="1625" y="1140" class="small">这些表示和规则共同参与编译，不表示所有 kernel 都可被任意自动分片。</text>
     <rect id="decoded-mosaic-payload" x="1600" y="1250" width="905" height="295" rx="12" fill="#f0f7ec" stroke="#a1b98b" stroke-width="1.6" />
-    <text x="1625" y="1289" class="component">解码 body：实际 Mosaic kernel IR</text>
-    <text x="1625" y="1331" class="pin" xml:space="preserve">func.func @pallas_add(... memref&lt;8x128xf32, ...&gt;)</text>
-    <text x="1625" y="1365" class="pin" xml:space="preserve">  vector.load ...</text>
-    <text x="1625" y="1399" class="pin" xml:space="preserve">  %2 = arith.addf %0, %1 : vector&lt;8x128xf32&gt;</text>
-    <text x="1625" y="1433" class="pin" xml:space="preserve">  tpu.vector_store ...</text>
+    <text x="1625" y="1289" class="component">body 经 bytecode 解析及 Mosaic 反序列化后的文本 IR</text>
+    <text x="1625" y="1320" class="detail">Base64 解码 → MLIR bytecode 解析 → mosaic-serde 反序列化 → get_asm 文本</text>
+    <text x="1625" y="1355" class="pin" xml:space="preserve">func.func @pallas_add(... memref&lt;8x128xf32, ...&gt;)</text>
+    <text x="1625" y="1385" class="pin" xml:space="preserve">  vector.load ...</text>
+    <text x="1625" y="1415" class="pin" xml:space="preserve">  %2 = arith.addf %0, %1 : vector&lt;8x128xf32&gt;</text>
+    <text x="1625" y="1445" class="pin" xml:space="preserve">  tpu.vector_store ...</text>
     <text x="1625" y="1480" class="detail">摘要省略类型与索引；加法位于 kernel IR 内。Mosaic TPU MLIR 不是 LLO。</text>
     <a href="../examples/pallas_add.mosaic.mlir">
-      <text x="1625" y="1520" class="detail" style="fill:#256a8a;text-decoration:underline">打开从该 body 解码得到的完整 Mosaic MLIR</text>
+      <text x="1625" y="1520" class="detail" style="fill:#256a8a;text-decoration:underline">打开由该 body 解析、反序列化后打印的完整 Mosaic MLIR 文本</text>
     </a>
     <path d="M1517 1320H1600" class="query" />
     <a href="../examples/pallas_add.stablehlo.mlir">

@@ -20,6 +20,7 @@
 - [原始 XSpace 关联](xspace-contexts.md)：49 组关联、13 组跨线程，区分本地范围、逻辑完成与 JSON 导出边界。
 - [XSpace Notebook](xspace-contexts.ipynb)：原始 protobuf、uint64 ID、逆序完成、数值与反例的归档复查。
 - [CPU thunk Notebook](cpu-thunk-execution.ipynb)：5 个代码单元已执行，含包装解析、trace/NumPy 复查及 19 个反例。
+- [matmul lowering 源码走读](matmul-lowering-walkthrough.md)：沿一条链路纵切，从 `matmul` 入口到 CPU `DotThunk`，含 primitive 规则、平台分叉与中间产物观察点（`SOURCE-ONLY`）。
 - [matmul 逐 pass 导读](matmul-pass-walkthrough.md)：640 个边界、22 组叶子改写，区分库 fusion、普通 fusion 与剩余 dot。
 - [LLVM、对象与 ORC](llvm-and-objects.md)：三个 ELF 对象与 HLO/LLVM 函数、序列化字节的对应。
 - [自定义 pass 事件补丁](pass-event-patch.md)：25 个 C++ 测试，真实编译、加载和源码恢复，含导出字段修正。
