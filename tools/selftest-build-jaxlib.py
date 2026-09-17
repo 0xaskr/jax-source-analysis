@@ -272,7 +272,7 @@ def _fixture(root: Path) -> tuple[dict[str, Any], Path, Path]:
     log = attempt_dir / "build.log"
     generated = attempt_dir / "generated.jax_configure.bazelrc"
     wheel = attempt_dir / (
-        "wheels/jaxlib-0.11.2.dev0+selfbuilt-"
+        "wheels/jaxlib-0.11.1.dev0+selfbuilt-"
         "cp312-cp312-manylinux_2_27_x86_64.whl"
     )
     log.parent.mkdir(parents=True)
