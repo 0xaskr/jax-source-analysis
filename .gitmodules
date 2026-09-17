@@ -1,6 +1,6 @@
 [submodule "upstream/jax"]
 	path = upstream/jax
-	url = https://github.com/jax-ml/jax.git
+	url = git@github.com:0xaskr/jax.git
 [submodule "upstream/xla"]
 	path = upstream/xla
 	url = https://github.com/openxla/xla.git
