@@ -108,26 +108,18 @@ def load_lock():
         raise EnvironmentError("package mirrors must be official Ubuntu archives")
     if len(set(value["source_paths"])) != len(value["source_paths"]):
         raise EnvironmentError("duplicate source path")
+    source_records = {}
+    for line in (ROOT / "upstream-sources.lock").read_text().splitlines():
+        if line and not line.startswith("#"):
+            fields = line.split("|")
+            source_records[fields[1]] = fields[3]
     for path in value["source_paths"]:
         owned_path(path)
+        if not re.fullmatch(r"[0-9a-f]{40}", source_records.get(path, "")):
+            raise EnvironmentError(f"environment source has no pinned commit: {path}")
     owned_path(value["bazel"]["path"])
-    baseline = json.loads((ROOT / "manifests/baseline.json").read_text())
-    expected_sources = {item["path"] for item in baseline["repository"]["sources"].values()}
-    if set(value["source_paths"]) != expected_sources:
-        raise EnvironmentError("environment sources differ from the baseline source set")
-    baseline_uv = baseline["toolchain"]["uv"]
-    if (value["uv"]["sha256"] != baseline_uv["artifact_sha256"]
-            or value["uv"]["size_bytes"] != baseline_uv["artifact_size_bytes"]
-            or value["uv"]["version"] != baseline_uv["repository_pin"]):
-        raise EnvironmentError("uv identity differs from the runtime baseline")
     if value["python"]["version"] != (ROOT / ".python-version").read_text().strip():
         raise EnvironmentError("Python version differs from .python-version")
-    build_schema = json.loads((ROOT / "manifests/schema/build-jaxlib.schema.json").read_text())
-    properties = build_schema["$defs"]["pythonTool"]["properties"]
-    for field, recorded in (("path", "base_executable"), ("size_bytes", "base_size_bytes"),
-                            ("sha256", "base_sha256"), ("version", "version")):
-        if value["python"][field] != properties[recorded]["const"]:
-            raise EnvironmentError("Python identity differs from the strict build contract")
     return value
 
 
@@ -351,6 +343,10 @@ def verify_workspace(lock, uv, *, strict=False):
     bytecode = source_bytecode(lock)
     if bytecode:
         raise EnvironmentError(f"source contains {len(bytecode)} bytecode files; run sync to quarantine them")
+    if not matches(GIT, lock["git"]):
+        raise EnvironmentError("Git binary does not match the environment lock")
+    if not matches(lock["python"]["path"], lock["python"]):
+        raise EnvironmentError("OS Python does not match the environment lock")
     if not matches(uv, lock["uv"]) or not matches(owned_path(lock["bazel"]["path"]), lock["bazel"]):
         raise EnvironmentError("uv or Bazel does not match the environment lock")
     python = owned_path(".venv/bin") / "python"
@@ -361,9 +357,10 @@ def verify_workspace(lock, uv, *, strict=False):
     environment = process_environment(uv)
     checks = [
         [uv, "lock", "--check", "--offline"],
-        [python, "-B", "tools/capture-baseline.py", "--verify"],
         [python, "-B", "labs/001-jit-cpu/probe.py", "--stage", "run"],
     ]
+    if (ROOT / "manifests/baseline.json").exists():
+        checks.insert(1, [python, "-B", "tools/capture-baseline.py", "--verify"])
     # A source-only workspace has no analysis bundle. Partial bundles still
     # require both validators so missing evidence cannot silently pass.
     if any(path.exists() for path in (
