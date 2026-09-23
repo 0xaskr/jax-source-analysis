@@ -10,9 +10,7 @@
 - `env/`、`manifests/baseline.json`：固定环境、工具链和运行二进制基线。
 - `tools/`、`manifests/schema/`：同步、构建、采集和校验工具源码及数据格式定义。
 - `labs/`：保留的 Python、Notebook 源码和可逆补丁。
-
-已有的 `.venv/` 与 `artifacts/environment/` 保留。旧分析文档、采集记录、
-架构图、研究计划和进度文件已从工作区清理。
+- `research`: 对于jax软件栈的探索产物。
 
 ## 环境入口
 
@@ -33,4 +31,4 @@ python3 -B tools/sync-environment.py docker
 ## 当前研究
 
 按 Outline kickoff revision 51 开展的新研究见
-[JAX 软件栈研究](research/jax-stack/README.md)，包含入口索引、CPU 产物和可运行 Notebook。
+[研究索引](research/index.md)分为软件栈开放探索与固定调用到 LLO 的追踪，包含源码材料、CPU 产物和 Notebook。
