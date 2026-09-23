@@ -327,7 +327,7 @@ StableHLO → HLO。`_cached_lowering_to_hlo` 之类的函数名也容易误导�
 3. **`ApplyXlaTransforms`** — 出现在两处：`cpu_compiler.cc:1177-1178` 的
    `PipelineStage::kPreScheduler`，以及 `:1832-1833` 的 `post_scheduler_pipeline` 中的
    `kPostScheduler`。实现见 `xla/service/xla_transform.cc:109,132,138`。**这正是
-   [软件栈图](../../software-stack/figures/overview-software-stack.svg) 里 D 接口（可写 HLO hook）的落点**，
+   [软件栈图](../../software-stack/overview/overview-software-stack.svg) 里 D 接口（可写 HLO hook）的落点**，
    与图中的 `cpu_compiler.cc:1178 / 1833` 两处引用一致。
 
 ### 2.10 运行时：`DotThunk`
@@ -413,5 +413,5 @@ contraction 执行。这一点在更早的 capture 中已单独取证：两处�
   对应本文 2.9 的后半段，但基于换 pin 前的产物。
 - [源码与 API 索引导读](../../software-stack/source/source-index-digest.md) / [source-index.json](../../software-stack/tools/source-index.json)：
   按组件列出的入口清单；本文是沿**一条链路**的纵切。
-- [软件栈与入口总览](../../software-stack/source/overview.md)：组件与分支的全局视图。
+- [软件栈与入口总览](../../software-stack/index.md)：组件与分支的全局视图。
 - [交互 Notebook](matmul-lowering.ipynb)：Jaxpr / StableHLO / HLO 的对照。

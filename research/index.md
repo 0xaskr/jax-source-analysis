@@ -4,21 +4,12 @@
 
 | 方向 | 负责什么 | 目录入口 |
 |---|---|---|
-| JAX 软件栈的开放探索 | 不预设算子、kernel 或性能目标；从组件、表示、编译、运行与观测中发现问题 | [software-stack/README.md](software-stack/README.md) |
+| JAX 软件栈的开放探索 | 不预设算子、kernel 或性能目标；从组件、表示、编译、运行与观测中发现问题 | [software-stack/index.md](software-stack/index.md) |
 | 固定调用到 LLO 的纵向追踪 | 固定一次 `jnp.matmul` 和一次 Pallas kernel 调用，逐层关联编译输入、输出与目标 TPU 的 LLO | [call-to-llo/README.md](call-to-llo/README.md)（下分 [matmul](call-to-llo/matmul/README.md) 与 [pallas](call-to-llo/pallas/README.md)） |
 
 ## 一、软件栈开放探索
 
-原 `research/jax-stack/` 的材料已整理到 [software-stack](software-stack/README.md)，与 [JAX 仓库结构](software-stack/jax-repo/README.md) 合并为同一个方向。可从任意组件进入，不把旧计划当作新的任务队列。
-
-| 主题 | 阅读入口 | 范围 |
-|---|---|---|
-| 源码与构建 | [组件/路径总览](software-stack/source/overview.md)、[源码索引导读](software-stack/source/source-index-digest.md) | JAX、jaxlib、StableHLO、Shardy、XLA 和依赖的归属与连接 |
-| 编译器 | [Shardy 往返](software-stack/compiler/shardy-round-trip.md)、[LLVM 与对象](software-stack/compiler/llvm-and-objects.md) | 表示转换、pass、CPU 代码生成；具体证据按后端区分 |
-| 运行时 | [TPU 公开接口](software-stack/runtime/tpu-runtime-boundary.md)、[CPU executable](software-stack/runtime/cpu-executable-and-trace.md) | 提交、等待、可执行对象及公开/私有边界 |
-| 观测与性能 | [profiling](software-stack/profiling/profiling.md)、[Roofline](software-stack/profiling/roofline.md)、[Fusion 与内存](software-stack/performance/fusion-and-memory.md) | host/编译/设备事件、成本与内存观测 |
-| Pallas 与工作负载 | [Pallas 对照](software-stack/pallas/pallas-comparison.md)、[SGLang v7 工作负载](software-stack/workload/sglang-v7-workload.md) | 通用机制与既有工作负载材料 |
-| 复用与历史 | [脚本及原始结果](software-stack/tools/README.md)、[历史记录](software-stack/history/README.md) | 代码、JSON 证据、旧计划和状态的边界 |
+当前 [软件栈入口](software-stack/index.md) 将已保留的六张图与锁定的 JAX、StableHLO、Shardy、XLA、LLVM 源码对应起来。专题文档和历史结果已移除；图示用于发现问题，具体结论需重新对照当前源码。
 
 ## 二、固定调用到 LLO
 

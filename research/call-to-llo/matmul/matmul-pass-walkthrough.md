@@ -34,7 +34,7 @@ flowchart LR
 ```
 
 导出 HLO 是独立观察接口，不能把它直接当成后端第一个 pass 的输入。
-Jaxpr/StableHLO 对照继续见 [Notebook](matmul-lowering.ipynb) 与 [总览](../../software-stack/source/overview.md)。
+Jaxpr/StableHLO 对照继续见 [Notebook](matmul-lowering.ipynb) 与 [总览](../../software-stack/index.md)。
 本次重点是实际 backend 的中间改写；schedule/buffer 见 [内存实验](../../software-stack/performance/fusion-and-memory.md)。
 
 ## 如何配对 pass，而不重复计数
