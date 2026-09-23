@@ -25,10 +25,10 @@
     "sha256": "671793498fe0a545432e2524b6691ffb9eea4540d9fda43ca2f978df2dbf8426"
   },
   "bazel": {
-    "version": "8.7.0",
-    "url": "https://github.com/bazelbuild/bazel/releases/download/8.7.0/bazel-8.7.0-linux-x86_64",
-    "path": "upstream/jax/bazel-8.7.0-linux-x86_64",
-    "sha256": "d7606e679b78067c811096fb3d6cf135225b528835ca396e3a4dddf957859544"
+    "version": "7.7.1",
+    "url": "https://github.com/bazelbuild/bazel/releases/download/7.7.1/bazel-7.7.1-linux-x86_64",
+    "path": "upstream/jax/bazel-7.7.1-linux-x86_64",
+    "sha256": "115a1b62be95f29e5821d4dddffba1b058905a48019b499919c285e7f708d5e2"
   },
   "git": {
     "path": "/usr/bin/git",

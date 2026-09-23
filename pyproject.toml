@@ -5,7 +5,7 @@ description = "Reproducible environment for analyzing the pinned JAX source tree
 readme = "README.md"
 requires-python = "==3.12.*"
 dependencies = [
-  "jax",
+  "jax==0.11.1",
   "jaxlib==0.11.1",
   "jsonschema>=4,<5",
   "marimo",
@@ -14,9 +14,6 @@ dependencies = [
 [tool.uv]
 package = false
 required-version = "==0.12.9"
-
-[tool.uv.sources]
-jax = { path = "upstream/jax", editable = true }
 
 [dependency-groups]
 notebook = [
