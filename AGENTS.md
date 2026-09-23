@@ -1,25 +1,22 @@
-# JAX source workspace
+# JAX 源码工作区
 
-This workspace retains the pinned upstream sources, development environment,
-and reusable tool and lab source code. Previous analysis documents, captures,
-plans, and progress records have been removed at the user's request.
+本工作区保留固定版本的上游源码、开发环境，以及可复用的工具和实验源码。
+此前的分析文档、采集产物、计划和进度记录已按用户要求删除。
 
-Before working:
+开始工作前：
 
-1. Inspect the root repository and relevant source trees with `git status`.
-2. Use `upstream-sources.lock`, `source-archives.lock`, and the environment locks
-   as the source of truth for revisions and dependencies.
-3. Follow the current user task. Do not resume or recreate the former analysis
-   queue unless requested.
+1. 使用 `git status` 检查根仓库及相关源码树的状态。
+2. 以 `upstream-sources.lock`、`source-archives.lock` 和环境锁文件作为
+   源码修订版本与依赖的权威依据。
+3. 遵循用户当前的任务要求。除非用户明确要求，否则不要恢复或重建此前的分析任务队列。
 
-Preserve upstream sources, source archives, local code, and the development
-environments during cleanup. Keep upstream patches intentional and reversible.
-Inspect pinned local source before relying on changing online documentation.
+清理时保留上游源码、源码归档、本地代码和开发环境。
+对上游源码应用补丁时，确保目的明确且可撤销。
+优先检查本地固定版本的源码，再参考可能随时变化的在线文档。
 
-Keep source inspection, CPU execution, TPU simulation, offline TPU compilation,
-and real TPU execution distinct. Record `VERSION-SKEW` when runtime binaries do
-not match the cited sources. Never call Mosaic TPU MLIR "LLO".
+严格区分源码检查、CPU 执行、TPU 模拟、离线 TPU 编译和真实 TPU 执行。
+运行时二进制与所引用的源码不匹配时，标记 `VERSION-SKEW`。
+绝不要将 Mosaic TPU MLIR 称为“LLO”。
 
-For environment changes, run `python3 -B tools/sync-environment.py check` and the
-corresponding selftests. Analysis validators remain available in `tools/` for
-future evidence bundles; the former status and coverage files are absent.
+变更环境时，运行 `python3 -B tools/sync-environment.py check` 及相应的自测。
+分析校验工具仍保留在 `tools/` 中，可用于今后的证据包；此前的状态和覆盖率文件已不存在。
