@@ -9,7 +9,7 @@
 
 ## 一、软件栈开放探索
 
-当前 [软件栈入口](software-stack/index.md) 将已保留的六张图与锁定的 JAX、StableHLO、Shardy、XLA、LLVM 源码对应起来。专题文档和历史结果已移除；图示用于发现问题，具体结论需重新对照当前源码。
+当前 [软件栈入口](software-stack/index.md) 将 [JAX 概念文档与图](software-stack/jax/index.md) 及已有图示与锁定的 JAX、StableHLO、Shardy、XLA、LLVM 源码对应起来。原有专题文档和历史结果已移除；图示用于发现问题，具体结论需重新对照当前源码。
 
 ## 二、固定调用到 LLO
 

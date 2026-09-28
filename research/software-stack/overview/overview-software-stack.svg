@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="4100" height="7480" viewBox="0 0 4100 7480" role="img" aria-labelledby="title desc">
   <title id="title">JAX 软件栈：组件位置与上下游关系</title>
-  <desc id="desc">JAX 区域区分 Trace、Tracer、AbstractValue、Primitive、JaxprStackFrame、Var / Literal、JaxprEqn 与 Jaxpr；展示运算符绑定、DMA effects、受约束的 Jaxpr fusion，以及由不同规则表完成的普通 primitive lowering 与 Pallas TPU kernel lowering。Pallas kernel Jaxpr 生成 Mosaic TPU MLIR，序列化为 bytecode 与 Base64 后，存入外层 stablehlo.custom_call 的 backend_config.custom_call_config.body。实际 8x128 float32 加法例子展示 payload 及反序列化后的 arith.addf。外层 MLIR 经 jaxlib / IFRT / PJRT 提交；libtpu 内区分外层 HLO 与 Mosaic kernel 路径。CPU HLO hook 与 Pallas 离线 lowering 已验证，TPU 编译执行未验证。右侧保留条件分支及扩展接口，底部保留小字号逐行术语。</desc>
+  <desc id="desc">JAX 区域区分 Trace、Tracer、AbstractValue、Primitive、JaxprStackFrame、Var / Literal、JaxprEqn 与 Jaxpr；展示运算符绑定、DMA effects、受约束的 Jaxpr fusion，以及由不同规则表完成的普通 primitive lowering 与 Pallas TPU kernel lowering。Pallas kernel Jaxpr 生成 Mosaic TPU MLIR，序列化为 bytecode 与 Base64 后，存入外层 stablehlo.custom_call 的 backend_config.custom_call_config.body。8x128 float32 加法片段用于说明 payload 结构及反序列化后的 arith.addf；原离线捕获已移除。外层 MLIR 经 jaxlib / IFRT / PJRT 提交；libtpu 内区分外层 HLO 与 Mosaic kernel 路径。图中不提供当前运行验证记录，TPU 编译执行须另行取证。右侧保留条件分支及扩展接口，底部保留逐行术语。</desc>
   <defs>
     <marker id="a" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
       <path d="M0 0L9 4.5L0 9Z" fill="#526b88" />
@@ -108,11 +108,11 @@
         <path d="M1517 3225V3290" class="inferred" />
         <text x="1533" y="3264" class="detail">推断关系</text>
         <text x="1395" y="3460" class="detail">与外层回并的位置未确认</text>
-        <text x="1395" y="3490" class="detail">本次确认到：</text>
-        <text x="1395" y="3522" class="detail">宿主离线 lowering、</text>
-        <text x="1395" y="3554" class="detail">payload 提取与解码。</text>
+        <text x="1395" y="3490" class="detail">公开源码覆盖：</text>
+        <text x="1395" y="3522" class="detail">宿主 lowering 与</text>
+        <text x="1395" y="3554" class="detail">payload 序列化。</text>
         <text x="1395" y="3586" class="detail">后端接线为架构推断；</text>
-        <text x="1395" y="3618" class="detail">未在本次编译 / 运行 TPU。</text>
+        <text x="1395" y="3618" class="detail">实际 TPU 编译 / 运行待验证。</text>
         <text x="1395" y="3650" class="detail">LLO / 最终机器码细节</text>
         <text x="1395" y="3682" class="detail">仍需目标版本证据。</text>
         <a href="https://docs.jax.dev/en/latest/pallas/design/design.html#lowering-pallas-to-mosaic-for-tpu">
@@ -126,7 +126,7 @@
       <text x="325" y="472" class="heading">jaxlib / IFRT / PJRT · 编译、执行与设备对象</text>
       <rect id="python-native-bindings" x="325" y="495" width="980" height="180" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
       <text x="345" y="531" class="component">jaxlib：Python / native 包装</text>
-      <text x="765" y="531" class="detail">JAX revision：2d66622450e2</text>
+      <text x="765" y="531" class="detail">JAX v0.11.1 基线：2d66622450e2</text>
       <rect id="py-client" x="345" y="552" width="300" height="85" rx="12" fill="#f4f7fb" stroke="#a7bfdc" stroke-width="1.5" />
       <text x="361" y="585" class="component">PyClient</text>
       <text x="361" y="617" class="detail">compile_and_load / client</text>
@@ -285,7 +285,7 @@
       <rect id="cpu-post-scheduler-hook" x="345" y="1565" width="210" height="85" rx="12" fill="#fbeef5" stroke="#ad4f7c" stroke-width="1.5" />
       <text x="355" y="1592" class="detail">5 · POST_SCHEDULER</text>
       <text x="360" y="1617" class="detail">注册的 Python HLO 变换</text>
-      <text x="360" y="1640" class="detail">CPU 直接注册；已实测</text>
+      <text x="360" y="1640" class="detail">CPU 路径可注册</text>
       <rect id="cpu-buffers" x="345" y="1680" width="210" height="70" rx="12" fill="#f4f7fb" stroke="#a7bfdc" stroke-width="1.5" />
       <text x="360" y="1710" class="small">6 · Buffer assignment</text>
       <text x="360" y="1736" class="detail">存活期 / 别名 / 内存复用</text>
@@ -367,9 +367,7 @@
       <text x="1430" y="1013" class="small">设备执行事件</text>
       <text x="1430" y="1046" class="detail">后端 profiler / 设备 trace</text>
       <text x="1430" y="1079" class="detail">事件支持依赖后端与配置</text>
-      <a href="../profiling.md">
-        <text x="1430" y="1105" class="detail" style="fill:#256a8a;text-decoration:underline">三类证据与验证边界</text>
-      </a>
+      <text x="1430" y="1105" class="detail">设备事件需后端取证</text>
       <rect id="profile-data-collection" x="1415" y="1180" width="215" height="90" rx="10" fill="#fff" stroke="#7bb1a8" />
       <text x="1430" y="1215" class="small">采集 session / XSpace</text>
       <text x="1430" y="1248" class="detail">按 plane / event 保存</text>
@@ -408,7 +406,7 @@
   <g id="jax-components">
     <rect id="jax" x="300" y="110" width="2230" height="1560" rx="12" fill="#eff6ff" stroke="#88a9d0" stroke-width="1.5" />
     <text id="jax-detail-text-1" x="325" y="150" class="heading">JAX：值、追踪、程序表示与 lowering</text>
-    <text id="jax-detail-text-2" x="1060" y="150" class="pin">2d66622450e2 · jax-v0.11.1</text>
+    <text id="jax-detail-text-2" x="1060" y="150" class="pin">jax-v0.11.1 基线 2d66622450e2 · 注释提交 3d1d3e8963b4</text>
     <text id="jax-detail-text-3" x="325" y="183" class="small">实线：调用 / 构建 / 转换；紫色虚线：规则 / 数据关联。以下展开构建 Jaxpr 的路径。</text>
     <text id="jax-detail-text-4" x="1700" y="183" class="detail">源码：upstream/jax · TPU 路径区分追踪与执行</text>
     <rect id="numerical-api" x="325" y="210" width="480" height="110" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
@@ -469,8 +467,8 @@
     <text id="jax-detail-text-33" x="345" y="1190" class="small">jit / make_jaxpr：记录程序；grad / jvp：微分规则；vmap：batching 规则</text>
     <text id="jax-detail-text-34" x="345" y="1221" class="small">常见执行路径：EvalTrace → impl → dispatch.apply_primitive → 单原语 JIT / 缓存 / 执行</text>
     <text id="jax-detail-text-35" x="345" y="1252" class="small">is_high + requires_low：HiJAX → LoJAX 展开；不用于选择 StableHLO 或 Mosaic</text>
-    <a href="../../../upstream/jax/jax/_src/dispatch.py#L81" style="text-decoration:underline">
-    <text id="jax-detail-text-36" x="345" y="1287" class="detail">api · ad · batching · core.bind_with_trace；dispatch.py:81</text>
+    <a href="../../../upstream/jax/jax/_src/dispatch.py#L88" style="text-decoration:underline">
+    <text id="jax-detail-text-36" x="345" y="1287" class="detail">api · ad · batching · core.bind_with_trace；dispatch.py:88</text>
     </a>
     <rect id="pallas-kernel-detail" x="1395" y="210" width="1110" height="650" rx="12" fill="#edf8f2" stroke="#8bb8a1" stroke-width="1.5" />
     <text id="jax-detail-text-37" x="1415" y="246" class="component">Pallas：同一套 tracer / Jaxpr，输入与编译上下文不同</text>
@@ -519,7 +517,7 @@
     <path d="M1740 1080H1785" class="flow" />
     <path d="M2120 1080H2165" class="flow" />
     <text id="jax-detail-text-68" x="1415" y="1204" class="small">选择由入口 / 平台 / 规则表决定；primitive 本身没有固定的 StableHLO 或 Mosaic 归属。</text>
-    <text id="jax-detail-text-69" x="1415" y="1236" class="small">已有离线样例：float32[8,128] 加法；1 个 custom_call；body 1372 字符 / bytecode 1029 字节。</text>
+    <text id="jax-detail-text-69" x="1415" y="1236" class="small">图内示意：float32[8,128] 加法；外层 custom_call 的 body 携带序列化 kernel。</text>
     <a href="../../../upstream/jax/jax/_src/pallas/mosaic/pallas_call_registration.py#L435" style="text-decoration:underline">
     <text id="jax-detail-text-70" x="1415" y="1279" class="detail">TPU 入口：pallas_call_registration.py:435</text>
     </a>
@@ -535,9 +533,7 @@
     <a href="../../../upstream/jax/jax/_src/pallas/fuser/jaxpr_fusion.py#L295" style="text-decoration:underline">
     <text id="jax-detail-text-77" x="1415" y="1565" class="detail">fuser.fuse / fuse_jaxpr：jaxpr_fusion.py:36 / 295</text>
     </a>
-    <a href="../examples/pallas_add_stablehlo.py#L48">
-    <text id="jax-detail-text-78" x="1415" y="1599" class="detail">离线 IR 样例：pallas_add_stablehlo.py:48–60；原 payload 证据保留于下方</text>
-    </a>
+    <text id="jax-detail-text-78" x="1415" y="1599" class="detail">下方的 payload 片段为结构示意；原离线捕获已移除</text>
     <rect id="mlir-lowering" x="325" y="1400" width="620" height="220" rx="12" fill="#fff" stroke="#a7bfdc" stroke-width="1.5" />
     <text id="jax-detail-text-79" x="345" y="1436" class="component">外层 MLIR lowering</text>
     <text id="jax-detail-text-80" x="345" y="1470" class="small">按 primitive + 平台上下文查询通用 lowering 规则</text>
@@ -600,10 +596,10 @@
     <text x="1775" y="2327" class="component">默认 JAX → TPU 提交路径的核对范围</text>
     <text x="1775" y="2363" class="small">范围：普通 jit / compile()，需要新编译，使用 TPU PJRT C API。</text>
     <text x="1775" y="2398" class="small">公开宿主侧传递 MLIR，执行合法化 / 兼容处理，再以 mlir 格式提交。</text>
-    <text x="1775" y="2433" class="detail">在这条已核对路径中，未发现提交前另跑一轮 XLA HloModule 优化流水线。</text>
+    <text x="1775" y="2433" class="detail">公开源码所示路径中，未发现提交前另跑一轮 XLA HloModule 优化流水线。</text>
     <text x="1775" y="2466" class="detail">导出 HLO、读回优化后 HLO、处理 HloSharding 的代码都存在于开源侧。</text>
     <text x="1775" y="2499" class="detail">注册变换后，后端编译还可回调宿主 Python 修改 HLO（见④）。</text>
-    <text x="1775" y="2530" class="detail">源码核对：JAX 2d66622450e2；XLA dcf304bc5dca</text>
+    <text x="1775" y="2530" class="detail">源码基线：JAX v0.11.1（2d66622450e2）；XLA dcf304bc5dca</text>
     <path d="M1775 2600H1830" class="query" />
     <text x="1850" y="2606" class="detail">橙色虚线：显式导出 / 查询分支</text>
     <path d="M1775 2640H1830" class="response" />
@@ -659,7 +655,7 @@
     <text x="1795" y="4078" class="component">交回编译器：更新 HLO，继续后端编译</text>
     <text x="1795" y="4115" class="detail">None → changed=false；bytes → UpdateHloModuleFromProto。</text>
     <text x="1795" y="4150" class="detail">公开 adapter 负责反序列化；更新 helper 会恢复返回 proto 中的 schedule。</text>
-    <text x="1795" y="4187" class="detail">此分支依据注册接口、公开桥接实现与 TPU 测试定义；不是本次 TPU 实测。</text>
+    <text x="1795" y="4187" class="detail">此分支依据注册接口、公开桥接实现与 TPU 测试定义；实际执行需另取证。</text>
     <path d="M2340 3480V3495H1705V3375H1338V3820H1260V3840" class="config" />
     <path d="M1310 3870H1370V3390H1745V3870H1775" class="transform-call" />
     <path d="M1775 3955H1720V3360H1350V3910H1310" class="transform-return" />
@@ -667,13 +663,13 @@
   <g id="cpu-python-hlo-callback" transform="translate(0 1600)">
     <rect x="35" y="3820" width="245" height="285" rx="12" fill="#fbeef5" stroke="#ad4f7c" stroke-width="1.6" />
     <text x="55" y="3855" class="component">CPU Python 回调</text>
-    <text x="55" y="3890" class="detail">record_hlo（本次探针）</text>
+    <text x="55" y="3890" class="detail">record_hlo（回调示意）</text>
     <text x="55" y="3925" class="detail">输入：HloModuleProto</text>
-    <text x="55" y="3955" class="detail">读取并验证 HloSchedule</text>
+    <text x="55" y="3955" class="detail">可读取 HloSchedule</text>
     <text x="55" y="3985" class="detail">返回 None：不改写 HLO</text>
-    <text x="55" y="4020" class="detail">2×3 @ 3×4 matmul</text>
-    <text x="55" y="4050" class="detail">回调 1 次；549 bytes</text>
-    <text x="55" y="4080" class="detail">CPU 执行数值匹配 NumPy</text>
+    <text x="55" y="4020" class="detail">示例：2×3 @ 3×4 matmul</text>
+    <text x="55" y="4050" class="detail">调用次数依赖实际编译</text>
+    <text x="55" y="4080" class="detail">结果需另与 NumPy 核对</text>
     <path d="M345 3910H280" class="transform-call" />
     <path d="M280 3970H320V3940H345" class="transform-return" />
   </g>
@@ -731,7 +727,7 @@
       <text x="2655" y="1458" class="small">使用的是分片阶段的专门契约；输入输出不是完整 HloModuleProto。</text>
       <path d="M2967 1310V1360" class="flow" />
       <path d="M3687 1310V1360" class="flow" />
-      <a href="../../../upstream/jax/jax/_src/custom_partitioning.py#L265">
+      <a href="../../../upstream/jax/jax/_src/custom_partitioning.py#L272">
         <text x="2630" y="1533" class="detail" style="fill:#256a8a;text-decoration:underline">源码：custom_partitioning 文档、def_partition 与 per-shard lowering</text>
       </a>
     </g>
@@ -756,7 +752,7 @@
       <path d="M3687 1905V1960" class="flow" />
       <path d="M3687 2075V2130" class="flow" />
       <path d="M2967 1905V2130" class="config" />
-      <a href="../../../upstream/jax/jax/_src/ffi.py#L47">
+      <a href="../../../upstream/jax/jax/_src/ffi.py#L54">
         <text x="2630" y="2288" class="detail" style="fill:#256a8a;text-decoration:underline">源码：register_ffi_target → register_custom_call_target；ffi_call_lowering</text>
       </a>
     </g>
@@ -786,7 +782,7 @@
       <text x="3420" y="2890" class="small">已有 HloSchedule 后的挂点</text>
       <text x="3420" y="2930" class="small">可检查 / 修改指令次序；必须保持数据依赖等约束</text>
       <text x="3420" y="2970" class="small">CPU：在 CreateBufferAssignment 之前调用</text>
-      <text x="3420" y="3010" class="small">CPU 已实测；TPU 有源码测试定义，本次未运行</text>
+      <text x="3420" y="3010" class="small">CPU 路径见源码；TPU 有测试定义，执行待验证</text>
       <path d="M3045 2940H3090" class="flow" />
       <path d="M3350 2940H3395" class="flow" />
       <text x="2630" y="3115" class="pin">callback(bytes) → HloModule.from_serialized_hlo_module_proto(bytes) → 以下内部 HLO 对象</text>
@@ -818,8 +814,8 @@
       <a href="../../../upstream/xla/xla/python/_hlo_pass.pyi#L17">
         <text x="2655" y="3963" class="detail" style="fill:#256a8a;text-decoration:underline">源码：xla/python/_hlo_pass.pyi 与 hlo_pass.cc；HLO 对象接口见 _hlo.pyi:531</text>
       </a>
-      <a href="../../../upstream/jax/jax/_src/xla_transform.py#L27">
-        <text x="2630" y="4024" class="detail" style="fill:#256a8a;text-decoration:underline">挂点来源：xla_transform.py:27；CPU cpu_compiler.cc:1178 / 1833；GPU gpu_compiler.cc:1026 / 3286</text>
+      <a href="../../../upstream/jax/jax/_src/xla_transform.py#L48">
+        <text x="2630" y="4024" class="detail" style="fill:#256a8a;text-decoration:underline">挂点来源：xla_transform.py:48；CPU cpu_compiler.cc:1178 / 1833；GPU gpu_compiler.cc:1026 / 3286</text>
       </a>
       <text x="2630" y="3139" class="detail">此回调处理外层 HloModuleProto；Pallas body 内封装的 Mosaic MLIR 是另一套表示。</text>
     </g>
@@ -842,14 +838,14 @@
       <text x="3375" y="4404" class="small">compiled.runtime_executable() → 底层 executable</text>
       <text x="3375" y="4447" class="small">后端可能不提供部分表示或分析；对应主图②</text>
       <text x="2630" y="4536" class="detail">原地改写描述当前实现，不是稳定的编辑 API，也不会改变已编译的 executable。</text>
-      <a href="../../../upstream/jax/jax/_src/stages.py#L665">
+      <a href="../../../upstream/jax/jax/_src/stages.py#L671">
         <text x="2630" y="4575" class="detail" style="fill:#256a8a;text-decoration:underline">源码：Lowered.compiler_ir / Compiled 分析接口；具体返回值由后端支持决定</text>
       </a>
       <a href="../../../upstream/jax/jax/_src/interpreters/pxla.py#L1224">
         <text x="2630" y="4605" class="detail" style="fill:#256a8a;text-decoration:underline">当前对象身份：MeshComputation.stablehlo 返回 self._hlo；后续首次 compile 使用该 module</text>
       </a>
     </g>
-    <text x="2600" y="4675" class="detail">核对：JAX 2d66622450e2 / XLA dcf304bc5dca；.venv 已检查 API 导出，CPU HLO hook 已执行；其他接口未新增目标设备执行。</text>
+    <text x="2600" y="4675" class="detail">源码基线：JAX v0.11.1 / XLA dcf304bc5dca；本图不附当前运行记录，接口行为和目标设备执行须分别验证。</text>
   </g>
   <a href="#xla-interface-a" transform="translate(0 800)">
     <circle cx="270" cy="721" r="17" fill="#20344d" />
@@ -886,8 +882,8 @@
       <text x="55" y="4905" class="glossary-body">
         <tspan style="font-weight:700;fill:#20344d">jit / grad / vmap：</tspan>
         <tspan>jit：将函数计算暂存为可编译程序，并复用编译结果。grad：构造导数计算；vmap：将标量式计算变成批量计算。这些变换可组合、嵌套，并使用 primitive 的对应规则。</tspan>
-        <a href="../../../upstream/jax/jax/_src/api.py#L204">
-          <title>源码：jax/jax/_src/api.py:204</title>
+        <a href="../../../upstream/jax/jax/_src/api.py#L208">
+          <title>源码：jax/jax/_src/api.py:208</title>
           <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
         </a>
       </text>
@@ -896,8 +892,8 @@
       <text x="55" y="4943" class="glossary-body">
         <tspan style="font-weight:700;fill:#20344d">Tracing / Jaxpr：</tspan>
         <tspan>Tracer 代表一个值，Trace 解释原语调用；DynamicJaxprTrace 的 frame 收集方程，最终构建 Jaxpr。Var / Literal 表示值，JaxprEqn 表示一次调用；Pallas 与普通函数共用此结构。</tspan>
-        <a href="../../../upstream/jax/jax/_src/core.py#L1">
-          <title>源码：jax/jax/_src/core.py:1</title>
+        <a href="../../../upstream/jax/jax/_src/core.py">
+          <title>源码：jax/jax/_src/core.py</title>
           <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
         </a>
       </text>
@@ -906,8 +902,8 @@
       <text x="55" y="4981" class="glossary-body">
         <tspan style="font-weight:700;fill:#20344d">Primitive（基础操作）：</tspan>
         <tspan>Jaxpr 中的一种基础操作，例如 dot_general。可定义形状 / 类型推导、自动微分、批量化和 lowering 规则。一个 primitive 不一定对应一条最终机器指令。</tspan>
-        <a href="../../../upstream/jax/jax/_src/core.py#L1">
-          <title>源码：jax/jax/_src/core.py:1</title>
+        <a href="../../../upstream/jax/jax/_src/core.py">
+          <title>源码：jax/jax/_src/core.py</title>
           <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
         </a>
       </text>
@@ -926,8 +922,8 @@
       <text x="55" y="5057" class="glossary-body">
         <tspan style="font-weight:700;fill:#20344d">MLIR / dialect（方言）：</tspan>
         <tspan>MLIR：构造多层 IR、分析与转换 pass 的编译基础设施。dialect：其中一组操作、类型和属性的定义。同一 MLIR module 可以同时包含多种方言的操作。</tspan>
-        <a href="../../../upstream/xla/xla/mlir_hlo/README.md#L86">
-          <title>源码：xla/xla/mlir_hlo/README.md:86</title>
+        <a href="../../../upstream/llvm-project/mlir/include/mlir/IR/Dialect.h">
+          <title>源码：llvm-project/mlir/include/mlir/IR/Dialect.h</title>
           <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
         </a>
       </text>
@@ -966,8 +962,8 @@
       <text x="55" y="5209" class="glossary-body">
         <tspan style="font-weight:700;fill:#20344d">HloSchedule / PRE / POST_SCHEDULER：</tspan>
         <tspan>HloSchedule：为 computation 中的 HLO 指令安排执行次序。PRE / POST_SCHEDULER：分别位于 HLO 调度前 / 后的挂点。PRE 不表示所有优化之前；POST 不表示最终机器指令调度之后。</tspan>
-        <a href="../../../upstream/jax/jax/_src/xla_transform.py#L27">
-          <title>源码：jax/jax/_src/xla_transform.py:27</title>
+        <a href="../../../upstream/jax/jax/_src/xla_transform.py#L32">
+          <title>源码：jax/jax/_src/xla_transform.py:32</title>
           <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
         </a>
       </text>
@@ -1006,8 +1002,8 @@
       <text x="55" y="5361" class="glossary-body">
         <tspan style="font-weight:700;fill:#20344d">IFRT · Interim Framework Runtime：</tspan>
         <tspan>面向 JAX 等框架的高层运行时 API，统一数组、编译与执行对象。Array 可代表跨多个设备分片的一个逻辑数组。本图通过 IFRT 的 PJRT 实现向下调用 PJRT；IFRT 不是 HLO pass。</tspan>
-        <a href="../../../upstream/xla/xla/python/ifrt/README.md#L1">
-          <title>源码：xla/xla/python/ifrt/README.md:1</title>
+        <a href="../../../upstream/xla/xla/python/ifrt/array.h#L64">
+          <title>源码：xla/xla/python/ifrt/array.h:64</title>
           <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
         </a>
       </text>
@@ -1046,8 +1042,8 @@
       <text x="55" y="5513" class="glossary-body">
         <tspan style="font-weight:700;fill:#20344d">FFI / custom_call：</tspan>
         <tspan>FFI（Foreign Function Interface）连接外部原生函数。custom_call 是由实现定义语义的 IR 操作；它既可调用原生 target，也可像 TPU Pallas 一样携带序列化 kernel IR。</tspan>
-        <a href="../../../upstream/jax/jax/_src/ffi.py#L47">
-          <title>源码：jax/jax/_src/ffi.py:47</title>
+        <a href="../../../upstream/jax/jax/_src/ffi.py#L54">
+          <title>源码：jax/jax/_src/ffi.py:54</title>
           <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
         </a>
       </text>
@@ -1106,9 +1102,9 @@
       <text x="55" y="5741" class="glossary-body">
         <tspan style="font-weight:700;fill:#20344d">XProf / trace：</tspan>
         <tspan>XProf：读取性能采集数据，提供时间线、算子与内存等分析。trace：记录执行活动及时间等信息；可用事件取决于后端。它在观测侧，读到的事件也不能直接代替硬件执行细节证据。</tspan>
-        <a href="../../../upstream/tooling/xprof/README.md#L1">
-          <title>源码：tooling/xprof/README.md:1</title>
-          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [源码]</tspan>
+        <a href="../../../upstream-sources.lock">
+          <title>来源记录：upstream-sources.lock；XProf 本地源码尚未落地</title>
+          <tspan class="detail" style="fill:#256a8a;text-decoration:underline">  [来源]</tspan>
         </a>
       </text>
     </g>
@@ -1165,15 +1161,11 @@
     <text x="1625" y="1385" class="pin" xml:space="preserve">  vector.load ...</text>
     <text x="1625" y="1415" class="pin" xml:space="preserve">  %2 = arith.addf %0, %1 : vector&lt;8x128xf32&gt;</text>
     <text x="1625" y="1445" class="pin" xml:space="preserve">  tpu.vector_store ...</text>
-    <text x="1625" y="1480" class="detail">摘要省略类型与索引；加法位于 kernel IR 内。Mosaic TPU MLIR 不是 LLO。</text>
-    <a href="../examples/pallas_add.mosaic.mlir">
-      <text x="1625" y="1520" class="detail" style="fill:#256a8a;text-decoration:underline">打开由该 body 解析、反序列化后打印的完整 Mosaic MLIR 文本</text>
-    </a>
+    <text x="1625" y="1480" class="detail">结构示意，省略类型与索引；加法位于 kernel IR 内。Mosaic TPU MLIR 不是 LLO。</text>
+    <text x="1625" y="1520" class="detail">原完整 Mosaic MLIR 捕获已移除；当前图仅展示关键操作。</text>
     <path d="M1517 1320H1600" class="query" />
-    <a href="../examples/pallas_add.stablehlo.mlir">
-      <text x="350" y="1576" class="detail" style="fill:#256a8a;text-decoration:underline">完整 StableHLO（保留 Base64）</text>
-    </a>
-    <a href="../../../upstream/jax/jax/_src/tpu_custom_call.py#L243">
+    <text x="350" y="1576" class="detail">原完整 StableHLO 捕获已移除；上方仅展示配置结构。</text>
+    <a href="../../../upstream/jax/jax/_src/tpu_custom_call.py#L253">
       <text x="790" y="1576" class="detail" style="fill:#256a8a;text-decoration:underline">源码：MLIR bytecode → Base64 → backend_config</text>
     </a>
   </g>

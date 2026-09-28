@@ -1,0 +1,465 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3600" height="6650" viewBox="0 0 3600 6650" role="img" aria-labelledby="title desc">
+<title id="title">以 Jaxpr 为轴：JAX 模型到 StableHLO MLIR</title>
+<desc id="desc">固定 JAX v0.11.1 基线的源码走读：从 Python 模型、jit.trace、DynamicJaxprTrace 和 Jaxpr 对象，到 sharding、effects、HiJAX 到 LoJAX、pxla、MLIR lowering 规则和 StableHLO module。模型为 f32[2,3] 与 f32[3,4] 的矩阵乘法、偏置相加及 tanh；附本地 CPU host lowering 的实际 Jaxpr 与 StableHLO 摘录。MLIR 不是已编译可执行文件，未执行 TPU。</desc>
+<defs><marker id="head-blue" markerWidth="12" markerHeight="10" refX="11" refY="5" orient="auto"><path d="M0 0L12 5L0 10Z" fill="#4976a0"/></marker><marker id="head-purple" markerWidth="12" markerHeight="10" refX="11" refY="5" orient="auto"><path d="M0 0L12 5L0 10Z" fill="#805ba8"/></marker><marker id="head-teal" markerWidth="12" markerHeight="10" refX="11" refY="5" orient="auto"><path d="M0 0L12 5L0 10Z" fill="#238c80"/></marker></defs>
+<style>text{font-family:"Noto Sans CJK SC","Microsoft YaHei",sans-serif;fill:#20364d;font-size:23px}.title{font-size:51px;font-weight:700;fill:#15334f}.subtitle{font-size:21px;fill:#536a80}.section-title{font-size:32px;font-weight:700;fill:#203c59}.card-title{font-size:27px;font-weight:700;fill:#173b5c}.body{font-size:23px}.small{font-size:20px;fill:#4a6279}.tiny{font-size:18px;fill:#5a7185}.code{font-family:"DejaVu Sans Mono","Noto Sans CJK SC",monospace;font-size:21px;fill:#263e53}.source{font-size:18px;fill:#186b9a;text-decoration:underline}.badge{font-size:20px;font-weight:700;fill:#ffffff}.arrow-main{fill:none;stroke:#4976a0;stroke-width:4;marker-end:url(#head-blue)}.arrow-branch{fill:none;stroke:#805ba8;stroke-width:3;stroke-dasharray:12 8;marker-end:url(#head-purple)}.arrow-lower{fill:none;stroke:#238c80;stroke-width:4;marker-end:url(#head-teal)}</style>
+<rect x="0" y="0" width="3600" height="6650" rx="0" fill="#f9fbfd" stroke="#f9fbfd" stroke-width="0"/>
+<text x="75" y="78" class="title">以 Jaxpr 为轴：JAX 模型如何变成 StableHLO MLIR</text>
+<text x="75" y="119" class="subtitle">JAX v0.11.1 基线 · 本地源码注释提交 3d1d3e8963b4 · 固定模型的 Python tracing 与 CPU host lowering 观测</text>
+<rect x="75" y="141" width="236" height="36" rx="18" fill="#4976a0" stroke="#4976a0" stroke-width="0"/>
+<text x="98" y="166" class="badge">蓝色：主调用链</text>
+<rect x="328" y="141" width="268" height="36" rx="18" fill="#805ba8" stroke="#805ba8" stroke-width="0"/>
+<text x="350" y="166" class="badge">紫色：Jaxpr 分支</text>
+<rect x="612" y="141" width="250" height="36" rx="18" fill="#238c80" stroke="#238c80" stroke-width="0"/>
+<text x="635" y="166" class="badge">绿色：MLIR 生成</text>
+<text x="910" y="165" class="subtitle">卡片底部蓝色文字可点击，跳转至本地锁定源码。</text>
+<rect x="70" y="195" width="3460" height="750" rx="24" fill="#edf5fb" stroke="#9cbcd7" stroke-width="2"/>
+<text x="98" y="246" class="section-title">00  固定模型与实际输出：四条 Jaxpr 方程，五条 StableHLO 操作</text>
+<rect x="100" y="280" width="800" height="585" rx="16" fill="#ffffff" stroke="#a4bfd6" stroke-width="2"/>
+<rect x="101" y="281" width="9" height="583" rx="3" fill="#2f668e" stroke="#2f668e" stroke-width="0"/>
+<text x="128" y="327" class="card-title">Python 模型 / 输入规格</text>
+<text x="128" y="373" class="code">def model(x, w, b):</text>
+<text x="128" y="412" class="code">    return jnp.tanh(x @ w + b)</text>
+<text x="128" y="451" class="code"></text>
+<text x="128" y="490" class="code">x : f32[2,3]</text>
+<text x="128" y="529" class="code">w : f32[3,4]</text>
+<text x="128" y="568" class="code">b : f32[4]</text>
+<text x="128" y="607" class="code"></text>
+<text x="128" y="646" class="code">traced = jax.jit(model).trace(...)</text>
+<text x="128" y="685" class="code">lowered = traced.lower()</text>
+<a href="../../../upstream/jax/jax/_src/stages.py#L412">
+<title>jax/_src/stages.py:412</title>
+<text x="128" y="844" class="source">↗ stages.Traced</text>
+</a>
+<rect x="945" y="280" width="1250" height="585" rx="16" fill="#ffffff" stroke="#b4a5d1" stroke-width="2"/>
+<rect x="946" y="281" width="9" height="583" rx="3" fill="#704b9c" stroke="#704b9c" stroke-width="0"/>
+<text x="973" y="327" class="card-title">traced.jaxpr（真实摘录）</text>
+<text x="973" y="373" class="code">{ lambda ; a:f32[2,3] b:f32[3,4]</text>
+<text x="973" y="412" class="code">           c:f32[4]. let</text>
+<text x="973" y="451" class="code">  d:f32[2,4] = dot_general[...] a b</text>
+<text x="973" y="490" class="code">  e:f32[1,4] = broadcast_in_dim c</text>
+<text x="973" y="529" class="code">  f:f32[2,4] = add d e</text>
+<text x="973" y="568" class="code">  g:f32[2,4] = tanh f</text>
+<text x="973" y="607" class="code">  in (g,) }</text>
+<text x="973" y="646" class="code"></text>
+<text x="973" y="685" class="code">is_high=False · effects=∅</text>
+<a href="../../../upstream/jax/jax/_src/core.py#L105">
+<title>jax/_src/core.py:105</title>
+<text x="973" y="844" class="source">↗ core.Jaxpr</text>
+</a>
+<rect x="2240" y="280" width="1260" height="585" rx="16" fill="#ffffff" stroke="#9bcbbf" stroke-width="2"/>
+<rect x="2241" y="281" width="9" height="583" rx="3" fill="#167b70" stroke="#167b70" stroke-width="0"/>
+<text x="2268" y="327" class="card-title">compiler_ir(&#x27;stablehlo&#x27;) 摘录</text>
+<text x="2268" y="373" class="code">module @jit_model {</text>
+<text x="2268" y="412" class="code">  func.func public @main(...) {</text>
+<text x="2268" y="451" class="code">    %0 = stablehlo.dot_general ...</text>
+<text x="2268" y="490" class="code">    %1 = stablehlo.broadcast_in_dim ...</text>
+<text x="2268" y="529" class="code">    %2 = stablehlo.broadcast_in_dim %1</text>
+<text x="2268" y="568" class="code">    %3 = stablehlo.add %0, %2</text>
+<text x="2268" y="607" class="code">    %4 = stablehlo.tanh %3</text>
+<text x="2268" y="646" class="code">    return %4</text>
+<text x="2268" y="685" class="code">  }</text>
+<text x="2268" y="724" class="code">}</text>
+<a href="../../../upstream/jax/jax/_src/stages.py#L671">
+<title>jax/_src/stages.py:671</title>
+<text x="2268" y="844" class="source">↗ Lowered.compiler_ir</text>
+</a>
+<path d="M903 565H940" class="arrow-main"/>
+<path d="M2197 565H2235" class="arrow-lower"/>
+<text x="1590" y="919" class="small">上方是同一次固定形状的 CPU host lowering；未调用 compile() 或执行模型。</text>
+<rect x="70" y="975" width="3460" height="1490" rx="24" fill="#edf5fb" stroke="#9cbcd7" stroke-width="2"/>
+<text x="98" y="1026" class="section-title">01  冷路径：Python 模型如何被追踪为 Jaxpr</text>
+<rect x="100" y="1060" width="2150" height="195" rx="16" fill="#ffffff" stroke="#a4bfd6" stroke-width="2"/>
+<rect x="101" y="1061" width="9" height="193" rx="3" fill="#2f668e" stroke="#2f668e" stroke-width="0"/>
+<text x="128" y="1107" class="card-title">1  用户入口与 PyTree / 静态参数</text>
+<text x="128" y="1143" class="body">jax.jit(model) 包装函数；trace(specs) 显式追踪</text>
+<text x="128" y="1174" class="body">位置/关键字参数展平；静态参数留在追踪外</text>
+<text x="128" y="1205" class="body">输入 aval 包含 shape、dtype、sharding 等</text>
+<a href="../../../upstream/jax/jax/_src/api.py#L208">
+<title>jax/_src/api.py:208</title>
+<text x="128" y="1234" class="source">↗ api.jit</text>
+</a>
+<a href="../../../upstream/jax/jax/_src/pjit.py#L317">
+<title>jax/_src/pjit.py:317</title>
+<text x="264" y="1234" class="source">↗ pjit.jit_trace</text>
+</a>
+<rect x="100" y="1275" width="2150" height="195" rx="16" fill="#ffffff" stroke="#a4bfd6" stroke-width="2"/>
+<rect x="101" y="1276" width="9" height="193" rx="3" fill="#2f668e" stroke="#2f668e" stroke-width="0"/>
+<text x="128" y="1322" class="card-title">2  参数推断与 trace_to_jaxpr</text>
+<text x="128" y="1358" class="code">jit_trace → _infer_params → _trace_for_jit</text>
+<text x="128" y="1389" class="code">avals_ft + in_tree + DebugInfo + 编译参数</text>
+<text x="128" y="1420" class="code">pe.trace_to_jaxpr(fun, avals_ft, dbg)</text>
+<a href="../../../upstream/jax/jax/_src/pjit.py#L491">
+<title>jax/_src/pjit.py:491</title>
+<text x="128" y="1449" class="source">↗ _trace_for_jit</text>
+</a>
+<rect x="100" y="1490" width="2150" height="195" rx="16" fill="#ffffff" stroke="#a4bfd6" stroke-width="2"/>
+<rect x="101" y="1491" width="9" height="193" rx="3" fill="#2f668e" stroke="#2f668e" stroke-width="0"/>
+<text x="128" y="1537" class="card-title">3  建立当前 Trace 和输入 Tracer</text>
+<text x="128" y="1573" class="code">DynamicJaxprTrace(debug_info) + JaxprStackFrame</text>
+<text x="128" y="1604" class="code">new_arg(aval) → Var(aval) + DynamicJaxprTracer</text>
+<text x="128" y="1635" class="code">set_current_trace(trace)；fun(*tracers)</text>
+<a href="../../../upstream/jax/jax/_src/interpreters/partial_eval.py#L2048">
+<title>jax/_src/interpreters/partial_eval.py:2048</title>
+<text x="128" y="1664" class="source">↗ trace_to_jaxpr_nocache</text>
+</a>
+<rect x="100" y="1705" width="2150" height="195" rx="16" fill="#ffffff" stroke="#a4bfd6" stroke-width="2"/>
+<rect x="101" y="1706" width="9" height="193" rx="3" fill="#2f668e" stroke="#2f668e" stroke-width="0"/>
+<text x="128" y="1752" class="card-title">4  Python 运算进入 Primitive.bind</text>
+<text x="128" y="1788" class="body">x @ w → dot_general_p；+b → broadcast + add</text>
+<text x="128" y="1819" class="code">Primitive.bind → trace.process_primitive</text>
+<text x="128" y="1850" class="body">Python 控制流仅可读取追踪期已知信息</text>
+<a href="../../../upstream/jax/jax/_src/core.py#L690">
+<title>jax/_src/core.py:690</title>
+<text x="128" y="1879" class="source">↗ Primitive.bind</text>
+</a>
+<rect x="100" y="1920" width="2150" height="195" rx="16" fill="#ffffff" stroke="#a4bfd6" stroke-width="2"/>
+<rect x="101" y="1921" width="9" height="193" rx="3" fill="#2f668e" stroke="#2f668e" stroke-width="0"/>
+<text x="128" y="1967" class="card-title">5  抽象求值和方程暂存</text>
+<text x="128" y="2003" class="code">primitive.abstract_eval(avals, params) → avals + effects</text>
+<text x="128" y="2034" class="code">make_eqn → TracingEqn + 输出 Var / Tracer</text>
+<text x="128" y="2065" class="body">frame.add_eqn；常量折叠可省去某些方程</text>
+<a href="../../../upstream/jax/jax/_src/interpreters/partial_eval.py#L1750">
+<title>jax/_src/interpreters/partial_eval.py:1750</title>
+<text x="128" y="2094" class="source">↗ default_process_primitive</text>
+</a>
+<rect x="100" y="2135" width="2150" height="195" rx="16" fill="#ffffff" stroke="#a4bfd6" stroke-width="2"/>
+<rect x="101" y="2136" width="9" height="193" rx="3" fill="#2f668e" stroke="#2f668e" stroke-width="0"/>
+<text x="128" y="2182" class="card-title">6  返回时构造 Jaxpr</text>
+<text x="128" y="2218" class="code">frame.get_eqns：TracingEqn → JaxprEqn</text>
+<text x="128" y="2249" class="body">收集 constvars / invars / outvars / effects / is_high</text>
+<text x="128" y="2280" class="code">Jaxpr(...) → stages.Traced.jaxpr</text>
+<a href="../../../upstream/jax/jax/_src/interpreters/partial_eval.py#L1517">
+<title>jax/_src/interpreters/partial_eval.py:1517</title>
+<text x="128" y="2309" class="source">↗ JaxprStackFrame.to_jaxpr</text>
+</a>
+<path d="M1170 1255V1272" class="arrow-main"/>
+<path d="M1170 1470V1487" class="arrow-main"/>
+<path d="M1170 1685V1702" class="arrow-main"/>
+<path d="M1170 1900V1917" class="arrow-main"/>
+<path d="M1170 2115V2132" class="arrow-main"/>
+<rect x="2310" y="1060" width="1190" height="390" rx="16" fill="#ffffff" stroke="#b4a5d1" stroke-width="2"/>
+<rect x="2311" y="1061" width="9" height="388" rx="3" fill="#704b9c" stroke="#704b9c" stroke-width="0"/>
+<text x="2338" y="1107" class="card-title">变换改变追踪行为</text>
+<text x="2338" y="1143" class="body">grad：JVP / VJP / transpose 规则决定导数计算</text>
+<text x="2338" y="1190" class="body">vmap：batching 规则决定批轴如何传播</text>
+<text x="2338" y="1237" class="body">jit：给编译阶段保留可暂存的程序</text>
+<text x="2338" y="1284" class="body">组合变换可能嵌套 Trace 或生成内层 Jaxpr</text>
+<text x="2338" y="1331" class="small">不要假设每个变换各产出一份独立 Jaxpr</text>
+<a href="../../../upstream/jax/jax/_src/api.py#L393">
+<title>jax/_src/api.py:393</title>
+<text x="2338" y="1429" class="source">↗ api.grad</text>
+</a>
+<a href="../../../upstream/jax/jax/_src/api.py#L949">
+<title>jax/_src/api.py:949</title>
+<text x="2484" y="1429" class="source">↗ api.vmap</text>
+</a>
+<rect x="2310" y="1490" width="1190" height="390" rx="16" fill="#fffdf9" stroke="#dfc396" stroke-width="2"/>
+<rect x="2311" y="1491" width="9" height="388" rx="3" fill="#a96c22" stroke="#a96c22" stroke-width="0"/>
+<text x="2338" y="1537" class="card-title">缓存与特化的入口条件</text>
+<text x="2338" y="1573" class="body">函数身份、静态参数、输入类型与配置参与缓存</text>
+<text x="2338" y="1620" class="body">命中可复用已有的追踪 / lowering / executable</text>
+<text x="2338" y="1667" class="body">本图主路径表示需要追踪与 lowering 的情况</text>
+<text x="2338" y="1714" class="body">静态 Python 分支由追踪时的已知条件决定</text>
+<text x="2338" y="1761" class="body">动态数组条件应由 lax.cond 等操作表达</text>
+<a href="../../../upstream/jax/jax/_src/pjit.py#L635">
+<title>jax/_src/pjit.py:635</title>
+<text x="2338" y="1859" class="source">↗ pjit._infer_params</text>
+</a>
+<rect x="2310" y="1920" width="1190" height="410" rx="16" fill="#ffffff" stroke="#b4a5d1" stroke-width="2"/>
+<rect x="2311" y="1921" width="9" height="408" rx="3" fill="#704b9c" stroke="#704b9c" stroke-width="0"/>
+<text x="2338" y="1967" class="card-title">表示边界</text>
+<text x="2338" y="2003" class="body">Tracer：追踪中流动的代理值</text>
+<text x="2338" y="2051" class="body">aval：抽象类型；Var：Jaxpr 中的值身份</text>
+<text x="2338" y="2099" class="body">JaxprEqn：primitive + 输入/输出 + params + effects</text>
+<text x="2338" y="2147" class="body">MLIR 尚未出现；此时得到的是 JAX Python IR</text>
+<text x="2338" y="2195" class="small">jit.trace 与 make_jaxpr 不意味着设备执行</text>
+<a href="../../../upstream/jax/jax/_src/core.py#L981">
+<title>jax/_src/core.py:981</title>
+<text x="2338" y="2309" class="source">↗ core.Tracer</text>
+</a>
+<a href="../../../upstream/jax/jax/_src/core.py#L460">
+<title>jax/_src/core.py:460</title>
+<text x="2516" y="2309" class="source">↗ core.JaxprEqn</text>
+</a>
+<path d="M1170 2465V2515" class="arrow-main"/>
+<rect x="70" y="2525" width="3460" height="1120" rx="24" fill="#f4f0fa" stroke="#b4a2d1" stroke-width="2"/>
+<text x="98" y="2576" class="section-title">02  Jaxpr 是交接契约：程序体、类型、效果与可选高层分支</text>
+<rect x="100" y="2610" width="2110" height="295" rx="16" fill="#ffffff" stroke="#b4a5d1" stroke-width="2"/>
+<rect x="101" y="2611" width="9" height="293" rx="3" fill="#704b9c" stroke="#704b9c" stroke-width="0"/>
+<text x="128" y="2657" class="card-title">Jaxpr 对象：稳定的程序结构</text>
+<text x="128" y="2693" class="body">_all_invars / _consts：参数和附值的闭包常量</text>
+<text x="128" y="2736" class="body">_outvars / _eqns：返回值与按顺序排列的方程</text>
+<text x="128" y="2779" class="body">_effects：全程序效果；_debug_info：参数名与结果路径</text>
+<text x="128" y="2822" class="body">_is_high：是否仍含高层 primitive 或抽象值</text>
+<a href="../../../upstream/jax/jax/_src/core.py#L105">
+<title>jax/_src/core.py:105</title>
+<text x="128" y="2884" class="source">↗ core.Jaxpr</text>
+</a>
+<rect x="100" y="2930" width="2110" height="295" rx="16" fill="#ffffff" stroke="#b4a5d1" stroke-width="2"/>
+<rect x="101" y="2931" width="9" height="293" rx="3" fill="#704b9c" stroke="#704b9c" stroke-width="0"/>
+<text x="128" y="2977" class="card-title">一条 JaxprEqn 的数据流</text>
+<text x="128" y="3013" class="code">invars: Var / Literal → primitive(params) → outvars: Var</text>
+<text x="128" y="3056" class="body">每个 Var 带 aval；示例 d:f32[2,4] 的类型已确定</text>
+<text x="128" y="3099" class="body">effects 记录外部可观察或状态相关的语义</text>
+<text x="128" y="3142" class="body">源码位置和 eqn 上下文帮助诊断、lowering</text>
+<a href="../../../upstream/jax/jax/_src/core.py#L460">
+<title>jax/_src/core.py:460</title>
+<text x="128" y="3204" class="source">↗ core.JaxprEqn</text>
+</a>
+<rect x="100" y="3250" width="2110" height="295" rx="16" fill="#ffffff" stroke="#b4a5d1" stroke-width="2"/>
+<rect x="101" y="3251" width="9" height="293" rx="3" fill="#704b9c" stroke="#704b9c" stroke-width="0"/>
+<text x="128" y="3297" class="card-title">这个模型的 Jaxpr 状态</text>
+<text x="128" y="3333" class="code">4 条 eqn：dot_general → broadcast_in_dim → add → tanh</text>
+<text x="128" y="3376" class="code">consts=[]，effects=∅，is_high=False</text>
+<text x="128" y="3419" class="code">in_avals=(f32[2,3], f32[3,4], f32[4])</text>
+<text x="128" y="3462" class="code">out_avals=(f32[2,4],)；还未转换为 MLIR</text>
+<a href="../../../upstream/jax/jax/_src/stages.py#L442">
+<title>jax/_src/stages.py:442</title>
+<text x="128" y="3524" class="source">↗ Traced.jaxpr</text>
+</a>
+<rect x="2260" y="2610" width="1240" height="295" rx="16" fill="#ffffff" stroke="#b4a5d1" stroke-width="2"/>
+<rect x="2261" y="2611" width="9" height="293" rx="3" fill="#704b9c" stroke="#704b9c" stroke-width="0"/>
+<text x="2288" y="2657" class="card-title">HiJAX → LoJAX（条件分支）</text>
+<text x="2288" y="2693" class="body">Traced.lojax 先检查 jaxpr.is_high</text>
+<text x="2288" y="2736" class="body">False：本例复用同一个 Jaxpr 对象</text>
+<text x="2288" y="2779" class="body">True：pe.lower_jaxpr 展开高层 eqn / HiType</text>
+<text x="2288" y="2822" class="body">LoJAX 仍是 Jaxpr，不是 MLIR</text>
+<a href="../../../upstream/jax/jax/_src/stages.py#L501">
+<title>jax/_src/stages.py:501</title>
+<text x="2288" y="2884" class="source">↗ Traced.lojax</text>
+</a>
+<rect x="2260" y="2930" width="1240" height="295" rx="16" fill="#ffffff" stroke="#b4a5d1" stroke-width="2"/>
+<rect x="2261" y="2931" width="9" height="293" rx="3" fill="#704b9c" stroke="#704b9c" stroke-width="0"/>
+<text x="2288" y="2977" class="card-title">effects 与 token 分支</text>
+<text x="2288" y="3013" class="body">debug_print / io_callback / Ref 可给 eqn 附 effect</text>
+<text x="2288" y="3056" class="body">lowering 检查可降级 effect；有序效果传 token</text>
+<text x="2288" y="3099" class="body">本例无 effects，因此 IR 签名没有 token</text>
+<text x="2288" y="3142" class="body">纯 add / tanh 方程通常没有 effect</text>
+<a href="../../../upstream/jax/jax/_src/interpreters/partial_eval.py#L1445">
+<title>jax/_src/interpreters/partial_eval.py:1445</title>
+<text x="2288" y="3204" class="source">↗ make_jaxpr_effects</text>
+</a>
+<a href="../../../upstream/jax/jax/_src/interpreters/mlir.py#L1611">
+<title>jax/_src/interpreters/mlir.py:1611</title>
+<text x="2539" y="3204" class="source">↗ mlir.TokenSet</text>
+</a>
+<rect x="2260" y="3250" width="1240" height="295" rx="16" fill="#fffdf9" stroke="#dfc396" stroke-width="2"/>
+<rect x="2261" y="3251" width="9" height="293" rx="3" fill="#a96c22" stroke="#a96c22" stroke-width="0"/>
+<text x="2288" y="3297" class="card-title">嵌套程序与特殊 primitive</text>
+<text x="2288" y="3333" class="body">cond / scan / jit 可在参数中携带内层 Jaxpr</text>
+<text x="2288" y="3376" class="body">Pallas kernel 也是内层 Jaxpr；路径因平台而异</text>
+<text x="2288" y="3419" class="body">TPU Pallas 可产生 Mosaic TPU MLIR payload</text>
+<text x="2288" y="3462" class="small">这些路径不属于上方普通模型的实际输出</text>
+<a href="../../../upstream/jax/jax/_src/pallas/pallas_call.py#L72">
+<title>jax/_src/pallas/pallas_call.py:72</title>
+<text x="2288" y="3524" class="source">↗ pallas_call</text>
+</a>
+<a href="../../../upstream/jax/jax/_src/pallas/mosaic/pallas_call_registration.py#L393">
+<title>jax/_src/pallas/mosaic/pallas_call_registration.py:393</title>
+<text x="2466" y="3524" class="source">↗ Mosaic TPU lowering</text>
+</a>
+<path d="M1170 3645V3695" class="arrow-lower"/>
+<rect x="70" y="3705" width="3460" height="1850" rx="24" fill="#edf8f6" stroke="#94c5bd" stroke-width="2"/>
+<text x="98" y="3756" class="section-title">03  从 LoJAX Jaxpr 到 MLIR Module：控制链和逐方程 lowering</text>
+<rect x="100" y="3790" width="2150" height="195" rx="16" fill="#ffffff" stroke="#9bcbbf" stroke-width="2"/>
+<rect x="101" y="3791" width="9" height="193" rx="3" fill="#167b70" stroke="#167b70" stroke-width="0"/>
+<text x="128" y="3837" class="card-title">1  Traced.lower()：进入 lowering 阶段</text>
+<text x="128" y="3873" class="code">lo = traced.lojax；本例 lo.jaxpr is traced.jaxpr</text>
+<text x="128" y="3904" class="body">调用 pjit._resolve_and_lower；返回 stages.Lowered</text>
+<text x="128" y="3935" class="body">未调用 compile()，也未运行设备程序</text>
+<a href="../../../upstream/jax/jax/_src/stages.py#L538">
+<title>jax/_src/stages.py:538</title>
+<text x="128" y="3964" class="source">↗ Traced.lower</text>
+</a>
+<rect x="100" y="4005" width="2150" height="195" rx="16" fill="#ffffff" stroke="#9bcbbf" stroke-width="2"/>
+<rect x="101" y="4006" width="9" height="193" rx="3" fill="#167b70" stroke="#167b70" stroke-width="0"/>
+<text x="128" y="4052" class="card-title">2  _resolve_and_lower：确定输入/输出约束</text>
+<text x="128" y="4088" class="code">解析 in/out_shardings 与 in/out_layouts</text>
+<text x="128" y="4119" class="body">携带 avals、donation、mesh、平台和编译选项</text>
+<text x="128" y="4150" class="code">交给 _pjit_lower</text>
+<a href="../../../upstream/jax/jax/_src/pjit.py#L1062">
+<title>jax/_src/pjit.py:1062</title>
+<text x="128" y="4179" class="source">↗ pjit._resolve_and_lower</text>
+</a>
+<rect x="100" y="4220" width="2150" height="195" rx="16" fill="#ffffff" stroke="#9bcbbf" stroke-width="2"/>
+<rect x="101" y="4221" width="9" height="193" rx="3" fill="#167b70" stroke="#167b70" stroke-width="0"/>
+<text x="128" y="4267" class="card-title">3  _pjit_lower → pxla.lower_sharding_computation</text>
+<text x="128" y="4303" class="body">以 jit 路径建立 MeshComputation</text>
+<text x="128" y="4334" class="body">传入 Jaxpr、分片、布局、donation、平台参数</text>
+<text x="128" y="4365" class="body">此阶段仍处理 JAX 级程序和编译元数据</text>
+<a href="../../../upstream/jax/jax/_src/pjit.py#L1228">
+<title>jax/_src/pjit.py:1228</title>
+<text x="128" y="4394" class="source">↗ pjit._pjit_lower</text>
+</a>
+<a href="../../../upstream/jax/jax/_src/interpreters/pxla.py#L976">
+<title>jax/_src/interpreters/pxla.py:976</title>
+<text x="358" y="4394" class="source">↗ pxla.lower_sharding_computation</text>
+</a>
+<rect x="100" y="4435" width="2150" height="195" rx="16" fill="#ffffff" stroke="#9bcbbf" stroke-width="2"/>
+<rect x="101" y="4436" width="9" height="193" rx="3" fill="#167b70" stroke="#167b70" stroke-width="0"/>
+<text x="128" y="4482" class="card-title">4  pxla 预处理 Jaxpr 与设备约束</text>
+<text x="128" y="4518" class="body">DCE；Ref discharge；常量参数与输出布局处理</text>
+<text x="128" y="4549" class="body">计算 device assignment、sharding 和平台</text>
+<text x="128" y="4580" class="body">效果与 sharding 参与后续 MLIR 参数传递</text>
+<a href="../../../upstream/jax/jax/_src/interpreters/pxla.py#L986">
+<title>jax/_src/interpreters/pxla.py:986</title>
+<text x="128" y="4609" class="source">↗ pxla.lower_sharding_computation</text>
+</a>
+<rect x="100" y="4650" width="2150" height="195" rx="16" fill="#ffffff" stroke="#9bcbbf" stroke-width="2"/>
+<rect x="101" y="4651" width="9" height="193" rx="3" fill="#167b70" stroke="#167b70" stroke-width="0"/>
+<text x="128" y="4697" class="card-title">5  _cached_lowering_to_hlo → MLIR 模块入口</text>
+<text x="128" y="4733" class="code">构造 ShardingContext 与 ordered_effects</text>
+<text x="128" y="4764" class="code">mlir.lower_jaxpr_to_module(jaxpr, avals, ...)</text>
+<text x="128" y="4795" class="body">输出 LoweringResult.module: mlir.ir.Module</text>
+<a href="../../../upstream/jax/jax/_src/interpreters/pxla.py#L726">
+<title>jax/_src/interpreters/pxla.py:726</title>
+<text x="128" y="4824" class="source">↗ pxla._cached_lowering_to_hlo</text>
+</a>
+<a href="../../../upstream/jax/jax/_src/interpreters/mlir.py#L1327">
+<title>jax/_src/interpreters/mlir.py:1327</title>
+<text x="483" y="4824" class="source">↗ mlir.lower_jaxpr_to_module</text>
+</a>
+<rect x="100" y="4865" width="2150" height="195" rx="16" fill="#ffffff" stroke="#9bcbbf" stroke-width="2"/>
+<rect x="101" y="4866" width="9" height="193" rx="3" fill="#167b70" stroke="#167b70" stroke-width="0"/>
+<text x="128" y="4912" class="card-title">6  ModuleContext → func.func public @main</text>
+<text x="128" y="4948" class="body">建 MLIR context/module；签名由 aval → tensor type</text>
+<text x="128" y="4979" class="body">处理常量、动态维、分片、别名与 effect token</text>
+<text x="128" y="5010" class="code">lower_jaxpr_to_fun 创建函数入口</text>
+<a href="../../../upstream/jax/jax/_src/interpreters/mlir.py#L804">
+<title>jax/_src/interpreters/mlir.py:804</title>
+<text x="128" y="5039" class="source">↗ mlir.ModuleContext</text>
+</a>
+<a href="../../../upstream/jax/jax/_src/interpreters/mlir.py#L1652">
+<title>jax/_src/interpreters/mlir.py:1652</title>
+<text x="379" y="5039" class="source">↗ mlir.lower_jaxpr_to_fun</text>
+</a>
+<rect x="100" y="5080" width="2150" height="195" rx="16" fill="#ffffff" stroke="#9bcbbf" stroke-width="2"/>
+<rect x="101" y="5081" width="9" height="193" rx="3" fill="#167b70" stroke="#167b70" stroke-width="0"/>
+<text x="128" y="5127" class="card-title">7  jaxpr_subcomp：逐条解释 JaxprEqn</text>
+<text x="128" y="5163" class="code">Var → IR value；Literal → IR constant</text>
+<text x="128" y="5194" class="body">按 primitive / 平台从 lowering 规则表选规则</text>
+<text x="128" y="5225" class="body">LoweringRuleContext 传 avals、params、token</text>
+<a href="../../../upstream/jax/jax/_src/interpreters/mlir.py#L2129">
+<title>jax/_src/interpreters/mlir.py:2129</title>
+<text x="128" y="5254" class="source">↗ mlir.jaxpr_subcomp</text>
+</a>
+<a href="../../../upstream/jax/jax/_src/interpreters/mlir.py#L1003">
+<title>jax/_src/interpreters/mlir.py:1003</title>
+<text x="379" y="5254" class="source">↗ mlir.register_lowering</text>
+</a>
+<rect x="100" y="5295" width="2150" height="195" rx="16" fill="#ffffff" stroke="#9bcbbf" stroke-width="2"/>
+<rect x="101" y="5296" width="9" height="193" rx="3" fill="#167b70" stroke="#167b70" stroke-width="0"/>
+<text x="128" y="5342" class="card-title">8  验证并暴露 StableHLO MLIR</text>
+<text x="128" y="5378" class="body">各规则生成 ir.Value；func.func 返回结果</text>
+<text x="128" y="5409" class="body">module.operation.verify()；MeshComputation 保存 module</text>
+<text x="128" y="5440" class="code">Lowered.compiler_ir(&#x27;stablehlo&#x27;) 供检查</text>
+<a href="../../../upstream/jax/jax/_src/interpreters/mlir.py#L1455">
+<title>jax/_src/interpreters/mlir.py:1455</title>
+<text x="128" y="5469" class="source">↗ MLIR verify</text>
+</a>
+<a href="../../../upstream/jax/jax/_src/interpreters/pxla.py#L1202">
+<title>jax/_src/interpreters/pxla.py:1202</title>
+<text x="306" y="5469" class="source">↗ MeshComputation.stablehlo</text>
+</a>
+<path d="M1170 3985V4002" class="arrow-lower"/>
+<path d="M1170 4200V4217" class="arrow-lower"/>
+<path d="M1170 4415V4432" class="arrow-lower"/>
+<path d="M1170 4630V4647" class="arrow-lower"/>
+<path d="M1170 4845V4862" class="arrow-lower"/>
+<path d="M1170 5060V5077" class="arrow-lower"/>
+<path d="M1170 5275V5292" class="arrow-lower"/>
+<rect x="2310" y="3790" width="1190" height="395" rx="16" fill="#ffffff" stroke="#9bcbbf" stroke-width="2"/>
+<rect x="2311" y="3791" width="9" height="393" rx="3" fill="#167b70" stroke="#167b70" stroke-width="0"/>
+<text x="2338" y="3837" class="card-title">模块级：ModuleContext</text>
+<text x="2338" y="3873" class="code">backend / platforms / axis_context</text>
+<text x="2338" y="3921" class="code">MLIR ir.Context / ir.Module / SymbolTable</text>
+<text x="2338" y="3969" class="body">常量缓存、host callbacks、sharding attr 缓存</text>
+<text x="2338" y="4017" class="body">动态形状维变量与 channel id</text>
+<text x="2338" y="4065" class="small">只属于 lowering 阶段，不在 Jaxpr 中</text>
+<a href="../../../upstream/jax/jax/_src/interpreters/mlir.py#L804">
+<title>jax/_src/interpreters/mlir.py:804</title>
+<text x="2338" y="4164" class="source">↗ mlir.ModuleContext</text>
+</a>
+<rect x="2310" y="4210" width="1190" height="395" rx="16" fill="#ffffff" stroke="#9bcbbf" stroke-width="2"/>
+<rect x="2311" y="4211" width="9" height="393" rx="3" fill="#167b70" stroke="#167b70" stroke-width="0"/>
+<text x="2338" y="4257" class="card-title">方程级：LoweringRuleContext</text>
+<text x="2338" y="4293" class="code">primitive / avals_in / avals_out / params</text>
+<text x="2338" y="4341" class="body">tokens_in/out、eqn 源码位置、name stack</text>
+<text x="2338" y="4389" class="body">平台专用规则优先于通用注册规则</text>
+<text x="2338" y="4437" class="body">lowering 缓存可复用相同 primitive 形态</text>
+<text x="2338" y="4485" class="small">一条方程可发出多条 MLIR operation</text>
+<a href="../../../upstream/jax/jax/_src/interpreters/mlir.py#L939">
+<title>jax/_src/interpreters/mlir.py:939</title>
+<text x="2338" y="4584" class="source">↗ LoweringRuleContext</text>
+</a>
+<a href="../../../upstream/jax/jax/_src/interpreters/mlir.py#L2344">
+<title>jax/_src/interpreters/mlir.py:2344</title>
+<text x="2599" y="4584" class="source">↗ rule selection</text>
+</a>
+<rect x="2310" y="4630" width="1190" height="395" rx="16" fill="#ffffff" stroke="#9bcbbf" stroke-width="2"/>
+<rect x="2311" y="4631" width="9" height="393" rx="3" fill="#167b70" stroke="#167b70" stroke-width="0"/>
+<text x="2338" y="4677" class="card-title">jax 与 jaxlib 的构造边界</text>
+<text x="2338" y="4713" class="body">JAX Python 决定何时调用哪条 lowering 规则</text>
+<text x="2338" y="4761" class="code">jaxlib.mlir.ir 提供 MLIR 对象绑定</text>
+<text x="2338" y="4809" class="code">jaxlib.mlir.dialects.stablehlo 提供 hlo.*</text>
+<text x="2338" y="4857" class="body">还可出现 func、sdy 等 MLIR 方言</text>
+<text x="2338" y="4905" class="small">它们不是独立网络服务</text>
+<a href="../../../upstream/jax/jax/_src/lib/mlir/dialects/__init__.py#L62">
+<title>jax/_src/lib/mlir/dialects/__init__.py:62</title>
+<text x="2338" y="5004" class="source">↗ JAX dialect imports</text>
+</a>
+<rect x="2310" y="5050" width="1190" height="440" rx="16" fill="#fffdf9" stroke="#dfc396" stroke-width="2"/>
+<rect x="2311" y="5051" width="9" height="438" rx="3" fill="#a96c22" stroke="#a96c22" stroke-width="0"/>
+<text x="2338" y="5097" class="card-title">输出的语义边界</text>
+<text x="2338" y="5133" class="body">ir.Module 已是编译器输入，不是 executable</text>
+<text x="2338" y="5181" class="body">StableHLO 是 MLIR 方言；普通路径的计算主体</text>
+<text x="2338" y="5229" class="body">sharding 可出现 sdy；特殊 primitive 可 custom_call</text>
+<text x="2338" y="5277" class="body">Pallas TPU payload 可为 Mosaic TPU MLIR</text>
+<text x="2338" y="5325" class="small">Mosaic TPU MLIR 不是 LLO；图中无 TPU 编译证明</text>
+<text x="2338" y="5373" class="small">CPU / GPU / TPU 后端进一步编译均在本图终点之后</text>
+<a href="../../../upstream/jax/jax/_src/stages.py#L671">
+<title>jax/_src/stages.py:671</title>
+<text x="2338" y="5469" class="source">↗ Lowered.compiler_ir</text>
+</a>
+<path d="M1170 5555V5625" class="arrow-lower"/>
+<rect x="70" y="5635" width="3460" height="925" rx="24" fill="#fff8ed" stroke="#ddbd83" stroke-width="2"/>
+<text x="98" y="5686" class="section-title">04  逐方程核对：Jaxpr 操作如何变成这个 MLIR module</text>
+<rect x="100" y="5720" width="2180" height="745" rx="16" fill="#fffdf9" stroke="#dfc396" stroke-width="2"/>
+<rect x="101" y="5721" width="9" height="743" rx="3" fill="#a96c22" stroke="#a96c22" stroke-width="0"/>
+<text x="128" y="5767" class="card-title">固定模型的映射表（CPU host lowering 实际观测）</text>
+<text x="128" y="5818" class="code">Jaxpr ① dot_general a b    → stablehlo.dot_general %arg0, %arg1</text>
+<text x="128" y="5874" class="code">Jaxpr ② broadcast_in_dim c → stablehlo.broadcast_in_dim %arg2</text>
+<text x="128" y="5930" class="code">Jaxpr ③ add d e            → 新增 broadcast_in_dim %1</text>
+<text x="128" y="5986" class="code">                               再发 stablehlo.add %0, %2</text>
+<text x="128" y="6042" class="code">Jaxpr ④ tanh f             → stablehlo.tanh %3</text>
+<text x="128" y="6098" class="body">Jaxpr 4 条方程；StableHLO 5 条计算操作。</text>
+<text x="128" y="6154" class="body">额外广播来自 add 的逐元素 lowering 规则；并非逐行文本替换。</text>
+<text x="128" y="6210" class="body">module 另有 func.func @main、return 和 mhlo.num_* 属性。</text>
+<text x="128" y="6266" class="small">不同 shape、sharding、平台或版本可改变生成的 IR。</text>
+<a href="../../../upstream/jax/jax/_src/lax/lax.py#L6266">
+<title>jax/_src/lax/lax.py:6266</title>
+<text x="128" y="6444" class="source">↗ dot_general lowering</text>
+</a>
+<a href="../../../upstream/jax/jax/_src/lax/lax.py#L5053">
+<title>jax/_src/lax/lax.py:5053</title>
+<text x="400" y="6444" class="source">↗ add lowering</text>
+</a>
+<rect x="2330" y="5720" width="1170" height="745" rx="16" fill="#fffdf9" stroke="#dfc396" stroke-width="2"/>
+<rect x="2331" y="5721" width="9" height="743" rx="3" fill="#a96c22" stroke="#a96c22" stroke-width="0"/>
+<text x="2358" y="5767" class="card-title">阅读图时的三个界限</text>
+<text x="2358" y="5818" class="body">源码：锁定 JAX 提交 3d1d3e8963b4</text>
+<text x="2358" y="5881" class="body">运行：JAX 0.11.1.dev + jaxlib 0.11.1</text>
+<text x="2358" y="5944" class="small">VERSION-SKEW：jaxlib wheel 非本地注释提交构建</text>
+<text x="2358" y="6007" class="body">已验证：traced.jaxpr 与 host StableHLO</text>
+<text x="2358" y="6070" class="body">未验证：compile() / CPU 数值执行</text>
+<text x="2358" y="6133" class="body">未验证：TPU 离线编译 / 真机执行</text>
+<text x="2358" y="6196" class="body">MLIR 是表示与编译输入，不等于设备代码</text>
+<text x="2358" y="6259" class="body">图中示例没有 Pallas、FFI 或 ordered effect</text>
+<text x="2358" y="6322" class="small">其他路径请由对应 Jaxpr 和目标 IR 单独取证</text>
+<a href="../../../upstream/jax/jax/_src/interpreters/mlir.py#L1482">
+<title>jax/_src/interpreters/mlir.py:1482</title>
+<text x="2358" y="6444" class="source">↗ MLIR module return</text>
+</a>
+<text x="75" y="6610" class="subtitle">生成：tools/render_jaxpr_to_mlir.py  ·  链接与行号对应当前本地锁定源码  ·  SVG 可缩放、搜索文本并点击源码锚点</text>
+</svg>

@@ -6,7 +6,7 @@ without writing if any pattern is missing or ambiguous.
 import pathlib
 import sys
 
-p = pathlib.Path(__file__).parent / 'core.py'
+p = pathlib.Path(__file__).resolve().parents[3] / 'artifacts/core-py-zh/core.py'
 src = p.read_text(encoding='utf-8')
 
 FIXES = [

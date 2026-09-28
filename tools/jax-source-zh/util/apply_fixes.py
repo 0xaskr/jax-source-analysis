@@ -2,7 +2,7 @@
 import pathlib
 import sys
 
-p = pathlib.Path(__file__).parent / 'util.py'
+p = pathlib.Path(__file__).resolve().parents[3] / 'artifacts/util-py-zh/util.py'
 src = p.read_text(encoding='utf-8')
 
 FIXES = [

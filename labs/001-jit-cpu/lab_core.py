@@ -147,3 +147,5 @@ def cache_experiment(
         )
     )
   return observations
+
+jax.make_jaxpr()

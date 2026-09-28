@@ -4,7 +4,7 @@ import pathlib
 import subprocess
 import sys
 
-root = pathlib.Path(__file__).parent
+root = pathlib.Path(__file__).resolve().parents[3] / 'artifacts/core-py-zh'
 manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8'))
 orig = root / 'core.py.orig'
 
@@ -45,7 +45,7 @@ final = root / 'core.py'
 final.write_text(''.join(parts), encoding='utf-8')
 print(f'\nassembled -> {final} ({len(final.read_text(encoding="utf-8").splitlines())} lines)')
 
-r = subprocess.run([sys.executable, str(root / 'verify.py'), str(orig), str(final)],
+r = subprocess.run([sys.executable, str(pathlib.Path(__file__).resolve().with_name('verify.py')), str(orig), str(final)],
                    capture_output=True, text=True)
 tail = '\n'.join(r.stdout.splitlines()[:12])
 print(tail)

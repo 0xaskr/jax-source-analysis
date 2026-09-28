@@ -3,7 +3,7 @@ import pathlib
 import re
 import sys
 
-p = pathlib.Path(__file__).parent / 'partial_eval.py'
+p = pathlib.Path(__file__).resolve().parents[3] / 'artifacts/partial-eval-py-zh/partial_eval.py'
 src = p.read_text(encoding='utf-8')
 
 FIXES = [
