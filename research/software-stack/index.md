@@ -9,7 +9,7 @@ note.md 是开发者的理解笔记，不要去修改。
 
 `overview/` 从整体视角描述整个软件栈：组件的职责与位置、跨组件调用、程序表示的转换，以及编译、加载和执行路径。这里的“概览”限定的是观察范围，不限定细节程度；为了讲清完整路径，可以展开关键 API、class 和源码边界，图示也不受固定画布尺寸限制。以内容完整、文字可读和连线清楚为准。
 
-`overview/` 以外的一级目录直接用组件名命名。现有 [`jax/`](jax/index.md) 收录 JAX 概念文档与整合软件栈图；以后分析其他顶层组件时，再以该组件名建目录。组件目录聚焦其内部机制，细节应比全栈图更深入，进入具体 API、class、方法及其调用和数据流。组件图文可以标出与外部的接口，但主体应是当前组件内部；需要解释多个组件如何衔接时，放在 `overview/`。图示归属由要解释的范围决定，不由节点数量或细节多少决定。
+`overview/` 以外的一级目录直接用组件名命名。现有 [`jax/`](jax/index.md) 收录 JAX 概念文档与组件内部架构图；以后分析其他顶层组件时，再以该组件名建目录。组件目录聚焦其内部机制，细节应比全栈图更深入，进入具体 API、class、方法及其调用和数据流。组件图文可以标出与外部的接口，但主体应是当前组件内部；需要解释多个组件如何衔接时，放在 `overview/`。图示归属由要解释的范围决定，不由节点数量或细节多少决定。
 
 原版全栈总图保留在 [`overview-software-stack.svg`](overview/overview-software-stack.svg)。总图中的 `pallas_add` 片段用于说明表示层次，原离线捕获已移除，不能据此认定当前环境完成了编译或设备执行。
 
@@ -23,7 +23,7 @@ note.md 是开发者的理解笔记，不要去修改。
 
 | 方向 | 本地入口 | 阅读入口 |
 |---|---|---|
-| JAX Python、tracing、Jaxpr 与 jaxlib | [JAX](../../upstream/jax) | [JAX 概念](jax/index.md)、[整合软件栈图](jax/jax-internal-stack.svg) |
+| JAX Python、tracing、Jaxpr 与 jaxlib | [JAX](../../upstream/jax) | [JAX 概念](jax/index.md)、[Jaxpr 中心辐射图](jax/jaxpr-centered-hub.svg) |
 | 程序表示与分片 | [StableHLO](../../upstream/stablehlo)、[Shardy](../../upstream/shardy) | [软件栈全貌](overview/overview-software-stack-components-layered.svg) |
 | 编译控制与后端路径 | [XLA](../../upstream/xla) | [软件栈全貌](overview/overview-software-stack-components-layered.svg) |
 | LLVM/MLIR 与 CPU 代码生成 | [LLVM](../../upstream/llvm-project) | [软件栈全貌](overview/overview-software-stack-components-layered.svg) |
