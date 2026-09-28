@@ -7,7 +7,7 @@
 # Bzlmod sources use JAX as the root module and the BCR snapshot below; plain
 # Git checkouts do not include the registry and root-module build patches.
 
-core|upstream/jax|git@github.com:0xaskr/jax.git|3d1d3e8963b4bc5074e8e7492424278ff64a0050|https://github.com/0xaskr/jax/pull/1 (docs/jax-v0.11.1-source-annotations); based on jax-v0.11.1
+core|upstream/jax|git@github.com:0xaskr/jax.git|361c43e072cce92b7d3e9bdaf4dd16db26c49043|https://github.com/0xaskr/jax/tree/main (origin/main)
 core|upstream/xla|https://github.com/openxla/xla.git|dcf304bc5dca1932b99f740b911dbd73631a1a69|jax/MODULE.bazel
 core|upstream/stablehlo|https://github.com/openxla/stablehlo.git|7b1b15781ccbd770f50c7eef4b0c3e03834649fd|xla/third_party/stablehlo/workspace.bzl
 core|upstream/shardy|https://github.com/openxla/shardy.git|2832731619ffb4bcc718faa4aa8054214a68c969|xla/third_party/shardy/workspace.bzl
