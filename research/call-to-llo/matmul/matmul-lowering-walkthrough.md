@@ -327,7 +327,7 @@ StableHLO → HLO。`_cached_lowering_to_hlo` 之类的函数名也容易误导�
 3. **`ApplyXlaTransforms`** — 出现在两处：`cpu_compiler.cc:1177-1178` 的
    `PipelineStage::kPreScheduler`，以及 `:1832-1833` 的 `post_scheduler_pipeline` 中的
    `kPostScheduler`。实现见 `xla/service/xla_transform.cc:109,132,138`。**这正是
-   [软件栈图](../../software-stack/overview/overview-software-stack.svg) 里 D 接口（可写 HLO hook）的落点**，
+   [软件栈扩展接口图](../../software-stack/overview/overview-software-stack-components-extended.svg#xla-interface-d) 里 D 接口（可写 HLO hook）的落点**，
    与图中的 `cpu_compiler.cc:1178 / 1833` 两处引用一致。
 
 ### 2.10 运行时：`DotThunk`

@@ -1,0 +1,66 @@
+{
+  "repository": "https://github.com/openxla/xla",
+  "revision": "dcf304bc5dca1932b99f740b911dbd73631a1a69",
+  "files": [
+    {
+      "path": "xla/python/pjrt_ifrt/pjrt_executable.cc",
+      "sha256": "4c35da1c9a2fbafe4a993b36c1fb5d761d1fb9ccba6ff290c4c8538ffe3a8fed",
+      "size_bytes": 48646
+    },
+    {
+      "path": "xla/pjrt/pjrt_client.h",
+      "sha256": "3ab220dd21e3411e0f5b5bc77b7757d624f95e3f84c4071d28b1bd567da23224",
+      "size_bytes": 78017
+    },
+    {
+      "path": "xla/pjrt/cpu/cpu_client.cc",
+      "sha256": "7e4bca4c7c71f87f11202c8080160147fb96545dd1e33feeb49fc1e8f89cfab2",
+      "size_bytes": 89739
+    },
+    {
+      "path": "xla/service/cpu/cpu_compiler.cc",
+      "sha256": "6cb8868588e05c05b9b8260a643951b0eb6d67cd473710bbf807ad0d82746e6f",
+      "size_bytes": 101330
+    },
+    {
+      "path": "xla/service/gpu/gpu_compiler.cc",
+      "sha256": "9b5998d2fe21d2589f533bec42c5de9b674233f6add96ec527f13e60c71c662c",
+      "size_bytes": 153525
+    },
+    {
+      "path": "xla/service/executable.h",
+      "sha256": "a0f94f2e53beb4265937cc72f3fff5f4a069928e2846750e416d60c424f7bbce",
+      "size_bytes": 17881
+    },
+    {
+      "path": "xla/python/ifrt/executable.h",
+      "sha256": "21ff03d284f7808e5b53a448cd24133a15631d30d24d81f8824a64f8f245fa71",
+      "size_bytes": 14840
+    },
+    {
+      "path": "xla/python/ifrt/array.h",
+      "sha256": "7ed8f9b1aeaee8da707e3abeed4a9cad7f1420d9db48bf89a73f138d027a86bf",
+      "size_bytes": 5898
+    },
+    {
+      "path": "xla/hlo/ir/hlo_module.h",
+      "sha256": "7167eeb9e74d36faa4b1ef7ad569c7210192965beb64756a9910cf24dba7bf96",
+      "size_bytes": 51744
+    },
+    {
+      "path": "xla/hlo/pass/hlo_pass_pipeline.cc",
+      "sha256": "b31566e64894e33f49a71190f8899f728e08ca6022ed6c607a4a619835a0410a",
+      "size_bytes": 13122
+    },
+    {
+      "path": "xla/hlo/translate/mhlo_to_hlo/mlir_hlo_to_hlo.cc",
+      "sha256": "66a26233b955abdc4097803d4334fabfc0bd552b4b64c3dee376cdef9d3d23ce",
+      "size_bytes": 244763
+    },
+    {
+      "path": "xla/service/buffer_assignment.h",
+      "sha256": "c6f986b95130d533b612406b5ca5b797021e1bdbc4428dfd7e35047d9c19f912",
+      "size_bytes": 52292
+    }
+  ]
+}

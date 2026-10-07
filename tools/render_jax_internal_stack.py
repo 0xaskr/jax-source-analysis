@@ -398,25 +398,9 @@ def build(meta):
 
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root",type=Path,default=ROOT)
-    parser.add_argument("--output-dir",type=Path)
-    parser.add_argument("--preview-dir",type=Path)
-    args=parser.parse_args()
-    overview=args.root/"research/software-stack/overview"
-    before={p:hashlib.sha256(p.read_bytes()).hexdigest() for p in overview.glob("*.svg")}
-    meta=metadata(args.root)
-    output=args.output_dir or args.root/"research/software-stack/jax"
-    output.mkdir(parents=True,exist_ok=True)
-    svg=output/"jax-internal-stack.svg"
-    build(meta).save(svg)
-    if args.preview_dir:
-        args.preview_dir.mkdir(parents=True,exist_ok=True)
-        preview(svg,args.preview_dir/"jax-internal-stack.png",width=1900)
-    for path,sha in before.items():
-        if hashlib.sha256(path.read_bytes()).hexdigest()!=sha:
-            raise ValueError(f"Overview changed: {path}")
-    print(f"Verified {len(meta['source_anchors'])} source anchors at JAX {JAX_PIN[:12]}")
+    """Keep the former command pointed at the single maintained JAX diagram."""
+    from render_software_stack_component_flows import main as render_selected
+    render_selected(only='jax')
 
 
 if __name__=="__main__":

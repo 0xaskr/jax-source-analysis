@@ -46,7 +46,7 @@ PTX 到物理 GPU 二进制的关系见 [NVIDIA CUDA 平台说明](https://docs.
 
 例如，PJRT 的编译接口接收程序并返回可执行对象，而执行接口接收输入数据并产生输出。PJRT 不是位于 HLO 和 LLVM IR 之间的一种 IR。参见 [PJRT C++ 接口概览](https://openxla.org/xla/pjrt/cpp_api_overview)。
 
-JAX 侧的绑定、IFRT/PJRT 调用及执行入口，见 [JAX 内部软件栈文档](../jax/jax-concepts.md#jax-与-jaxlib-的分界及下游调用)。
+JAX 侧的绑定、IFRT/PJRT 调用及执行入口，见 [JAX 文档中的 jaxlib 分界](../jax/jaxpr-centered-hub.md#jaxlib-boundary)。
 
 ## 4. MLIR、Shardy 与 Pallas/Mosaic 的位置
 
@@ -55,4 +55,4 @@ JAX 侧的绑定、IFRT/PJRT 调用及执行入口，见 [JAX 内部软件栈文
 - **Pallas/Mosaic** 属于专用 kernel 编译分支。Pallas kernel 仍可追踪为 Jaxpr；TPU 路径生成 Mosaic TPU MLIR，并作为外层 custom call 的 payload 交给后端继续处理。
 - **Mosaic TPU MLIR 不是 LLO，也不是最终 TPU 机器码。**普通 JAX 程序也不要求先经过 Pallas。
 
-Pallas 与普通 JAX 的两条表示路径见 [本地 JAX 概念文档](../jax/jax-concepts.md#普通-jax-与-pallas-tpu-的表示路径)。
+Pallas 与普通 JAX 的两条表示路径见 [JAX 文档中的表示路径](../jax/jaxpr-centered-hub.md#representation-paths)。

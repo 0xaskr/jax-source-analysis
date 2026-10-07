@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
-"""Render the selected light, layered JAX component/flow diagram.
+"""Shared SVG primitives and compatibility CLI for the selected JAX overview.
 
 Includes Pango measurement, SVG primitives and fixed source anchors for standalone regeneration.
-Requires system PyGObject/Pango; --preview-dir also uses Rsvg and cairo.
+The CLI delegates to render_overview_software_stack_flows.py and outputs SVG only.
+Install the locked drawing dependencies with tools/diagram_environment.py sync.
 """
 
 from __future__ import annotations
 
-import argparse
 import copy
 import heapq
-import hashlib
 import json
 from pathlib import Path
 import subprocess
@@ -18,11 +17,9 @@ import subprocess
 from html import escape
 import xml.etree.ElementTree as ET
 
-import gi
+from diagram_environment import pango, preview_bindings
 
-gi.require_version("Pango", "1.0")
-gi.require_version("PangoCairo", "1.0")
-from gi.repository import Pango, PangoCairo
+FONT_FAMILY = "Noto Sans CJK SC, Microsoft YaHei, sans-serif"
 
 
 SOURCE_METADATA = {'source_pins': {'jax': '361c43e072cce92b7d3e9bdaf4dd16db26c49043',
@@ -213,26 +210,31 @@ class Diagram:
         self.card = "#192a40" if dark else "#ffffff"
         self.ink = "#eff5ff" if dark else "#17324d"
         self.muted = "#b4c4d9" if dark else "#536a80"
-        self.colors = {"program": "#84b6ff" if dark else "#3971b7",
-                       "data": "#65d9c4" if dark else "#168679",
-                       "transform": "#c9a7ff" if dark else "#8963ad",
-                       "unknown": "#f1c37c" if dark else "#af7935",
-                       "neutral": "#99aabd" if dark else "#8293a6"}
+        self.colors = {"program": "#84b6ff" if dark else "#2866a4",
+                       "data": "#65d9c4" if dark else "#087e78",
+                       "transform": "#c9a7ff" if dark else "#8656ac",
+                       "unknown": "#f1c37c" if dark else "#a66b21",
+                       "neutral": "#99aabd" if dark else "#768899",
+                       "result": "#be633c"}
         self.base, self.edges, self.nodes, self.labels = [], [], [], []
         self.boxes, self.text_boxes, self.edge_boxes = {}, [], []
+        self.Pango, PangoCairo = pango()
         self.context = PangoCairo.FontMap.get_default().create_context()
-        self.text(65, 82, title, 44, bold=True)
-        self.text(68, 131, subtitle, 24, color=self.muted)
+        self.text(65, 88, title, 60, bold=True)
+        self.text(68, 146, subtitle, 29, color=self.muted)
         x = 70
-        for label, color in [("编译路径", "program"), ("数据与执行", "data"),
-                             ("变换步骤", "transform"), ("待源码确认", "unknown"), ("契约 / 观察关系", "neutral")]:
-            self.labels.append(f'<path d="M{x} 181h42" stroke="{self.colors[color]}" stroke-width="4"/>')
-            self.text(x + 54, 189, label, 21, color=self.muted)
-            x += 250
+        for label, color in [("编译 / 程序", "program"), ("数据 / 执行", "data"),
+                             ("变换", "transform"), ("编译结果返回", "result"),
+                             ("待确认", "unknown"), ("结构 / 契约 / 观察", "neutral")]:
+            dash = ' stroke-dasharray="8 7"' if color in {"result", "unknown", "neutral"} else ""
+            self.labels.append(f'<path d="M{x} 211h48" stroke="{self.colors[color]}" stroke-width="4"{dash}/>')
+            self.text(x + 64, 220, label, 25, color=self.muted)
+            x += 340
 
     def measure(self, value, size, bold=False):
+        Pango = self.Pango
         font = Pango.FontDescription()
-        font.set_family("Noto Sans CJK SC")
+        font.set_family(FONT_FAMILY)
         font.set_absolute_size(size * Pango.SCALE)
         font.set_weight(Pango.Weight.BOLD if bold else Pango.Weight.NORMAL)
         layout = Pango.Layout.new(self.context)
@@ -245,10 +247,11 @@ class Diagram:
         ink, logical, baseline = self.measure(value, size, bold)
         if center:
             x -= logical.width / 2
-        text = (f'<text x="{x}" y="{y}" font-family="Noto Sans CJK SC" font-size="{size}" '
+        text = (f'<text x="{x}" y="{y}" font-family="{FONT_FAMILY}" font-size="{size}" '
                 f'font-weight="{700 if bold else 400}" fill="{color or self.ink}">{escape(value)}</text>')
         if href:
-            text = f'<a href="{escape(href, quote=True)}" target="_blank">{text}</a>'
+            target = '' if href.startswith('#') else ' target="_blank"'
+            text = f'<a href="{escape(href, quote=True)}"{target}>{text}</a>'
         self.labels.append(text)
         self.text_boxes.append((x + ink.x, y - baseline + ink.y, ink.width, ink.height, value, owner))
 
@@ -276,27 +279,43 @@ class Diagram:
         self.boxes[key] = (x, y, w, h)
         stroke = self.colors[color]
         dash = ' stroke-dasharray="9 7"' if dashed else ""
-        self.nodes.append(f'<g id="{key}"><rect x="{x}" y="{y}" width="{w}" height="{h}" '
+        self.nodes.append(f'<g id="{key}"><title>{escape(title)}</title><rect x="{x}" y="{y}" width="{w}" height="{h}" '
                           f'rx="{h / 2 if pill else 18}" fill="{self.card}" stroke="{stroke}" stroke-width="2"{dash}/></g>')
-        self.text(x + 24, y + 30, tag, 18, color=stroke, bold=True, owner=key)
-        title_size = 32
-        if self.measure(title, title_size, True)[1].width > w - 48:
-            title_size = 28
+        self.text(x + 24, y + 30, tag, 20, color=stroke, bold=True, owner=key)
+        title_size = 36 if "核心概念" in tag else 32
+        while self.measure(title, title_size, True)[1].width > w - 48:
+            title_size -= 1
         self.text(x + 24, y + 71, title, title_size, bold=True, owner=key)
         baseline = y + 109
         for line in body:
-            for part in self.wrap(line, w - 48, 23):
-                self.text(x + 24, baseline, part, 23, color=self.muted, owner=key)
+            for part in self.wrap(line, w - 48, 24):
+                self.text(x + 24, baseline, part, 24, color=self.muted, owner=key)
                 baseline += 33
         if ref:
             self.text(x + 24, y + h - 20, link or ref, 18, color=stroke, href=self.ref(ref), owner=key)
 
-    def edge(self, points, color="program", dashed=False, end=True):
-        path = "M" + " L".join(f"{x},{y}" for x, y in points)
+    def edge(self, points, color="program", dashed=False, end=True, bridge_over=(), width=3):
+        path = f"M{points[0][0]},{points[0][1]}"
+        bridges = []
+        for a, b in zip(points, points[1:]):
+            crossings = sorted({crossing(a, b, u, v) for u, v in bridge_over} - {None},
+                               key=lambda p: abs(p[0]-a[0])+abs(p[1]-a[1]))
+            for cx, cy in crossings:
+                if a[1] == b[1]:
+                    dx = 12 if b[0] > a[0] else -12
+                    path += f" L{cx-dx},{cy} Q{cx},{cy-24} {cx+dx},{cy}"
+                    bridges.append(f"M{cx-dx},{cy} Q{cx},{cy-24} {cx+dx},{cy}")
+                else:
+                    dy = 12 if b[1] > a[1] else -12
+                    path += f" L{cx},{cy-dy} Q{cx+24},{cy} {cx},{cy+dy}"
+                    bridges.append(f"M{cx},{cy-dy} Q{cx+24},{cy} {cx},{cy+dy}")
+            path += f" L{b[0]},{b[1]}"
         dash = ' stroke-dasharray="8 7"' if dashed else ""
         marker = f' marker-end="url(#{color})"' if end else ""
+        for bridge in bridges:
+            self.edges.append(f'<path d="{bridge}" fill="none" stroke="{self.bg}" stroke-width="11" stroke-linecap="round"/>')
         self.edges.append(f'<path d="{path}" fill="none" stroke="{self.colors[color]}" '
-                          f'stroke-width="3" stroke-linejoin="round"{dash}{marker}/>')
+                          f'stroke-width="{width}" stroke-linejoin="round"{dash}{marker}/>')
         self.edge_boxes.append(points)
 
     def label(self, x, y, value, color="program", ref=None, size=20):
@@ -333,8 +352,9 @@ class Diagram:
             raise ValueError(str(path.name) + ":\n" + "\n".join(errors))
         defs = "".join(f'<marker id="{name}" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="10" markerHeight="10" orient="auto-start-reverse"><path d="M1,1 L11,6 L1,11" fill="none" stroke="{color}" stroke-width="2"/></marker>' for name, color in self.colors.items())
         xml = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{self.w}" height="{self.h}" viewBox="0 0 {self.w} {self.h}" role="img" aria-labelledby="title desc">'
-               f'<title id="title">{escape(self.title)}</title><desc id="desc">JAX 到硬件的软件栈流程图。编译路径和数据路径在执行处汇合；包含定义、产生、变换、消费以及固定提交源码链接。</desc>'
+               f'<title id="title">{escape(self.title)}</title><desc id="desc">{escape(getattr(self, "description", "JAX 到硬件的软件栈流程图。编译路径和数据路径在执行处汇合；包含定义、产生、变换、消费以及固定提交源码链接。"))}</desc>'
                f'<metadata>{escape(json.dumps(self.meta, ensure_ascii=False))}</metadata><defs>{defs}</defs>'
+               '<style>a:hover text{text-decoration:underline}g:target rect{stroke:#c65028;stroke-width:6}</style>'
                f'<rect width="100%" height="100%" fill="{self.bg}"/>' + "".join(self.base + self.edges + self.nodes + self.labels) + '</svg>\n')
         path.write_text(xml)
         ET.parse(path)
@@ -342,7 +362,7 @@ class Diagram:
 
 
 W = 2140
-HEIGHTS = {"jax": 1210, "jaxlib": 890, "ifrt": 890, "pjrt": 890,
+HEIGHTS = {"jax": 1660, "jaxlib": 890, "ifrt": 890, "pjrt": 890,
            "xla": 890, "backend": 1160, "asm": 560, "runtime": 890,
            "hardware": 630}
 TITLES = {
@@ -350,15 +370,33 @@ TITLES = {
     "jaxlib": "jaxlib · Python 与原生编译 / 运行时绑定",
     "ifrt": "IFRT · 面向框架的逻辑数组与程序",
     "pjrt": "PJRT · 设备、存储与可执行程序接口",
-    "xla": "XLA · HLO 计算图与编译规划",
+    "xla": "XLA · HLO 优化与编译规划",
     "backend": "编译后端 · 按目标设备分流",
     "asm": "目标汇编表示 · ASM 与目标代码的观察关系",
     "runtime": "设备运行时与驱动 · 程序和数据在此汇合",
     "hardware": "指令集接口与硬件 · ISA 约束执行行为",
 }
 
+ROLES = {"jax": "前端实现", "jaxlib": "原生绑定", "ifrt": "框架运行时接口",
+         "pjrt": "设备运行时接口", "xla": "编译器子系统", "backend": "目标后端",
+         "asm": "可观察表示", "runtime": "运行时实现", "hardware": "硬件 / 指令契约"}
+DETAILS = {"jax": "../jax/jaxpr-centered-hub.svg", "jaxlib": "../jaxlib/mlir-module-centered-hub.svg",
+           "ifrt": "../ifrt/array-centered-hub.svg", "pjrt": "../pjrt/buffer-centered-hub.svg",
+           "xla": "../xla/hlo-centered-hub.svg", "runtime": "../stream-executor/submission-centered-hub.svg"}
 
-def source_metadata(root):
+
+def crossing(a, b, u, v):
+    """An interior perpendicular crossing; touching endpoints are not junctions."""
+    if a[1] == b[1] and u[0] == v[0]:
+        if min(a[0], b[0]) < u[0] < max(a[0], b[0]) and min(u[1], v[1]) < a[1] < max(u[1], v[1]):
+            return u[0], a[1]
+    if a[0] == b[0] and u[1] == v[1]:
+        if min(a[1], b[1]) < u[1] < max(a[1], b[1]) and min(u[0], v[0]) < a[0] < max(u[0], v[0]):
+            return a[0], u[1]
+    return None
+
+
+def source_metadata(root, allow_missing=False):
     meta = copy.deepcopy(SOURCE_METADATA)
     additions = [
         ("JaxprEqn", "jax", "jax/_src/core.py", 460, "class JaxprEqn:"),
@@ -367,6 +405,8 @@ def source_metadata(root):
         ("DynamicJaxprTrace", "jax", "jax/_src/interpreters/partial_eval.py", 1623, "class DynamicJaxprTrace("),
         ("PyArray", "jax", "jaxlib/py_array.h", 141, "class PyArray :"),
         ("PyLoadedExecutable", "jax", "jaxlib/py_executable.h", 185, "class PyLoadedExecutable {"),
+        ("TPU custom_call payload", "jax", "jax/_src/tpu_custom_call.py", 461, "call = mlir.custom_call("),
+        ("Shardy module pass", "jax", "jax/_src/interpreters/mlir.py", 1483, "'builtin.module(sdy-lift-inlined-meshes)'"),
         ("PjRtMemorySpace", "xla", "xla/pjrt/pjrt_client.h", 89, "class PjRtMemorySpace {"),
         ("PjRtDevice", "xla", "xla/pjrt/pjrt_client.h", 148, "class PjRtDevice {"),
         ("PjRtClient", "xla", "xla/pjrt/pjrt_client.h", 546, "class PjRtClient {"),
@@ -378,22 +418,39 @@ def source_metadata(root):
             "repo": repo, "path": path, "line": line, "needle": needle,
             "href": f'https://github.com/{host}/blob/{meta["source_pins"][repo]}/{path}#L{line}',
         }
-    lock = (root / "upstream-sources.lock").read_text()
+    locks = {parts[1]: parts[3] for line in (root / "upstream-sources.lock").read_text().splitlines()
+             if line and not line.startswith("#") and len(parts := line.split("|")) >= 4}
     checked = set()
+    missing = []
     for repo, pin in meta["source_pins"].items():
-        actual = subprocess.check_output(["git", "-C", str(root / "upstream" / repo), "rev-parse", "HEAD"], text=True).strip()
-        if actual != pin or f"|upstream/{repo}|" not in lock or f"|{pin}|" not in lock:
+        checkout = root / "upstream" / repo
+        if locks.get(f"upstream/{repo}") != pin:
+            raise ValueError(f"Source pin mismatch: {repo}")
+        if not (checkout / ".git").exists():
+            if not allow_missing:
+                raise ValueError(f"Missing source checkout: {repo}; --allow-missing-sources retains its unverified pinned anchors")
+            missing.append(repo)
+            continue
+        actual = subprocess.check_output(["git", "-C", str(checkout), "rev-parse", "HEAD"], text=True).strip()
+        if actual != pin:
             raise ValueError(f"Source pin mismatch: {repo}")
     for anchor in meta["source_anchors"].values():
         repo, path = anchor["repo"], anchor["path"]
-        local = (root / "upstream" / repo / path).read_text()
-        if anchor["needle"] not in local.splitlines()[anchor["line"] - 1]:
-            raise ValueError(f"Source anchor moved: {anchor}")
+        if repo in missing:
+            continue
+        checkout = root / "upstream" / repo
+        committed = subprocess.check_output(["git", "-C", str(checkout), "show", f'{meta["source_pins"][repo]}:{path}'], text=True)
         if (repo, path) not in checked:
-            committed = subprocess.check_output(["git", "-C", str(root / "upstream" / repo), "show", f'{meta["source_pins"][repo]}:{path}'], text=True)
-            if committed != local:
+            local = checkout / path
+            if local.exists() and committed != local.read_text():
                 raise ValueError(f"Source file modified: {repo}/{path}")
             checked.add((repo, path))
+        if anchor["needle"] not in committed.splitlines()[anchor["line"] - 1]:
+            raise ValueError(f"Source anchor moved: {anchor}")
+    meta["source_verification"] = {"checked_repositories": sorted(set(meta["source_pins"]) - set(missing)),
+                                   "missing_repositories": missing}
+    if missing:
+        print("Source check incomplete; retained pinned anchors for missing checkouts: " + ", ".join(missing))
     meta["evidence_scope"] = "固定源码与图示生成；无 CPU/GPU/TPU 执行或性能验证"
     meta["component_model"] = "组件大框 + 核心抽象 + 内部关系 + 编译/数据/执行流程"
     return meta
@@ -410,34 +467,40 @@ class ComponentDiagram(Diagram):
         self.components = {}
         self.members = {}
         self.connections = []
-        self.text(1390, 189, "橙色虚线：编译结果返回", 21, self.colors["result"])
-        self.text(65, 241, "大框 = 组件 / 明确标注的表示层；强调色节点 = 首要抽象；框内看协作，框间看流程。", 23, self.muted)
+        self.text(65, 278, "实线表示流程；虚线关系按颜色与文字区分：按需分支、返回、观察或待确认。跨线拱桥表示互不连接。", 25, self.muted)
+        self.text(65, 324, "大框右上标明角色；强调色节点是核心概念。点击组件标题进入详细图，点击编号端口定位框内节点。", 25, self.muted)
 
     def component(self, name, x, y):
         h = HEIGHTS[name]
-        color = "data" if name in {"ifrt", "pjrt", "runtime", "hardware"} else "program"
+        color = "data" if name in {"ifrt", "pjrt", "runtime"} else "neutral" if name in {"asm", "hardware"} else "program"
         self.components[name] = (x, y, W, h)
-        self.base.append(f'<rect x="{x}" y="{y}" width="{W}" height="{h}" rx="24" fill="#f1f5f7" stroke="#a8bbca" stroke-width="3"/>')
+        fill = "#f5f4ef" if name in {"asm", "hardware"} else "#f1f5f7"
+        self.base.append(f'<g id="component_{name}"><rect x="{x}" y="{y}" width="{W}" height="{h}" rx="24" fill="{fill}" stroke="#a8bbca" stroke-width="3"/></g>')
         self.base.append(f'<path d="M{x+26},{y+103}H{x+W-26}" stroke="#d1dce3" stroke-width="2"/>')
-        self.text(x+32, y+57, TITLES[name], 34, self.colors[color], bold=True)
+        self.text(x+32, y+57, TITLES[name] + (" ↗" if name in DETAILS else ""), 40,
+                  self.colors[color], bold=True, href=DETAILS.get(name))
+        role = ROLES[name]
+        rw = self.measure(role, 23, True)[1].width + 32
+        self.base.append(f'<rect x="{x+W-rw-28}" y="{y+21}" width="{rw}" height="43" rx="10" fill="#e3e9ec"/>')
+        self.text(x+W-rw-12, y+51, role, 23, self.colors[color], bold=True)
         self.text(x+34, y+88, {
             "jax": "主抽象 Jaxpr · 描述计算与效果；运行时输入数据走独立通路",
             "jaxlib": "主表示 MLIR Module（StableHLO）· 绑定与包装不等于一个独立 IR 方言",
             "ifrt": "主抽象 Array · 一个逻辑数组可跨多个设备；编译、加载和执行是不同动作",
             "pjrt": "主抽象 Buffer · 本图使用 IFRT 的 PJRT-backed 实现；接口由具体 provider 实现",
             "xla": "主抽象 HLO · 模块、计算和指令组成程序图；passes 改写图及其编译约束",
-            "backend": "CPU / GPU / TPU 是并列目标 · IR、设备代码与运行时执行计划共同形成编译产物",
+            "backend": "归属：CPU / GPU 为 XLA 后端；TPU 经 provider / libtpu · 下方按目标展开",
             "asm": "主抽象 ASM · 汇编文本是代码表示 / 观察形式，不是所有编译调用的强制中间产物",
             "runtime": "主抽象 执行提交 · 已加载程序 + 输入 Buffer + 执行选项 / 依赖",
             "hardware": "主抽象 ISA · 指令和语义契约；设备按目标程序执行并读写存储",
-        }[name], 21, self.muted)
+        }[name], 23, self.muted)
 
     def item(self, comp, name, col, row, tag, title, body=(), color="program", ref=None, core=False, dashed=False, h=235):
         x, y, _, _ = self.components[comp]
         x += 60 + col * 700
         y += 155 + row * 370
         key = f"{comp}_{name}"
-        self.node(key, x, y, 580, h, ("首要抽象 · " if core else "") + tag, title, body, color, ref,
+        self.node(key, x, y, 580, h, ("核心概念 · " if core else "") + tag, title, body, color, ref,
                   link="源码 · " + ref if ref else None, dashed=dashed)
         self.members[key] = comp
         if core:
@@ -451,11 +514,31 @@ class ComponentDiagram(Diagram):
         self.edge(translated, color, dashed)
         if label:
             lx, ly = label_at
-            self.label(x+lx, y+ly, label, color, size=19)
+            self.label(x+lx, y+ly, label, color, size=21)
 
     def note(self, comp, text, y=None):
         x, top, _, h = self.components[comp]
-        self.text(x+34, top+(y or h-35), text, 21, self.muted)
+        self.text(x+34, top+(y or h-35), text, 23, self.muted)
+
+    def reading_guide(self):
+        self.panel(180, 500, 1030, 435, "阅读导航 · 点击定位组件", "neutral")
+        for i, (label, target) in enumerate([
+            ("前端：Jaxpr → 外层 MLIR Module", "jax"),
+            ("接口：IFRT Array / PJRT Buffer", "ifrt"),
+            ("编译：HLO → CPU / GPU / TPU 后端", "xla"),
+            ("执行：已加载程序 × 输入数据", "runtime"),
+        ]):
+            self.text(216, 618+i*76, label, 30, self.colors["program"], href=f"#component_{target}")
+        self.panel(180, 1030, 1030, 620, "MLIR · 跨层基础设施", "neutral")
+        lines = ["对象：Module、Operation、Region、Type",
+                 "JAX lowering 借助 jaxlib 绑定构造操作。",
+                 "StableHLO、sdy、Mosaic 等方言规定语义。",
+                 "模块可包含多个方言，并经过验证与 pass。",
+                 "相应后端路径继续使用 MLIR 方言。"]
+        for i, line in enumerate(lines):
+            self.text(216, 1160+i*70, line, 27, self.muted)
+        self.text(216, 1550, "作用范围跨越前端构造、绑定与编译处理。", 27, self.muted)
+        self.text(216, 1610, "查看 Module / 方言详细图 ↗", 25, self.colors["program"], href=DETAILS["jaxlib"])
 
     def save(self, path):
         for key, comp in self.members.items():
@@ -480,15 +563,24 @@ def populate(d, positions):
     n("jax", "transform", 0, 2, "变换", "Jaxpr → Jaxpr", ["部分求值、DCE 等重写程序", "消费原图，产生变换后的 Jaxpr"], "transform", "dce_jaxpr")
     n("jax", "lower", 1, 2, "消费", "MLIR lowering 规则", ["按 primitive 选择规则与上下文", "将方程序列生成为模块中的操作"], ref="lower_jaxpr_to_module")
     n("jax", "pallas", 2, 2, "可选 KERNEL 分支", "Pallas / Mosaic TPU MLIR", ["kernel Jaxpr → Mosaic TPU MLIR", "序列化后装入外层 custom_call"], ref="lower_module_to_custom_call", dashed=True)
+    n("jax", "shardy", 0, 3, "共享分片系统 · 本阶段用法", "Shardy / sdy", ["此处：sdy-lift-inlined-meshes", "启用时整理 Module 内联 mesh"], "transform", "Shardy module pass", dashed=True)
+    n("jax", "module", 1, 3, "构造产物 · 编译表示", "外层 MLIR Module", ["普通张量操作与 custom_call 共存", "lowering 返回，交由绑定层传递"], ref="lower_jaxpr_to_module")
+    n("jax", "custom_call", 2, 3, "外层程序操作", "stablehlo.custom_call", ["target = tpu_custom_call", "backend_config 携带 Mosaic payload"], ref="TPU custom_call payload", dashed=True)
     e("jax", "function", "trace", [(640,270),(760,270)], "追踪", (658,243))
     e("jax", "trace", "jaxpr", [(1050,390),(1050,525)], "构建", (1080,465))
-    e("jax", "jaxpr", "values", [(760,625),(640,625)], "引用", (658,600))
-    e("jax", "jaxpr", "eqn", [(1340,625),(1460,625)], "包含", (1358,600))
+    e("jax", "jaxpr", "values", [(760,625),(640,625)], "引用", (658,600), "neutral", True)
+    e("jax", "jaxpr", "eqn", [(1340,625),(1460,625)], "包含", (1358,600), "neutral", True)
     e("jax", "jaxpr", "lower", [(1050,760),(1050,895)], "逐方程消费", (1080,833))
     e("jax", "jaxpr", "transform", [(840,760),(840,815),(350,815),(350,895)], color="transform")
     e("jax", "transform", "jaxpr", [(640,1010),(700,1010),(700,720),(760,720)], color="transform")
     e("jax", "jaxpr", "pallas", [(1250,760),(1250,815),(1750,815),(1750,895)], "kernel Jaxpr（可选）", (1470,841), dashed=True)
-    d.note("jax", "普通 JAX 与 Pallas 共用 Jaxpr 结构；Mosaic TPU MLIR ≠ LLO；一个 primitive 不对应一条硬件指令。")
+    e("jax", "lower", "module", [(1050,1130),(1050,1265)], "构造", (1080,1200))
+    e("jax", "pallas", "custom_call", [(1750,1130),(1750,1265)], "序列化为 payload", (1780,1200), dashed=True)
+    e("jax", "custom_call", "module", [(1460,1380),(1340,1380)], "装入", (1360,1350), dashed=True)
+    e("jax", "module", "shardy", [(760,1340),(640,1340)], "按需", (660,1310), "transform", True)
+    e("jax", "shardy", "module", [(640,1450),(760,1450)], "更新", (660,1420), "transform", True)
+    d.note("jax", "Pallas 分支在外层 Module 汇合：custom_call 携带 Mosaic TPU MLIR；Mosaic TPU MLIR ≠ LLO。", y=1568)
+    d.note("jax", "Shardy 处理分片信息；此处展示 JAX lowering 中启用时运行的模块 pass。一个 primitive 不对应一条硬件指令。", y=1618)
 
     n("jaxlib", "mlir", 0, 0, "IR 基础设施", "Operation / Region / Type", ["MLIR 操作、区域、块与 SSA 值", "方言为操作和类型规定具体语义"], ref="register_lowering")
     n("jaxlib", "module", 1, 0, "编译输入表示", "MLIR Module（StableHLO）", ["承载张量计算及形状 / 类型", "也可含 sdy、func 或 custom_call"], ref="StableHLO binding", core=True)
@@ -496,7 +588,7 @@ def populate(d, positions):
     n("jaxlib", "client", 0, 1, "编译绑定", "PyClient", ["克隆模块并构造 IFRT HloProgram", "CompileAndLoad 提交编译请求"], ref="PyClient CompileAndLoad")
     n("jaxlib", "executable", 1, 1, "返回的程序包装", "PyLoadedExecutable", ["包装 IFRT 已加载程序", "向 Python 提供执行与查询接口"], ref="PyLoadedExecutable")
     n("jaxlib", "execute", 2, 1, "执行绑定", "ExecuteSharded", ["解包输入数组并调用 IFRT Execute", "将输出包装回 Python 数组"], "data", "PyLoadedExecutable ExecuteSharded")
-    e("jaxlib", "mlir", "module", [(640,270),(760,270)], "组成", (658,243))
+    e("jaxlib", "mlir", "module", [(640,270),(760,270)], "组成", (658,243), "neutral", True)
     e("jaxlib", "module", "client", [(1050,390),(1050,450),(350,450),(350,525)], "构造编译请求", (470,436))
     e("jaxlib", "client", "executable", [(640,650),(760,650)], "返回", (658,623), "result", True)
     e("jaxlib", "array", "execute", [(1750,390),(1750,525)], "输入数组", (1780,465), "data")
@@ -511,7 +603,7 @@ def populate(d, positions):
     n("ifrt", "copy", 2, 1, "按需变换", "CopyArrays / RemapArrays", ["复制数组或重映射已有分片", "不要求每次执行都经过这些操作"], "transform", "RemapArrays")
     e("ifrt", "program", "compiler", [(640,270),(760,270)], "提交", (658,243))
     e("ifrt", "compiler", "executable", [(1050,390),(1050,440),(350,440),(350,525)], "编译并加载后返回", (430,425), "result", True)
-    e("ifrt", "sharding", "array", [(1250,525),(1250,475),(1650,475),(1650,390)], "约束放置", (1345,460), "data")
+    e("ifrt", "sharding", "array", [(1250,525),(1250,475),(1650,475),(1650,390)], "约束放置", (1345,460), "neutral", True)
     e("ifrt", "array", "copy", [(1900,390),(1900,525)], "按需", (1930,465), "transform", True)
     e("ifrt", "copy", "array", [(2040,650),(2080,650),(2080,270),(2040,270)], color="transform", dashed=True)
     e("ifrt", "array", "executable", [(1460,340),(1395,340),(1395,805),(350,805),(350,760)], "Execute 消费 Array；输出仍为 Array", (560,830), "data")
@@ -526,7 +618,7 @@ def populate(d, positions):
     e("pjrt", "client", "provider", [(350,390),(350,525)], "委托实现", (380,465))
     e("pjrt", "provider", "executable", [(600,525),(600,445),(1050,445),(1050,390)], "编译 / 加载后返回", (720,430), "result", True)
     e("pjrt", "buffer", "executable", [(1460,270),(1340,270)], "实参", (1358,243), "data")
-    e("pjrt", "memory", "buffer", [(1250,525),(1250,475),(1650,475),(1650,390)], "归属", (1360,460), "data")
+    e("pjrt", "memory", "buffer", [(1250,525),(1250,475),(1650,475),(1650,390)], "归属", (1360,460), "neutral", True)
     e("pjrt", "buffer", "copy", [(1900,390),(1900,525)], "按需", (1930,465), "transform", True)
     e("pjrt", "copy", "buffer", [(2040,650),(2080,650),(2080,270),(2040,270)], color="transform", dashed=True)
     d.note("pjrt", "BufferFromHostBuffer 创建设备数据；Execute 是执行调用，不是另一种编译 IR。")
@@ -538,7 +630,7 @@ def populate(d, positions):
     n("xla", "plan", 1, 1, "编译期规划", "Schedule / BufferAssignment", ["安排 HLO 次序与内存复用计划", "计划供代码生成与运行时使用"], ref="BufferAssignment")
     n("xla", "output", 2, 1, "后端结果", "Executable + 执行计划", ["目标代码、常量、内存 / 调度信息", "经 provider 加载为运行时程序"], ref="CpuCompiler CompileCpuExecutable")
     e("xla", "import", "hlo", [(640,270),(760,270)], "产生", (658,243))
-    e("xla", "hlo", "structure", [(1340,270),(1460,270)], "包含", (1358,243))
+    e("xla", "hlo", "structure", [(1340,270),(1460,270)], "包含", (1358,243), "neutral", True)
     e("xla", "hlo", "passes", [(850,390),(850,445),(350,445),(350,525)], "改写程序", (470,430), "transform")
     e("xla", "passes", "hlo", [(640,650),(700,650),(700,340),(760,340)], color="transform")
     e("xla", "hlo", "plan", [(1150,390),(1150,525)], "后端规划", (1180,465))
@@ -549,7 +641,10 @@ def populate(d, positions):
     for i, target in enumerate(["CPU", "GPU", "TPU"]):
         x = bx + 30 + i*700
         d.base.append(f'<rect x="{x}" y="{by+127}" width="680" height="974" rx="17" fill="#ffffff" stroke="#c4cfd7" stroke-width="2"/>')
-        d.text(x+23, by+164, target + " 后端", 26, d.colors["unknown" if i == 2 else "program"], bold=True)
+        detail = {"CPU": "../xla/cpu-llvm-ir-centered-hub.svg", "GPU": "../xla/gpu-ir-centered-hub.svg",
+                  "TPU": "../libtpu/llo-boundary-centered-hub.svg"}[target]
+        heading = ("XLA / " if target != "TPU" else "provider / ") + target + " 后端 ↗"
+        d.text(x+23, by+164, heading, 29, d.colors["unknown" if i == 2 else "program"], bold=True, href=detail)
     # Backend cards use a slightly lower row origin to leave a component heading.
     rows = [
         ("CPU", "HLO / emitter", ["HLO + 调度 / 内存计划", "IrEmitter 构造函数与 kernel"], "LLVM IR", ["Module / Function / BasicBlock", "Instruction 表达低层计算"], "CPU 目标代码", ["LLVM 优化与目标代码生成", "链接代码并集成执行计划"], "CpuCompiler CompileCpuExecutable"),
@@ -561,7 +656,7 @@ def populate(d, positions):
         for row, (title, body, core) in enumerate([(t0,b0,False),(t1,b1,True),(t2,b2,False)]):
             key = f"backend_{target}_{row}"
             x, y = bx+60+700*col, by+195+290*row
-            d.node(key,x,y,580,225,"首要抽象" if core else ("输入与选择" if row == 0 else "消费 / 产物"),title,body,color,ref,link="源码 · RunBackend / codegen" if ref else None,dashed=target=="TPU")
+            d.node(key,x,y,580,225,"核心概念" if core else ("输入与选择" if row == 0 else "消费 / 产物"),title,body,color,ref,link="源码 · RunBackend / codegen" if ref else None,dashed=target=="TPU")
             d.members[key]="backend"
             if core:
                 d.nodes[-1]=d.nodes[-1].replace('fill="#ffffff"', 'fill="#fff1d9"' if target=="TPU" else 'fill="#e6f0fd"').replace('stroke-width="2"','stroke-width="4"')
@@ -600,7 +695,7 @@ def populate(d, positions):
     e("hardware", "units", "memory", [(1340,235),(1460,235)], "读写", (1358,210), "data")
     e("hardware", "memory", "units", [(1460,340),(1340,340)], color="data")
     d.note("hardware", "此框表示软硬件接口与执行关系；不把一个 Jaxpr primitive、HLO 指令或 kernel 与一条硬件指令对应。", y=482)
-    d.note("hardware", "证据：本图核对宿主源码与公开接口；未执行 CPU/GPU/TPU 工作负载，也未验证数值或性能。", y=535)
+    d.note("hardware", "证据范围：源码与接口关系图；源码复核范围见页脚。无 CPU/GPU/TPU 执行、数值或性能验证。", y=535)
 
 
 def port(box, side, fraction):
@@ -658,27 +753,34 @@ def route(d, source, target, color, label, used):
     while state!=si:
         points.append((xs[state[0]],ys[state[1]])); state=prev[state]
     points.append(start); points.reverse()
-    for u,v in zip(points,points[1:]):
-        seg=tuple(sorted([u,v])); used[seg]=used.get(seg,0)+1
     full=[p]+points+[q]; clean=[full[0]]
     for k in range(1,len(full)-1):
         if (full[k-1][0]==full[k][0]==full[k+1][0]) or (full[k-1][1]==full[k][1]==full[k+1][1]): continue
         clean.append(full[k])
     clean.append(q)
-    d.edge(clean,color,dashed=color in {"result","neutral"})
     number=len(d.connections)+1
+    if number == 7:
+        # Leave PJRT to the left before descending, avoiding the executable lane (12).
+        gutter_x = d.components["ifrt"][0] + W + 110
+        gutter_y = d.components["xla"][1] - 80
+        clean = [p, (gutter_x, p[1]), (gutter_x, gutter_y), (q[0], gutter_y), q]
+    d.edge(clean,color,dashed=color in {"result","neutral"},bridge_over=used,width=4)
+    for u,v in zip(clean,clean[1:]):
+        seg=tuple(sorted([u,v])); used[seg]=used.get(seg,0)+1
     d.connections.append((number,a,b,color,label))
-    # Full route descriptions live in a compact numbered key; endpoints carry matching IDs.
-    for point,vector in [(p,va),(q,vb)]:
+    # Each endpoint links to its actual node, with a named tooltip and matching key entry.
+    node_a, node_b = PORT_NODES[number-1]
+    for (point,vector), node in zip([(p,va),(q,vb)], [node_a,node_b]):
         cx=point[0]+vector[0]*25; cy=point[1]+vector[1]*25
-        d.labels.append(f'<circle cx="{cx}" cy="{cy}" r="17" fill="{d.bg}" stroke="{d.colors[color]}" stroke-width="2"/>')
-        d.text(cx,cy+7,str(number),19,d.colors[color],bold=True,center=True)
-    short = ["lowering → Module", "实际输入", "HloProgram / 编译请求",
+        d.labels.append(f'<a href="#{node}"><title>端口 {number:02d} · {escape(PORT_NAMES[node])}</title>'
+                        f'<circle cx="{cx}" cy="{cy}" r="19" fill="{d.bg}" stroke="{d.colors[color]}" stroke-width="2"/></a>')
+        d.text(cx,cy+7,str(number),20,d.colors[color],bold=True,center=True,href=f"#{node}")
+    short = ["外层 Module → 绑定", "实参 → PyArray", "PyClient → HloProgram",
              "Array 包装", "CompileAndLoad", "Array → Buffer 映射",
-             "MLIR → 后端", "HLO → 目标后端", "编译 / 加载结果",
+             "provider → HLO 导入", "HLO → 目标后端", "编译 / 加载结果",
              "目标码观察", "输入 Buffer / 依赖", "已加载程序", "设备执行"][number-1]
     caption = f"{number:02d}  {short}"
-    tw = d.measure(caption, 22)[1].width
+    tw = d.measure(caption, 25)[1].width
     def overlaps(rect, other):
         x,y,w,h=rect; ox,oy,ow,oh=other
         return min(x+w,ox+ow)>max(x,ox) and min(y+h,oy+oh)>max(y,oy)
@@ -690,24 +792,49 @@ def route(d, source, target, color, label, used):
             mx=u[0]+(v[0]-u[0])*t; my=u[1]+(v[1]-u[1])*t
             candidates=[(mx-tw/2,my-16),(mx-tw/2,my+39)] if u[1]==v[1] else [(mx+23,my),(mx-tw-23,my)]
             for tx,ty in candidates:
-                rect=(tx-12,ty-29,tw+24,43)
+                rect=(tx-12,ty-32,tw+24,46)
                 if rect[0]<15 or rect[0]+rect[2]>d.w-15 or rect[1]<265: continue
                 if any(overlaps(rect,o) for o in obstacles): continue
                 if any(overlaps(rect,box[:4]) for box in d.text_boxes): continue
-                d.label(tx,ty,caption,color,size=22)
+                d.label(tx,ty,caption,color,size=25)
                 placed=True
                 break
             if placed: break
         if placed: break
+    if not placed:
+        raise ValueError(f"No visible caption for flow {number:02d}: {caption}")
+
+
+PORT_NODES = [
+    ("jax_module", "jaxlib_module"), ("jax_input", "jaxlib_array"),
+    ("jaxlib_client", "ifrt_program"), ("jaxlib_array", "ifrt_array"),
+    ("ifrt_compiler", "pjrt_client"), ("ifrt_array", "pjrt_buffer"),
+    ("pjrt_provider", "xla_import"), ("xla_plan", "component_backend"),
+    ("component_backend", "pjrt_executable"), ("component_backend", "asm_code"),
+    ("pjrt_buffer", "runtime_buffers"), ("pjrt_executable", "runtime_program"),
+    ("runtime_dispatch", "hardware_units"),
+]
+PORT_NAMES = {
+    "jax_module": "JAX · 外层 MLIR Module", "jaxlib_module": "jaxlib · MLIR Module",
+    "jax_input": "JAX · 主机值 / jax.Array", "jaxlib_array": "jaxlib · PyArray",
+    "jaxlib_client": "jaxlib · PyClient", "ifrt_program": "IFRT · HloProgram",
+    "ifrt_array": "IFRT · Array", "ifrt_compiler": "IFRT · Compiler",
+    "pjrt_client": "PJRT · PjRtClient", "pjrt_buffer": "PJRT · PjRtBuffer",
+    "pjrt_provider": "PJRT · Backend provider", "xla_import": "XLA · MLIR → HLO 导入",
+    "xla_plan": "XLA · HLO / 编译规划", "component_backend": "CPU / GPU / TPU 目标后端",
+    "pjrt_executable": "PJRT · PjRtLoadedExecutable", "asm_code": "ASM 观察 · 目标代码",
+    "runtime_buffers": "运行时 · 输入 Buffer / 依赖", "runtime_program": "运行时 · 已加载程序",
+    "runtime_dispatch": "运行时 · 提交工作", "hardware_units": "硬件 · 执行单元",
+}
 
 
 LAYOUT = {
     "title": "JAX 软件栈 / 分层架构 · 组件与双通路",
     "subtitle": "从前端到设备逐层展开；同层并列组件通过编号箭头连接，框内展示抽象之间的作用关系。",
-    "size": (5000,7530),
-    "positions": {"jax":(1430,340),"jaxlib":(1430,1770),"ifrt":(180,2890),"pjrt":(2680,2890),"xla":(180,4040),"backend":(2680,4040),"asm":(180,5530),"runtime":(2680,5530),"hardware":(1430,6640)},
-    "edges": [("jax","bottom",.35,"jaxlib","top",.35,"program","Jaxpr 经 lowering 产生 MLIR Module"),("jax","right",.2,"jaxlib","right",.2,"data","实际输入进入 PyArray / 运行时"),("jaxlib","left",.65,"ifrt","top",.25,"program","模块包装为 HloProgram，提交编译"),("jaxlib","right",.4,"ifrt","top",.8,"data","Python 数组对应 IFRT Array"),("ifrt","right",.3,"pjrt","left",.3,"program","IFRT 的 PJRT 实现调用 CompileAndLoad"),("ifrt","right",.68,"pjrt","left",.68,"data","逻辑 Array 映射到设备 Buffer"),("pjrt","bottom",.2,"xla","top",.3,"program","provider 将编译输入交给后端"),("xla","right",.45,"backend","left",.35,"program","优化后的 HLO / 规划按目标分流"),("backend","top",.75,"pjrt","bottom",.75,"result","编译产物返回并加载为可执行对象"),("backend","left",.85,"asm","top",.8,"neutral","目标代码可导出 / 反汇编为 ASM"),("pjrt","right",.85,"runtime","right",.25,"data","输入 Buffer 及其依赖进入执行"),("pjrt","bottom",.5,"runtime","top",.35,"program","已加载程序交给设备运行时执行"),("runtime","bottom",.3,"hardware","top",.7,"data","提交设备工作；硬件按 ISA 执行")],
-    "key":(180,7340),
+    "size": (5200,8630),
+    "positions": {"jax":(1430,420),"jaxlib":(1430,2280),"ifrt":(180,3400),"pjrt":(2680,3400),"xla":(180,4630),"backend":(2680,4630),"asm":(180,6180),"runtime":(2680,6180),"hardware":(1430,7400)},
+    "edges": [("jax","bottom",1050/W,"jaxlib","top",1050/W,"program","JAX lowering 构造外层 Module，经 jaxlib 绑定传递"),("jax","right",.2,"jaxlib","right",.2,"data","实际输入进入 PyArray / 运行时"),("jaxlib","left",.65,"ifrt","top",.25,"program","模块包装为 HloProgram，提交编译"),("jaxlib","right",.4,"ifrt","top",.8,"data","Python 数组对应 IFRT Array"),("ifrt","right",.3,"pjrt","left",.3,"program","IFRT 的 PJRT 实现调用 CompileAndLoad"),("ifrt","right",.68,"pjrt","left",.68,"data","逻辑 Array 映射到设备 Buffer"),("pjrt","left",.90,"xla","top",.3,"program","provider 将编译输入交给后端"),("xla","right",.45,"backend","left",.35,"program","优化后的 HLO / 规划按目标分流"),("backend","top",.75,"pjrt","bottom",.75,"result","编译产物返回并加载为可执行对象"),("backend","left",.85,"asm","top",.8,"neutral","目标代码可导出 / 反汇编为 ASM"),("pjrt","right",.85,"runtime","right",.25,"data","输入 Buffer 及其依赖进入执行"),("pjrt","bottom",.5,"runtime","top",.35,"program","已加载程序交给设备运行时执行"),("runtime","bottom",.3,"hardware","top",.7,"data","提交设备工作；硬件按 ISA 执行")],
+    "key":(180,8150),
 }
 
 
@@ -715,28 +842,39 @@ def render(layout, meta):
     width,height=layout["size"]
     d=ComponentDiagram(width,height,layout["title"],layout["subtitle"],meta)
     populate(d,layout["positions"])
+    d.reading_guide()
     used={}
     for a,sa,fa,b,sb,fb,color,label in layout["edges"]:
         route(d,(a,sa,fa),(b,sb,fb),color,label,used)
     # Put the key in dedicated bottom space, expanding the canvas if necessary.
     x,y=layout["key"]
-    d.text(x,y,"框间流程索引 · 编号在箭头两端配对；框内小字可点击打开固定版本源码",27,d.ink,bold=True)
+    d.text(x,y,"框间流程索引 · 点击端口名称定位节点；框内源码链接指向固定提交",32,d.ink,bold=True)
     for idx,(num,a,b,color,label) in enumerate(d.connections):
         col,row=divmod(idx,7)
-        tx=x+col*2350; ty=y+53+row*43
-        d.text(tx,ty,f"{num:02d}  {a} → {b}  ·  {label}",21,d.colors[color])
-    footer=y+404
+        tx=x+col*2500; ty=y+62+row*86
+        na,nb=PORT_NODES[idx]
+        d.text(tx,ty,f"{num:02d}  {PORT_NAMES[na]}",24,d.colors[color],href=f"#{na}")
+        first_width=d.measure(f"{num:02d}  {PORT_NAMES[na]}",24)[1].width
+        d.text(tx+first_width+20,ty,f"→ {PORT_NAMES[nb]}",24,d.colors[color],href=f"#{nb}")
+        d.text(tx+44,ty+33,label,22,d.muted)
+    d.meta["flow_ports"] = [{"number":i+1,"source":a,"target":b} for i,(a,b) in enumerate(PORT_NODES)]
+    footer=y+690
     pins=meta["source_pins"]
-    d.text(x,footer,f'固定源码：JAX {pins["jax"][:12]} · XLA {pins["xla"][:12]} · 浅色组件分层图 · 编译与数据在执行提交处汇合。',21,d.muted)
-    d.h=max(d.h,footer+55)
+    d.text(x,footer,f'固定源码：JAX {pins["jax"][:12]} · XLA {pins["xla"][:12]} · 编译与数据在执行提交处汇合。',23,d.muted)
+    verification=meta.get("source_verification",{})
+    missing=verification.get("missing_repositories",[])
+    checked=verification.get("checked_repositories",[])
+    scope = "本次已复核图内固定源码锚点。"
+    if missing:
+        prefix = "本次复核 " + " / ".join(checked).upper() + " 源码；" if checked else ""
+        scope = prefix + " / ".join(missing).upper() + " 检出缺失，沿用锁定锚点，未复核其源码。"
+    d.text(x,footer+44,scope,23,d.muted)
+    d.h=max(d.h,footer+100)
     return d
 
 
 def preview(svg, png, width=1900):
-    import gi
-    gi.require_version("Rsvg","2.0")
-    from gi.repository import Rsvg
-    import cairo
+    Rsvg, cairo = preview_bindings()
     import xml.etree.ElementTree as ET
     root=ET.parse(svg).getroot(); sw,sh=float(root.attrib["width"]),float(root.attrib["height"])
     height=round(sh*width/sw)
@@ -747,22 +885,8 @@ def preview(svg, png, width=1900):
 
 
 def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--root",type=Path,default=Path(__file__).resolve().parents[1])
-    parser.add_argument("--output-dir",type=Path)
-    parser.add_argument("--preview-dir",type=Path)
-    args=parser.parse_args()
-    directory=args.root/"research/software-stack/overview"
-    preserve=[directory/"overview-software-stack.svg"]
-    hashes={p:hashlib.sha256(p.read_bytes()).hexdigest() for p in preserve}
-    meta=source_metadata(args.root)
-    output=args.output_dir or directory; output.mkdir(parents=True,exist_ok=True)
-    if args.preview_dir: args.preview_dir.mkdir(parents=True,exist_ok=True)
-    svg=output/"overview-software-stack-components-layered.svg"
-    render(LAYOUT,meta).save(svg)
-    if args.preview_dir: preview(svg,args.preview_dir/"layered.png")
-    for path,before in hashes.items():
-        assert hashlib.sha256(path.read_bytes()).hexdigest()==before, f"Unexpected modification: {path}"
+    from render_overview_software_stack_flows import main as render_selected
+    render_selected()
 
 
 if __name__=="__main__":

@@ -1,0 +1,253 @@
+{
+  "schema_version": 1,
+  "repositories": {
+    "llvm-project": {
+      "repository": "llvm/llvm-project",
+      "revision": "75a45c373407c13a44c7abb28a78d891a97fe665"
+    },
+    "stablehlo": {
+      "repository": "openxla/stablehlo",
+      "revision": "7b1b15781ccbd770f50c7eef4b0c3e03834649fd"
+    },
+    "xla": {
+      "repository": "openxla/xla",
+      "revision": "dcf304bc5dca1932b99f740b911dbd73631a1a69"
+    }
+  },
+  "files": [
+    {
+      "repo": "llvm-project",
+      "path": "llvm/include/llvm/IR/BasicBlock.h",
+      "sha256": "2485b669d7829b07700b61523970cb94d931248d2bff6ea9d57cd30ef672d50d",
+      "size_bytes": 32843
+    },
+    {
+      "repo": "llvm-project",
+      "path": "llvm/include/llvm/IR/Function.h",
+      "sha256": "e70aa7cab3520b91839a85964d581ad9f8f201583121a2c519656faaaf45fc8d",
+      "size_bytes": 39679
+    },
+    {
+      "repo": "llvm-project",
+      "path": "llvm/include/llvm/IR/Instruction.h",
+      "sha256": "f2ea5bd1656e027bd99e99932b6a454ab2c74c26a68bf8b79ef3462d5f910d96",
+      "size_bytes": 47236
+    },
+    {
+      "repo": "llvm-project",
+      "path": "llvm/include/llvm/IR/Module.h",
+      "sha256": "be26d46c8d5b3f44860d1b1bfb81d65742420a50c3922d3a2519c539f3637f7b",
+      "size_bytes": 46163
+    },
+    {
+      "repo": "llvm-project",
+      "path": "mlir/include/mlir/IR/BuiltinOps.td",
+      "sha256": "d29914634846cbcf9498c5e68107cff0e2edc39b0a9ea46ca7accb0a8d6d5832",
+      "size_bytes": 6012
+    },
+    {
+      "repo": "stablehlo",
+      "path": "stablehlo/dialect/StablehloOps.td",
+      "sha256": "a70a9b4926718614e33b986bf3c568cccdac1792019c43e9346ab617ebedf987",
+      "size_bytes": 140637
+    },
+    {
+      "repo": "xla",
+      "path": "xla/backends/cpu/codegen/ir_compiler.cc",
+      "sha256": "081aab1f1d55a871172d5b0c2f1af451b204635e3b13d1dba8daa67b79c05233",
+      "size_bytes": 19488
+    },
+    {
+      "repo": "xla",
+      "path": "xla/backends/gpu/codegen/cubin_custom_kernel_compiler.cc",
+      "sha256": "e07d4a8c341228c05df8d380c9e72930cda89ece6abaccb2b651dd99cf45c421",
+      "size_bytes": 6966
+    },
+    {
+      "repo": "xla",
+      "path": "xla/backends/gpu/codegen/triton/compilation_pipeline.cc",
+      "sha256": "7926b0830fc6e54f0d65cd7dfc56646c842205c7a49b866df16d5834d0947027",
+      "size_bytes": 5025
+    },
+    {
+      "repo": "xla",
+      "path": "xla/backends/gpu/codegen/triton/fusion.cc",
+      "sha256": "21170236f88a17db790cd093f688399911d0bf993c17fce2dd2ca596a1aa6332",
+      "size_bytes": 17476
+    },
+    {
+      "repo": "xla",
+      "path": "xla/backends/gpu/codegen/triton/xtile_compiler.cc",
+      "sha256": "066e6a8518e63aaf647d2bf99a91396e63798efeb73ea180e524f2cc752702c3",
+      "size_bytes": 31853
+    },
+    {
+      "repo": "xla",
+      "path": "xla/backends/gpu/runtime/command_buffer_thunk.cc",
+      "sha256": "bcc2bc716ae4407dd256ccd752a7dd321f9856cc12b478e5eb485d4a5c0a6768",
+      "size_bytes": 19193
+    },
+    {
+      "repo": "xla",
+      "path": "xla/backends/gpu/runtime/kernel_thunk.cc",
+      "sha256": "2c4b0e6308db510d00b205c27984d4e4ef7483442016f9a667456f626510c752",
+      "size_bytes": 12348
+    },
+    {
+      "repo": "xla",
+      "path": "xla/hlo/ir/hlo_computation.h",
+      "sha256": "a3005d7b5639dd878ae4d29e13a5fb4b94c028bffcca30df8e82d834c3e3209d",
+      "size_bytes": 57595
+    },
+    {
+      "repo": "xla",
+      "path": "xla/hlo/ir/hlo_instruction.h",
+      "sha256": "3e2ea2021e406bc074e283a2bb4cf50fe9945f988f4db765c583d03f4553d517",
+      "size_bytes": 131494
+    },
+    {
+      "repo": "xla",
+      "path": "xla/hlo/ir/hlo_module.h",
+      "sha256": "7167eeb9e74d36faa4b1ef7ad569c7210192965beb64756a9910cf24dba7bf96",
+      "size_bytes": 51744
+    },
+    {
+      "repo": "xla",
+      "path": "xla/hlo/pass/hlo_pass_pipeline.cc",
+      "sha256": "b31566e64894e33f49a71190f8899f728e08ca6022ed6c607a4a619835a0410a",
+      "size_bytes": 13122
+    },
+    {
+      "repo": "xla",
+      "path": "xla/hlo/transforms/simplifiers/algebraic_simplifier.h",
+      "sha256": "fb5a0f19bd4e5354373a54b40f6aa5bc7da906e0edef2b63db40133f2eace607",
+      "size_bytes": 37546
+    },
+    {
+      "repo": "xla",
+      "path": "xla/hlo/transforms/simplifiers/hlo_dce.h",
+      "sha256": "ee1d2033bd359979494a9667721f0dcacfb8afab481a5d7069a529401e9734a4",
+      "size_bytes": 3467
+    },
+    {
+      "repo": "xla",
+      "path": "xla/hlo/translate/mhlo_to_hlo/mlir_hlo_to_hlo.cc",
+      "sha256": "66a26233b955abdc4097803d4334fabfc0bd552b4b64c3dee376cdef9d3d23ce",
+      "size_bytes": 244763
+    },
+    {
+      "repo": "xla",
+      "path": "xla/pjrt/c/pjrt_c_api.h",
+      "sha256": "a38827698466b7ac81b2402ad144d027a8566714d94d649fba74a37be464ece4",
+      "size_bytes": 127045
+    },
+    {
+      "repo": "xla",
+      "path": "xla/pjrt/pjrt_client.h",
+      "sha256": "3ab220dd21e3411e0f5b5bc77b7757d624f95e3f84c4071d28b1bd567da23224",
+      "size_bytes": 78017
+    },
+    {
+      "repo": "xla",
+      "path": "xla/python/ifrt/array.h",
+      "sha256": "7ed8f9b1aeaee8da707e3abeed4a9cad7f1420d9db48bf89a73f138d027a86bf",
+      "size_bytes": 5898
+    },
+    {
+      "repo": "xla",
+      "path": "xla/python/ifrt/array_spec.h",
+      "sha256": "87a960c85b728ea89f11afe902594c0759571b2c8a9b8d30284c8a9ff508a417",
+      "size_bytes": 4056
+    },
+    {
+      "repo": "xla",
+      "path": "xla/python/ifrt/sharding.h",
+      "sha256": "4b6320ce41302226eda834f3d1ba7254085cfc44df63e817e5cee02698786eb9",
+      "size_bytes": 20798
+    },
+    {
+      "repo": "xla",
+      "path": "xla/python/ifrt/value.h",
+      "sha256": "e417f16b4e2c32fe8e5e3b30a92c6df9a073c2c5fb56a936a8fa37a35473955e",
+      "size_bytes": 2886
+    },
+    {
+      "repo": "xla",
+      "path": "xla/python/pjrt_ifrt/pjrt_array.cc",
+      "sha256": "e74a479ac8df86935430ddcb5f94dd140fb7029492beb137affbafe2931c75e5",
+      "size_bytes": 28181
+    },
+    {
+      "repo": "xla",
+      "path": "xla/python/pjrt_ifrt/pjrt_array.h",
+      "sha256": "b2de3641f5ef27bbbcfb5428e2f1c41a2b93f0d83d8a24e5c23105dac78036ee",
+      "size_bytes": 8875
+    },
+    {
+      "repo": "xla",
+      "path": "xla/python/pjrt_ifrt/pjrt_client.cc",
+      "sha256": "37d5c513d0e490b2864089751c2aaf20266ebb1a3eb6bdc6aeed98bd62057b6e",
+      "size_bytes": 85247
+    },
+    {
+      "repo": "xla",
+      "path": "xla/python/pjrt_ifrt/pjrt_executable.cc",
+      "sha256": "4c35da1c9a2fbafe4a993b36c1fb5d761d1fb9ccba6ff290c4c8538ffe3a8fed",
+      "size_bytes": 48646
+    },
+    {
+      "repo": "xla",
+      "path": "xla/service/cpu/cpu_compiler.cc",
+      "sha256": "6cb8868588e05c05b9b8260a643951b0eb6d67cd473710bbf807ad0d82746e6f",
+      "size_bytes": 101330
+    },
+    {
+      "repo": "xla",
+      "path": "xla/service/gpu/compile_module_to_llvm_ir.cc",
+      "sha256": "49a532a53fe6b4a7e8e2a6e821c806fe61b41815b6c4531813a9449e5f29664d",
+      "size_bytes": 13160
+    },
+    {
+      "repo": "xla",
+      "path": "xla/service/gpu/gpu_compiler.cc",
+      "sha256": "9b5998d2fe21d2589f533bec42c5de9b674233f6add96ec527f13e60c71c662c",
+      "size_bytes": 153525
+    },
+    {
+      "repo": "xla",
+      "path": "xla/service/gpu/llvm_gpu_backend/gpu_backend_lib.cc",
+      "sha256": "24690d09f0fe3d9e760f551f607d13844a164cb36b6aa32ff20fb6c53c4e916d",
+      "size_bytes": 12998
+    },
+    {
+      "repo": "xla",
+      "path": "xla/service/gpu/nvptx_compiler.cc",
+      "sha256": "24af5f3aa4753baed2a9e5583cd0f4d00839b3b2f5ebbf9922c3f92c49050e0c",
+      "size_bytes": 31767
+    },
+    {
+      "repo": "xla",
+      "path": "xla/service/hlo_verifier.h",
+      "sha256": "cac2f15524a46a465c022d17ca05e1920d6e129440052f502029ccd6e4657f33",
+      "size_bytes": 23726
+    },
+    {
+      "repo": "xla",
+      "path": "xla/stream_executor/cuda/cuda_stream.cc",
+      "sha256": "77ba6645695ba5342e77d15c3ca9322cbd4e165e9b129533c3192fe3f062bfbe",
+      "size_bytes": 25386
+    },
+    {
+      "repo": "xla",
+      "path": "xla/stream_executor/stream.h",
+      "sha256": "c40ae6842b95c68c2b0ae2b325f86f8ef2af4489f840dad8ecfdac46fc596850",
+      "size_bytes": 15385
+    },
+    {
+      "repo": "xla",
+      "path": "xla/tpu/tpu_ops_c_api.h",
+      "sha256": "e5b11ae2d27ba7eb33c7eece23b976740d2162e7958a62ce68068faa319d8222",
+      "size_bytes": 16826
+    }
+  ]
+}
