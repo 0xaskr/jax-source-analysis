@@ -1,17 +1,19 @@
 # JAX 软件栈：从jax到 tpu/cpu/gpu
 
+> 本文由文章作者提出大纲，AI完成，并且经由作者进行润色，去AI味和审阅，作者对文章内容负责。
+
 本文是[分层架构 SVG](overview-software-stack-components-layered.svg) 的配套说明
 
 ## 1. 不同组件的核心抽象概念
 
-每个组件选取一个核心抽象概念，并围绕此进行展开，从该概念描述了哪些东西以及具体的数据结构如何表示？数据结构如何产生？会经过哪些变换？会被哪些组件消费？ 这四个角度来进行探索。
+每个组件选取一个核心抽象概念，并围绕此进行展开，从该概念抽象了哪些东西以及具体的数据结构如何表示？数据结构如何产生？会经过哪些变换？会被哪些组件消费？ 这四个角度来进行探索。
 
 | 组件 | 核心抽象 | 含义 | 生命周期 |
 |---|---|---|---|
-| JAX | [Jaxpr](overview-software-stack-components-layered.svg#outer) | 用于表达jax/pallas 代码的中间表示, 描述输入如何通过原语及其组合产生输出 | 由 Python 函数和抽象输入经[trace][src-trace]产生，经过[自动微分（如 JVP）][src-jvp-jaxpr]、[批处理（vmap）][src-batch-jaxpr]、[部分求值][src-partial-eval-jaxpr]和[死代码消除][src-dce]等变换；随后由 JAX 的 [lowering][src-lower] 按原语规则生成外层 MLIR Module，交给原生编译路径。 |
+| JAX | [Jaxpr](overview-software-stack-components-layered.svg#outer) | 用于表达jax/pallas 代码的IR, 描述输入如何通过原语及其组合产生输出 | 由 Python 函数和抽象输入经[trace][src-trace]产生，经过[自动微分（如 JVP）][src-jvp-jaxpr]、[批处理（vmap）][src-batch-jaxpr]、[部分求值][src-partial-eval-jaxpr]和[死代码消除][src-dce]等变换；随后由 JAX 的 [lowering][src-lower] 按原语规则生成外层 MLIR Module，交给原生编译路径。 |
 | jaxlib | [MLIR Module（StableHLO/Mosaic）](overview-software-stack-components-layered.svg#binding_module) | 以 [MLIR Module][src-module-op] 为容器，使用 [StableHLO][src-stablehlo-add]、[Mosaic 等专用 IR][src-mosaic-module] 表示计算图的中间表示。 | 由 [JAX][src-lower]/[Pallas lowering][src-pallas-lowering] 从 Jaxpr 产生; jaxlib 把MLIR module 封装成ifrt:HloProgram, ifrt通过调用pjrt交给具体的设备后端的编译接口。|
 | IFRT | [Array](overview-software-stack-components-layered.svg#ifrt_array) | 跨设备的逻辑数组。[`ifrt::Array`][src-ifrt-array] 通过 `ArraySpec` 描述元素类型、形状、分片和布局；| 将输入数据对应的设备 Buffer 与类型、形状、分片信息[组合为逻辑数组][src-array-create]，供 [LoadedExecutable 执行][src-ifrt-execute]；执行返回时，再将输出 Buffer [组织为新的逻辑数组][src-ifrt-outputs]。 |
-| PJRT | [PjRtBuffer](overview-software-stack-components-layered.svg#pjrt_buffer) | 对[设备上的数据存储的统一抽象][src-pjrt-buffer]，描述所属设备、内存空间、数据形状与布局，并提供所有权和[就绪状态][src-ready]的管理接口。 | 在接收[输入数据][src-buffer-from-host]或准备输出存储时创建，可按需要[复制][src-buffer-copy]或复用；作为 [PjRtLoadedExecutable][src-pjrt-execute] 的执行输入和输出，返回的输出 Buffer 由 IFRT [组织为逻辑数组][src-ifrt-outputs]，不再使用时[释放存储引用][src-buffer-delete]。 |
+| PJRT | [PjRtBuffer](overview-software-stack-components-layered.svg#pjrt_buffer) | 对[单个设备上的数据存储的统一抽象][src-pjrt-buffer]，描述所属设备、内存空间、数据形状与布局，并提供所有权和[就绪状态][src-ready]的管理接口。 | 在接收[输入数据][src-buffer-from-host]或准备输出存储时创建，可按需要[复制][src-buffer-copy]或复用；作为 [PjRtLoadedExecutable][src-pjrt-execute] 的执行输入和输出，返回的输出 Buffer 由 IFRT [组织为逻辑数组][src-ifrt-outputs]，不再使用时[释放存储引用][src-buffer-delete]。 |
 | XLA | [HLO（HloModule）](overview-software-stack-components-layered.svg#hlo) | 用于优化、规划和代码生成的计算图。[`HloModule`][src-hlo] 包含入口及其他 `HloComputation`，由 `HloInstruction` 表达计算和依赖，并携带形状、布局及分片等约束。 | 由 [StableHlo 导入][src-import]产生，经 [HLO pass pipeline][src-hlo-passes] 规范化并进行目标相关优化，再交给 [CPU][src-cpu-backend]／[GPU 后端][src-gpu-backend]组织存储规划、目标代码与执行计划，形成相应 `Executable`。 |
 | XLA CPU 后端 | [LLVM IR](overview-software-stack-components-layered.svg#cpu_ir) | 面向 CPU 代码生成的低层中间表示。描述具体的数据运算，内存访问和控制流，并携带目标平台与数据布局信息。 | 由 CPU后端根据优化后的HLO、存储规划和目标信息生成，经 [LLVM 优化][src-cpu-ir-passes]后交给[目标代码生成][src-cpu-machine-code]得到对象文件；链接后的函数库与 thunk 执行计划共同组成 `CpuExecutable`。 |
 | XLA GPU 后端 | [LLVM IR](overview-software-stack-components-layered.svg#gpu_ir) | 面向 GPU kernel 代码生成的[低层中间表示][src-llvm-module]，描述 kernel 内的数据运算、内存访问和控制流，并通过目标相关的指令与约定表达线程协作、地址空间和 kernel 入口。 | 由 [GPU 后端][src-gpu-emit]根据优化后的 HLO、存储规划和目标设备信息生成，按需链接设备 bitcode，经 [LLVM 优化][src-gpu-ir-passes]和目标代码生成得到设备代码；其中 [NVIDIA 路径][src-nvptx-binary]生成 PTX 并编译为 cubin。设备代码与存储规划、thunk 执行计划共同组成 [`GpuExecutable`][src-gpu-backend]，交回 PJRT。 |
@@ -24,15 +26,15 @@
 
 填色和粗边框用于核心节点。蓝线表示编译与程序传递，绿线表示执行与输入数据，紫线表示程序变换，橙色虚线表示编译结果返回，粉色实线表示输出对象返回，粉色虚线表示完成状态。灰色虚线说明结构、持有或观察关系；棕色虚线说明 TPU 内部证据边界。线上的拱桥表示交叉处不连接。
 
-## 2. 从 Python 函数到可执行程序
+## 2. 从 JAX 代码到可执行程序的编译流程
 
-一次需要编译的 JAX 调用，会先把 Python 函数转换成各种IR，再生成目标设备可以执行的代码。编译结果可以复用；后续调用能够复用已有结果时，就从第三章的执行流程继续。
+一次需要编译的 JAX 调用，会先把jax代码lowering到各种IR，再生成目标设备可以执行的代码。
 
 下面讨论 JAX 通过 jaxlib、IFRT 和 PJRT 调用设备后端的路径。文中的设备后端实现，也就是源码和图中常见的 device backend，负责实现具体设备的编译、加载和执行接口。
 
 ### 2.1 追踪和函数变换：构造 Jaxpr
 
-JAX 追踪 Python 函数时，根据输入的shape和dtype等抽象信息，创建Tracer， 代表动态输入参与函数调用中，并将过程中发生的原语运算记录为jaxpr，追踪得到的 Jaxpr 则记录输入、常量、原语方程、输出和 effects。每个变量的 `aval` 描述其抽象类型，方程说明这些变量如何参与计算。相关定义在 [`Jaxpr`][src-jaxpr]、[`JaxprEqn`][src-eqn] 和 [`Var`][src-var] 中，追踪入口之一是 [`trace_to_jaxpr_dynamic`][src-trace]。
+JAX 追踪 Python 函数时，根据输入的shape和dtype等抽象信息，创建Tracer， 作为占位符代表动态输入参与函数调用中，并将过程中发生的原语运算记录为jaxpr，追踪得到的 Jaxpr 则记录输入、常量、原语方程、输出和 effects。每个变量的 `aval` 描述其抽象类型，方程说明这些变量如何参与计算。相关定义在 [`Jaxpr`][src-jaxpr]、[`JaxprEqn`][src-eqn] 和 [`Var`][src-var] 中，追踪入口之一是 [`trace_to_jaxpr_dynamic`][src-trace]。
 
 Jaxpr 承接 JAX 的函数变换。不同变换处理的问题不同：
 
@@ -115,7 +117,7 @@ TPU 编译请求经 PJRT 进入 TPU provider，输入包括程序和编译选项
 
 这些包装保存的是执行能力及其元信息。数组结果要等实际调用程序时产生。
 
-## 3. 从输入数组到执行结果
+## 3. 从输入数组到输出数组的运行流程
 
 执行时需要同时提供两类东西：编译好的程序，以及本次调用的数据。程序决定计算和存储安排，输入数组提供实际值；运行时把二者组合起来，处理依赖并提交工作。
 
@@ -174,7 +176,7 @@ Pallas 允许在 JAX 函数中编写专用 kernel。外层程序组织数组之�
 
 ### 4.1 kernel Jaxpr 与外层 pallas_call
 
-[`_trace_kernel_to_jaxpr`][src-kernel-trace] 根据 kernel 函数和抽象参数追踪内层 Jaxpr。kernel 使用 Ref 表达数据读写，结果通常通过写入输出 Ref 产生；当前入口要求 kernel 函数返回 `None`。
+[`_trace_kernel_to_jaxpr`][src-kernel-trace] 根据 kernel 函数和抽象参数追踪内层 kernel Jaxpr。kernel 使用 Ref 表达数据读写，结果通常通过写入输出 Ref 产生；当前入口要求 kernel 函数返回 `None`。
 
 [`get_grid_mapping`][src-grid-build] 构造的 `GridMapping` 记录执行网格、数据块映射和调用所需的信息。外层的 [`pallas_call_p.bind`][src-pallas-bind] 把 kernel Jaxpr、GridMapping 等作为方程参数，并用数组输入输出把这次调用接入外层数据流。内层程序和映射共同决定 kernel 如何作用于外层数组。
 
@@ -202,93 +204,15 @@ Pallas 的 GPU 路径按配置选择 Mosaic GPU、Triton 或已注册的平台�
 
 更细的对象关系见 [Pallas 内外层程序说明](../jax/jaxpr-centered-hub.md#pallas)和 [Jaxpr 详细图](../jax/jaxpr-centered-hub.svg#inner_jaxpr)。
 
-## 5. MLIR 和 Shardy 在哪里起作用
+## 5. 源码版本和图的维护
 
-### 5.1 MLIR 容器与不同方言
-
-MLIR 提供 Module、Operation、Region、Type 和 pass 等基础设施。不同方言在这些结构上定义自己的类型、操作和约束：StableHLO 表达张量计算，Shardy 表达分片关系，Mosaic 表达专用 kernel 的计算和设备相关操作。
-
-因此，两个对象都叫 MLIR Module，只能说明它们使用同一种容器，还需要查看其中的方言和操作，才能知道程序含义。JAX lowering 使用 MLIR，Pallas 内核生成使用 MLIR，部分后端代码生成也继续使用 MLIR。它在多个编译阶段提供共同的基础设施。参见 [Module 定义][src-module-op]、[外层 lowering][src-lower]和 [Mosaic lowering][src-mosaic-module]。
-
-### 5.2 分片信息如何参与编译
-
-编译器需要知道全局数组如何分布到设备，才能生成各设备上的计算，并在需要时安排通信。分片信息会经历表示整理、传播和分区等处理；具体流程取决于启用的分片实现和后端配置。
-
-一个可以直接定位的处理是 JAX lowering 中的 `sdy-lift-inlined-meshes`。启用 Shardy 后，这个 pass 将内联 mesh 提升为模块中的命名定义，合并重复 mesh，并让分片属性引用这些定义。它整理的是分片表示，后续分片传播和计算分区还有各自的处理。参见 [JAX 调用位置][src-shardy]和 [`LiftInlinedMeshesPass`][src-shardy-lift-definition]。
-
-对自定义运算，开发者还可以通过 `custom_partitioning` 提供分片规则和逐设备计算方式。这个接口如何进入编译流程，见下一章。
-
-<a id="extension-interfaces"></a>
-
-## 6. 在哪些位置扩展计算和编译
-
-扩展方式取决于要改变什么：原语如何生成 IR、自定义运算如何分片、如何调用原生实现，或者如何修改编译中的 HLO。[扩展接口图](overview-software-stack-components-extended.svg)给出了这些入口的位置，下面直接使用接口名称说明。
-
-### 6.1 为原语注册 lowering
-
-[`mlir.register_lowering`][src-ext-lowering] 将原语关联到通用或平台专用的 lowering 规则。规则接收 lowering context、MLIR 输入值和原语参数，生成操作并返回 MLIR 结果值。外层 `jaxpr_subcomp` 遍历到该原语时调用这条规则。
-
-一个原语在追踪、自动微分、批处理和 lowering 阶段可能分别需要规则。lowering 负责把已经确定的运算转成后端表示；抽象求值、AD 和 batching 各自决定其他阶段如何处理这个运算。
-
-### 6.2 为自定义运算提供分片规则
-
-[`custom_partitioning`][src-ext-partition] 允许为函数定义分片行为。`def_partition` 记录规则；启用 Shardy 时，`sharding_rule` 描述输入输出维度之间的分片关系；其他相应路径使用分片传播和推导回调。
-
-分区时，`partition` 回调接收形状和分片信息，返回 mesh、逐设备执行的 `lower_fn`，以及最终的输入输出分片。JAX 按分片后的输入形状追踪 `lower_fn`，检查输出，再将这段计算 lowering 为 MLIR bytecode，连同分片信息交回编译器。具体过程见 [`_custom_partitioning_partition`][src-ext-shard-lowering]。
-
-这个接口处理的是某个自定义运算的分片契约，输入输出与下面的完整 HLO 模块变换接口不同。
-
-### 6.3 通过 FFI 调用原生实现
-
-[`register_ffi_target`][src-ext-ffi] 为指定平台注册原生 target，`ffi_call` 在 JAX 程序中引用这个 target。lowering 时，[`ffi_call_lowering`][src-ext-ffi-lowering] 生成 custom call，并记录输入输出布局、别名关系、属性和调用协议等信息。后端据此连接原生实现，执行结果再通过正常的输出数组流程返回。
-
-Pallas 也使用 custom call 接入部分后端，但 Mosaic TPU 路径传递的是待编译的内核表示。阅读 custom call 时，需要一起看 target 名称、配置内容和对应实现，才能确定它如何编译或执行。
-
-### 6.4 在 HLO 编译过程中注册变换
-
-当前固定源码提供 [`register_hlo_module_transformation`][src-ext-hook]。它注册宿主 Python 回调，输入是序列化的 `HloModuleProto`；回调返回新的 bytes 时更新编译中的模块，返回 `None` 时保留原模块。同一阶段的多个回调按注册顺序运行。
-
-注册时通过 `platforms` 选择后端。CPU 直接调用 `_xla.register_xla_transform`，其他平台经 PJRT 插件扩展注册，要求插件支持对应接口。源码中有 [TPU 使用该接口的测试定义][src-ext-tpu-test]。
-
-`PRE_SCHEDULER` 和 `POST_SCHEDULER` 分别位于 HLO 调度前后的指定位置。CPU 的调度后回调发生在 `CreateBufferAssignment` 之前；GPU 在自己的 HLO 流水线中安排相应调用点。它们的具体位置见 [CPU 调度前][src-ext-cpu-pre]、[CPU 调度后][src-ext-cpu-post]、[GPU 调度前][src-ext-gpu-pre]和 [GPU 调度后][src-ext-gpu-post]。
-
-回调修改的是本次编译中的外层 HLO，修改后编译继续进行。已经生成的 executable 保留原来的编译结果；custom call 中携带的 Mosaic 内核也需要按其自己的表示处理。
-
-## 7. 如何查看程序表示和执行情况
-
-### 7.1 按编译阶段选择检查入口
-
-同一个函数在追踪、lowering 和编译之后有不同的观察对象。选择入口时，先确定要看的是哪一阶段。
-
-| 要检查的内容 | 入口 | 能看到什么 |
-|---|---|---|
-| JAX 原语计算 | `jax.make_jaxpr` | 追踪得到的 Jaxpr、变量抽象类型和原语方程。 |
-| lowering 后的程序 | `Lowered.compiler_ir`、`Lowered.as_text` | 指定方言的 IR 对象或文本，例如 StableHLO。 |
-| 编译后的程序与规划 | `Compiled.as_text`、`cost_analysis`、`memory_analysis` | 后端提供的程序文本、代价估计和存储分析。 |
-| 底层可执行对象 | `Compiled.runtime_executable` | 运行时可执行对象及其支持的后端接口。 |
-| 目标代码 | 后端 dump、反汇编工具 | PTX 或目标机器指令等更低层的表示。 |
-
-这些检查接口的返回内容受后端和版本影响。`Lowered` 与 `Compiled` 的接口定义分别见 [`stages.py` 的 lowering 检查入口][src-ext-ir]和 [编译结果检查入口][src-compiled-inspection]。
-
-在当前实现中，`MeshComputation.stablehlo()` 直接返回内部保存的 Module，所以 `compiler_ir('stablehlo')` 可能暴露同一个可变对象。原地修改可能影响尚未发生的编译，调试时应注意这层关联；可靠的程序导出使用 `jax.export` 提供的接口。`compiler_ir('hlo')` 则走另一条显式导出路径。参见 [StableHLO 对象返回位置][src-ext-stablehlo-object]和 [HLO 导出实现][src-ext-hlo-export]。
-
-### 7.2 观察异步执行和性能
-
-[`jax.profiler.trace`][src-ext-trace] 采集运行事件，[`TraceAnnotation`][src-ext-annotation] 为宿主代码范围添加标记。后端提供的事件可以帮助定位 kernel、库调用、通信和等待发生在什么位置。
-
-JAX 调用返回数组时，设备工作可能还没有完成。要测量一次计算的完成时间，或确保 trace 覆盖这次计算，需要在计时或采集范围内等待结果就绪，例如调用结果数组的 `block_until_ready()`。如果关注的是已有 executable 的执行时间，还应先完成首次编译。JAX 的[异步派发说明][doc-jax-async]解释了返回对象与设备完成之间的关系。
-
-阅读性能结果时，还要记录目标设备、编译选项和输入条件。CPU 执行、TPU 模拟、离线 TPU 编译和真实 TPU 执行分别说明不同的事情；本文的调用关系来自固定版本源码，未据此给出设备性能结论。
-
-## 8. 源码版本和图的维护
-
-### 8.1 本文使用的源码
+### 5.1 本文使用的源码
 
 JAX 固定在 `361c43e072cce92b7d3e9bdaf4dd16db26c49043`，XLA 固定在 `dcf304bc5dca1932b99f740b911dbd73631a1a69`。文中的源码链接指向这些固定提交，其他依赖以 [`upstream-sources.lock`](../../../upstream-sources.lock)、[`source-archives.lock`](../../../source-archives.lock) 和[环境锁](../../../env/environment.lock.json)为准。
 
 在线文档用于补充概念和使用方式，具体类、函数与调用顺序以工作区固定源码为准。对照实际运行结果时，应同时核对运行时二进制版本；与所引用源码不一致的结果标记为 `VERSION-SKEW`。
 
-### 8.2 重建配套图
+### 5.2 重建配套图
 
 [分层图](overview-software-stack-components-layered.svg)由 [`render_overview_software_stack_flows.py`](../../../tools/render_overview_software_stack_flows.py) 生成，节点和核心抽象的配置在 [`software_stack_overview_flow_data.py`](../../../tools/software_stack_overview_flow_data.py) 中。[扩展接口图](overview-software-stack-components-extended.svg)由 [`render_overview_software_stack_extensions.py`](../../../tools/render_overview_software_stack_extensions.py) 生成。
 
@@ -304,23 +228,6 @@ python3 -B tools/diagram_environment.py run tools/render_overview_software_stack
 生成器检查固定源码锚点和绘图结构。所需源码不在本地检出中时，使用 [`overview_flow_sources.json`](../../../tools/overview_flow_sources.json) 记录的提交和 SHA-256 校验缓存；缺少缓存时，可用 `--fetch-sources` 获取相应文件。绘图依赖由 [`env/diagrams.lock.json`](../../../env/diagrams.lock.json) 锁定。
 
 修改组件职责或调用关系时，需要同时检查正文、节点配置和图中的连线说明。正文使用组件名、对象名和函数名描述流程，可以单独阅读；图用于查看这些关系在整体架构中的位置。
-
-[src-ext-lowering]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/interpreters/mlir.py#L1003
-[src-ext-partition]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/custom_partitioning.py#L272
-[src-ext-shard-lowering]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/custom_partitioning.py#L158
-[src-ext-ffi]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/ffi.py#L54
-[src-ext-ffi-lowering]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/ffi.py#L656
-[src-ext-hook]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/xla_transform.py#L48
-[src-ext-tpu-test]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/tests/xla_transform_test.py#L452
-[src-ext-cpu-pre]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/service/cpu/cpu_compiler.cc#L1178
-[src-ext-cpu-post]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/service/cpu/cpu_compiler.cc#L1833
-[src-ext-gpu-pre]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/service/gpu/gpu_compiler.cc#L1026
-[src-ext-gpu-post]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/service/gpu/gpu_compiler.cc#L3286
-[src-ext-stablehlo-object]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/interpreters/pxla.py#L1224
-[src-ext-hlo-export]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/stages.py#L237
-[src-ext-ir]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/stages.py#L671
-[src-ext-trace]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/profiler.py#L315
-[src-ext-annotation]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/profiler.py#L354
 
 [src-buffer-assignment]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/service/buffer_assignment.h#L476
 [src-cpu-backend]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/service/cpu/cpu_compiler.cc#L2139
@@ -363,7 +270,6 @@ python3 -B tools/diagram_environment.py run tools/render_overview_software_stack
 [src-py-outputs]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jaxlib/py_executable.cc#L260
 [src-py-wrap]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jaxlib/py_client.cc#L430
 [src-ready]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/pjrt/pjrt_client.h#L1380
-[src-shardy]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/interpreters/mlir.py#L1483
 [src-stablehlo]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/lib/mlir/dialects/__init__.py#L62
 [src-subcomp]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/interpreters/mlir.py#L2129
 [src-tpu-lowering]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/pallas/mosaic/pallas_call_registration.py#L393
@@ -402,9 +308,6 @@ python3 -B tools/diagram_environment.py run tools/render_overview_software_stack
 [src-cpu-compile-body]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/service/cpu/cpu_compiler.cc#L1722
 [src-gpu-executable-create]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/service/gpu/gpu_compiler.cc#L3038
 [src-mosaic-serialize]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/tpu_custom_call.py#L491
-[src-shardy-lift-definition]: https://github.com/openxla/shardy/blob/2832731619ffb4bcc718faa4aa8054214a68c969/shardy/dialect/sdy/transforms/import/lift_inlined_meshes.cc#L143
-[src-compiled-inspection]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/stages.py#L738
 [doc-llvm-objdump]: https://www.llvm.org/docs/CommandGuide/llvm-objdump.html
 [doc-ptx]: https://docs.nvidia.com/cuda/parallel-thread-execution/
 [doc-cuda-async]: https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/asynchronous-execution.html
-[doc-jax-async]: https://docs.jax.dev/en/latest/async_dispatch.html
