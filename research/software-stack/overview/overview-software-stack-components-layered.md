@@ -2,7 +2,7 @@
 
 > 本文由文章作者提出大纲，AI完成，并且经由作者进行润色，去AI味和审阅，作者对文章内容负责。
 
-本文是[分层架构 SVG](overview-software-stack-components-layered.svg) 的配套说明
+本文是[分层架构 SVG](overview-software-stack-components-layered.svg) 的配套说明, 请配合图片进行阅读。
 
 ## 1. 不同组件的核心抽象概念
 
