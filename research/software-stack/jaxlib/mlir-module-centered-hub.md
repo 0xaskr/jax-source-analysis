@@ -1,112 +1,92 @@
-# jaxlib：MLIR Module 的绑定、编译提交与导出
+# jaxlib：MLIR Module
 
-本文对应 [jaxlib 内部架构 SVG](mlir-module-centered-hub.svg)，承接 [software-stack overview](../overview/overview-software-stack-components-layered.md)。图中唯一核心概念是 [MLIR Module（StableHLO）](mlir-module-centered-hub.svg#core)；Module 是程序容器，StableHLO 定义其中相应操作的语义。
+MLIR Module 是这一层传递计算程序的容器。JAX 用 StableHLO 等方言描述外层计算，Pallas 可以另外构造 Mosaic 内核模块；jaxlib 提供 Python 与原生对象的绑定，并把外层 Module 交给编译接口。
 
-图左侧定义块说明 Module 的静态结构；右侧产生、变换和消费三个块通过实际对象与调用关系相连。跨区箭头也展开消费调用内部的 clone 和导出 pass，所以四个视角不是必须依次完成的流水线。灰色区域展示消费结果的包装与后续表示。
+[查看 SVG](mlir-module-centered-hub.svg) · [软件栈总览](../overview/overview-software-stack-components-layered.md)
 
-图区导航：[定义](mlir-module-centered-hub.svg#view_definition) · [产生](mlir-module-centered-hub.svg#view_production) · [变换](mlir-module-centered-hub.svg#view_transformation) · [消费](mlir-module-centered-hub.svg#view_consumption) · [后续结果](mlir-module-centered-hub.svg#downstream)。节点归属区分 JAX、jaxlib、IFRT 与 XLA 实现。
+## 1. 定义：表示了什么
 
-## 1. 定义：容器、方言与绑定各自负责什么
+[`mlir::ModuleOp`][src-module] 把一组操作组织为完整的程序单元，Python 中的对应对象是 `ir.Module`。它具有一个 Region 和一个 Block，并提供符号表；`IsolatedFromAbove` 约束内部操作不能隐式捕获模块外部的 SSA 值。操作之间通过输入与结果建立数据依赖，函数调用等关系通过符号引用表达。
 
-| 对象或约束 | 具体定义位置 | 在本图中的含义 |
+Module 中的计算含义由所用方言决定。比如 [`stablehlo.add`][src-stablehlo] 定义张量加法及其输入输出约束，`func` 描述函数，`sdy` 描述分片。Pallas 的 Mosaic Module 采用同一种 MLIR 容器，但其中的操作描述内核计算、存储访问和设备相关行为。
+
+| 结构 | 表示的内容 | 约束由谁提供 |
 |---|---|---|
-| `mlir::ModuleOp` / Python `ir.Module` | [`BuiltinOps.td` 中的 ModuleOp][src-module] | 顶层容器具有单个 graph region 和单个 block，可持有操作；绑定让 Python 构造和访问对应原生对象。 |
-| `SymbolTable / IsolatedFromAbove` | [`ModuleOp` traits][src-module] | 管理符号关系，并约束内部操作不得隐式捕获 Module 外定义的 SSA 值。 |
-| Operation、类型、属性与 SSA 结果 | [StableHLO `AddOp` 定义实例][src-stablehlo] | 具体操作规定输入、结果和语义约束；Module 本身不规定所有内部计算语义。 |
-| JAX `ModuleContext` | [`ModuleContext`][src-context] | 保存 Module 及 JAX lowering 所需的平台、符号、回调等上下文；它与 MLIR 基础 Context 的职责不同。 |
-| 模块验证 | [`operation.verify()` 调用位置][src-verify] | 检查所构造 IR 的结构与语义约束；输入是模块，成功只说明验证通过。 |
+| Module、Region、Block | 程序单元及操作的组织方式。 | MLIR 的容器和区域规则。 |
+| Operation、Value、Type、Attribute | 运算、数据依赖、值的类型和操作参数。 | 对应方言的操作定义与 verifier。 |
+| 函数和符号引用 | 程序入口、被调用函数及其联系。 | 符号表和函数操作约束。 |
+| [`ModuleContext`][src-context] | JAX lowering 使用的 Module、平台、符号和回调等上下文。 | JAX 的构造与 lowering 实现。 |
 
-因此，“MLIR Module（StableHLO）”说明本页选择的程序载体及常见方言，不要求 Module 只包含 StableHLO。`func`、`sdy` 及 custom call 等可以按对应路径共存，jaxlib 的绑定职责也不等于独占这些方言的实现。
+`ModuleContext` 是帮助构造程序的上下文；最终提交的是其中的 Module，以及单独提供的编译选项。运行时数组通过 IFRT Array 和 PJRT Buffer 传递。
 
-<a id="2-产生三个入口返回形式各不相同"></a>
+## 2. 产生：从 Jaxpr 构造，或从已有表示还原
 
-## 2. 产生：构造、还原与辅助解析
+### JAX 外层程序
 
-| 来源与图中节点 | 具体函数 | 输入 | 输出与注意点 |
-|---|---|---|---|
-| JAX lowering，[`p0`](mlir-module-centered-hub.svg#p0) | [`lower_jaxpr_to_module`][src-lower] 与 [`ModuleContext`][src-context] | Jaxpr、输入输出类型、平台、分片和效果等上下文。 | `LoweringResult.module`；按配置完成模块 pass 后，成为编译输入。 |
-| 可移植产物反序列化，[`p1`](mlir-module-centered-hub.svg#p1) | [`PyDeserializePortableArtifact`][src-deserialize] | StableHLO portable artifact 字节与 MLIR Context。 | 反序列化后包装为 Python Module；失败返回错误。 |
-| HLO 兼容入口，[`p2`](mlir-module-centered-hub.svg#p2) | [`PyXlaComputationToMlirModule`][src-from-hlo] | `XlaComputation`。 | 内部构造 StableHLO Module，函数最终返回打印文本；不是直接返回 Python Module 对象。 |
-| 辅助转换内部解析，[`mhlo_input`](mlir-module-centered-hub.svg#mhlo_input) | [`PyMhloToStablehlo`][src-mhlo] | 模块文本或字节。 | 先得到含 MHLO 操作的 Module，再交给该接口内部的合法化 pass。 |
+[`lower_jaxpr_to_module`][src-lower] 接收 Jaxpr、抽象类型、平台、分片和 effects 等信息。它创建 `ModuleContext`，生成入口函数，再由 `jaxpr_subcomp` 遍历方程，调用每个原语的 lowering 规则。规则接收 MLIR 输入值和原语参数，产生操作与结果值；这些结果继续连接后续方程。
 
-JAX lowering 与反序列化的对象汇入 [`produced`](mlir-module-centered-hub.svg#produced)，再由 [`consume_input`](mlir-module-centered-hub.svg#consume_input) 选择接口；这条直接消费路径不要求先做独立变换。HLO 兼容入口则沿 `p2 → compat_module → compat_text` 返回文本。若后续代码需要 Module 对象，不能把这一文本结果直接当作原生 `mlir::ModuleOp` 使用。
+函数返回 `LoweringResult`，其中的 `module` 是外层 MLIR Module。生成后调用 [`operation.verify()`][src-verify] 检查结构、类型和操作约束；启用 Shardy 时，还会进行下一节的 mesh 表示整理。
 
-## 3. 变换：标明发生在哪个调用内部
+### Pallas 内核程序
 
-| 位置 | 输入及调用条件 | 所做处理 | 输出或改变 |
-|---|---|---|---|
-| JAX lowering 的 [Shardy 模块 pass][src-shardy]，[`t1`](mlir-module-centered-hub.svg#t1) | 已生成的 Module；启用对应 Shardy 配置时。 | 运行 `builtin.module(sdy-lift-inlined-meshes)`。 | 仍为 Module；分片表示处理发生在进入本图编译绑定之前。 |
-| [`PyClient::CompileAndLoad`][src-compile] 内部，[`t0`](mlir-module-centered-hub.svg#t0) | 调用者提交的 `mlir::ModuleOp`。 | `module.clone()`，将独立副本交给后续处理，并允许该副本被原地修改。 | 编译流程持有的克隆 Module；调用者的原模块保留。 |
-| [`PyMhloToStablehlo`][src-mhlo] 内部，[`t2`](mlir-module-centered-hub.svg#t2) | 前面已经解析的 Module。 | 运行 MHLO → StableHLO legalization。 | 变换结果仍是 Module；接口随后写成普通 MLIR bytecode，并非所有编译的必经步骤。 |
-| XLA 的 [`PrepareForExport`][src-prepare]，[`t3`](mlir-module-centered-hub.svg#t3) | HLO 导出流程中的 Module。 | 组织导出前 pass；按需要处理 shape 操作等。 | 被准备过的 Module，后续导出继续构造 HLO。 |
+TPU 路径中的 [`pallas_call_tpu_lowering_rule`][src-pallas] 根据 kernel Jaxpr 和 `GridMapping` 调用 [`lower_jaxpr_to_pipelined_module`][src-mosaic]。后者创建一个独立的 `ir.Module`，把内核计算与流水安排写入其中。
 
-启用相应 Shardy 路径时，图中的 `p0 → t1 → produced` 展开 lowering 内部处理；否则由 `p0 → produced` 直接返回 Module 实例。静态 [`core`](mlir-module-centered-hub.svg#core) 不充当运行阶段。这里展示一个具体模块 pass 调用位置，不代表全部 Shardy pipeline。
+外层 Module 表示整个 JAX 函数，Mosaic Module 表示其中一次 Pallas 调用的内核。内核随后被序列化，连同调用配置放入外层 custom call；这两份 Module 的关系在消费一节展开。
 
-两处嵌套顺序尤其需要保留：**先进入 `PyClient::CompileAndLoad`，再在函数内部 clone；先进入 `ConvertMlirHloToHloModule` 的导出流程，再在其内部调用 `PrepareForExport`。** 图中把内部步骤展开，是为了说明处理位置，不将它们改成调用者必须先自行完成的前置任务。
+### 从已有程序还原
 
-## 4. 消费：编译提交、HLO 导出与对象返回
+| 函数 | 输入 | 产生的对象及接口返回值 |
+|---|---|---|
+| [`PyDeserializePortableArtifact`][src-deserialize] | StableHLO 可移植产物字节、MLIR Context。 | 还原 Module，返回 Python Module 对象。 |
+| [`PyXlaComputationToMlirModule`][src-from-hlo] | `XlaComputation` 中的 HLO proto。 | 内部调用 `ConvertHloToStablehlo` 构造 Module，最终返回模块文本。 |
+| [`PyMhloToStablehlo`][src-mhlo] | MLIR 文本或字节。 | 先解析出 Module，再做方言转换，最终返回 MLIR bytecode。 |
 
-### 4.1 从 Module 到 IFRT 编译接口
+## 3. 变换：在 Module 上改了什么
 
-图中 `produced → consume_input → c0 → t0 → after → ifrt_program` 对应以下对象路径：
+这些处理发生在不同调用中，使用哪一项取决于模块来源和用途。
+
+| 位置与函数 | 输入及条件 | 处理与结果 |
+|---|---|---|
+| JAX lowering 中的 [`sdy-lift-inlined-meshes`][src-shardy] | 带分片属性的 Module，且启用 Shardy。 | 将内联 mesh 提升为命名定义，合并相同 mesh，并更新引用；计算仍保存在 Module 中。 |
+| [`PyClient::CompileAndLoad`][src-compile] | 调用者提交的 Module。 | 先 `clone()`，后续编译可以修改副本。遇到 Shardy 与旧 GSPMD 属性混用时，按条件回退并导出相应分片表示。 |
+| [`PyMhloToStablehlo`][src-mhlo] | 已解析、含 MHLO 操作的 Module。 | 运行 `createHloLegalizeToStablehloPass`，将相应操作转换为 StableHLO。 |
+| [`PrepareForExport`][src-prepare] | 将要导出 HLO 的 Module。 | 运行 MHLO 合法化和 StableHLO 导出准备；发现 shape 操作时，再整理和合法化形状计算。 |
+| [`_lower_mosaic_module_to_asm`][src-mosaic-serde] | Mosaic TPU Module 和可选的 IR 目标版本。 | 克隆模块，运行 `mosaic-serde` pass，得到适合序列化的模块副本。 |
+
+`verify()` 读取 Module 并检查约束；pass 和克隆则分别改写程序或产生副本。Shardy 的 mesh 整理只是分片处理中的一步，后续分片传播与计算分区由相应编译路径继续完成。
+
+## 4. 消费：交给编译器，或导出程序表示
+
+### 外层 Module 进入 IFRT 和 PJRT
+
+[`PyClient::CompileAndLoad`][src-compile] 把克隆的 Module 放入 [`ifrt::HloProgram`][src-hlo-program]，并构造 IFRT 编译选项。`HloProgram` 在这里持有 `mlir::ModuleOp` 及其所有权，接着由 [`CompileAndLoadIfrtProgram`][src-ifrt] 调用 IFRT 默认 Compiler。
+
+使用 PJRT 的实现中，[`PjRtCompiler::CompileAndLoad`][src-ifrt-compiler] 检查 Program 类型，取出 Module 和 XLA 编译选项，交给 `PjRtLoadedExecutable::Create`；后者调用设备实现的 [`PjRtClient::CompileAndLoad`][src-pjrt-compile]。
 
 ```text
-Module + CompileOptions
-  → PyClient::CompileAndLoad
-      → clone() 得到独立 Module
-      → IFRT HloProgram(Module)
-      → IFRT Compiler::CompileAndLoad
+外层 MLIR Module + 编译选项
+  → jaxlib 克隆 Module，构造 ifrt::HloProgram
+  → IFRT PjRtCompiler 取出 Module 与编译配置
+  → PJRT 调用具体设备后端的编译与加载接口
 ```
 
-[`PyClient::CompileAndLoad`][src-compile] 接收 Module、设备及编译选项，处理后将副本放进 `ifrt::HloProgram`，交给 `CompileAndLoadIfrtProgram`。后者在 [IFRT 调用位置][src-ifrt] 调用默认 Compiler。可以对照图中的 [编译绑定](mlir-module-centered-hub.svg#c0)、[克隆副本](mlir-module-centered-hub.svg#after) 和 [IFRT Program](mlir-module-centered-hub.svg#ifrt_program)。
+CPU/GPU 后续路径会导出 HLO 并构造 `HloModule`。公开的 [`ConvertMlirHloToHloModule`][src-to-hlo] 展示了这类转换：先准备 Module、导出 HLO proto，再根据配置调用 `HloModule::CreateFromProto`。具体设备入口怎样调用导出接口，见 [HLO 文档](../xla/hlo-centered-hub.md)。
 
-`HloProgram` 是此处的 IFRT Program 实现名称。这个构造位置明确传入 `mlir::ModuleOp` 的 owning reference，所以名字并不证明对象已经变成 XLA `HloModule`。
+编译与加载完成后，IFRT 返回 LoadedExecutable，jaxlib 构造 `PyLoadedExecutable` 供 Python 持有。它提供后续执行能力；本次函数调用的数据由执行接口另行传入。
 
-### 4.2 下游公开 HLO 转换
+### Mosaic Module 接入外层 custom call
 
-图中 `ifrt_program → c1 → t3 → r1` 聚合下游编译路径里的 Module → HLO 转换，并展开导出内部步骤；它不表示 IFRT 公共接口要求每一种 provider 使用同一套内部转换。
+[`lower_module_to_custom_call`][src-custom-call] 组织内核配置，并调用序列化流程。`_lower_mosaic_module_to_asm` 将处理后的 Module 写成 MLIR bytecode；这里函数名中的 `asm` 指向的实际返回值是字节序列。
 
-[`ConvertMlirHloToHloModule`][src-to-hlo] 的输入是 Module 和转换选项，内部先调用 `ConvertMlirHloToHlo`。后者在导出前调用 [`PrepareForExport`][src-prepare]，再构造 HLO proto；外层函数根据 proto 和配置调用 `HloModule::CreateFromProto`，返回 `HloModule`。
+外层 custom call 的 `backend_config` 携带这份内核程序及配置，操作数和结果连接外层数据流。包含该调用的完整外层 Module 随后进入上述编译接口，由 TPU 专用编译路径处理内核载荷。
 
-所以 [导出准备](mlir-module-centered-hub.svg#t3) 的结果仍是 Module，而 [HloModule](mlir-module-centered-hub.svg#r1) 是继续导出与构造后的结果。后续 HLO pass 和目标后端见 [XLA / HLO 文档](../xla/hlo-centered-hub.md)。
+### 保存与检查 Module
 
-### 4.3 编译结果沿接口返回
+[`PySerializePortableArtifact`][src-serialize] 接收 Module、目标版本和序列化选项，返回版本化的 StableHLO 可移植产物。普通的 [`module_to_bytecode`][src-bytecode] 则写出 MLIR bytecode。验证接口返回状态或诊断，打印接口返回文本，供开发者检查某个阶段的程序。
 
-图中 `ifrt_program → r0` 从 IFRT 编译接口返回 [Python 可执行包装](mlir-module-centered-hub.svg#r0)。[`CompileAndLoadIfrtProgram`][src-ifrt] 获取编译结果并构造 `PyLoadedExecutable`。这条返回关系聚合被调用方完成编译与加载后的结果，不是绕过下游编译的另一种实现。
+---
 
-返回的可执行对象用于后续提交数组参数。Module、HloModule 和可执行对象分别处于不同阶段；数组输入输出另走 [IFRT Array](../ifrt/array-centered-hub.md) 与 [PJRT Buffer](../pjrt/buffer-centered-hub.md) 通路。
-
-<a id="5-辅助消费接口与表示边界"></a>
-
-### 4.4 并列的序列化、验证与观察接口
-
-[`consume_input`](mlir-module-centered-hub.svg#consume_input) 也分别连接版本化序列化 [`c2`](mlir-module-centered-hub.svg#c2) 和验证、打印、普通 bytecode [`c3`](mlir-module-centered-hub.svg#c3)。这些消费者与编译提交并列；选择一个不要求先调用其他消费者。
-
-| 接口 | 输入 | 输出 | 使用时需要保留的区别 |
-|---|---|---|---|
-| [`module_to_bytecode`][src-bytecode] | MLIR Module。 | MLIR bytecode 字节。 | 普通模块序列化不自动等同于指定版本的 StableHLO portable artifact。 |
-| [`PySerializePortableArtifact`][src-serialize] | Module、目标版本、Shardy 版本及序列化选项。 | 可移植产物字节。 | 这里引用的是接收 Python Module 的重载；版本化序列化与设备代码生成不同。 |
-| [`PyDeserializePortableArtifact`][src-deserialize] | 产物字节和 Context。 | Python Module 对象。 | 还原程序表示，不执行程序。 |
-| [`operation.verify()`][src-verify] | 构造后的 Module。 | 验证通过或错误。 | 通过验证不意味着已完成后端编译或已得到设备结果。 |
-
-Pallas 的 Mosaic Module 也使用 MLIR 基础设施，但图中提交编译的是包含 custom call 的完整外层 Module；内层 payload、外层 operands 和运行时数组分属不同角色，见 [JAX 文档中的 Pallas 两层程序](../jax/jaxpr-centered-hub.md#pallas)。
-
-<a id="6-固定版本与证据范围"></a>
-
-## 固定版本与证据范围
-
-本页源码链接直接复用 SVG 中的固定提交与行号，版本以 [`upstream-sources.lock`](../../../upstream-sources.lock) 为准。
-
-| 源码树 | 固定提交 | 本页使用范围 |
-|---|---|---|
-| JAX / jaxlib | `361c43e072cce92b7d3e9bdaf4dd16db26c49043` | Python lowering、原生绑定、编译提交及序列化接口。 |
-| LLVM / MLIR | `75a45c373407c13a44c7abb28a78d891a97fe665` | `ModuleOp` 定义。 |
-| StableHLO | `7b1b15781ccbd770f50c7eef4b0c3e03834649fd` | 方言操作定义实例。 |
-| XLA | `dcf304bc5dca1932b99f740b911dbd73631a1a69` | MLIR → HLO 导出及其内部准备过程。 |
-
-证据来自本地固定源码和校验过的源码缓存。本文没有执行 CPU 计算、TPU 模拟、离线 TPU 编译或真实 TPU 执行；只说明这些版本中可定位的结构、输入输出和调用关系。
-
-继续阅读：[JAX / Jaxpr](../jax/jaxpr-centered-hub.md) · [IFRT Array](../ifrt/array-centered-hub.md) · [XLA / HLO](../xla/hlo-centered-hub.md) · [software-stack 索引](../index.md)。
+本页按 [`upstream-sources.lock`](../../../upstream-sources.lock) 中的 JAX `361c43e0`、XLA `dcf304bc`、LLVM `75a45c37` 和 StableHLO `7b1b1578` 核对。链接均指向完整固定提交；结论来自源码检查，未运行编译或设备计算。生成和校验方法见[图文维护](../index.md#图文维护)。
 
 [src-module]: https://github.com/llvm/llvm-project/blob/75a45c373407c13a44c7abb28a78d891a97fe665/mlir/include/mlir/IR/BuiltinOps.td#L33
 [src-stablehlo]: https://github.com/openxla/stablehlo/blob/7b1b15781ccbd770f50c7eef4b0c3e03834649fd/stablehlo/dialect/StablehloOps.td#L831
@@ -123,3 +103,10 @@ Pallas 的 Mosaic Module 也使用 MLIR 基础设施，但图中提交编译的�
 [src-to-hlo]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/hlo/translate/mhlo_to_hlo/mlir_hlo_to_hlo.cc#L6232
 [src-bytecode]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/interpreters/mlir.py#L603
 [src-serialize]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jaxlib/mlir.cc#L176
+[src-pallas]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/pallas/mosaic/pallas_call_registration.py#L393
+[src-mosaic]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/pallas/mosaic/lowering.py#L1008
+[src-mosaic-serde]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/tpu_custom_call.py#L491
+[src-custom-call]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/tpu_custom_call.py#L839
+[src-hlo-program]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/python/ifrt/hlo/hlo_program.h#L39
+[src-ifrt-compiler]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/python/pjrt_ifrt/pjrt_compiler.cc#L91
+[src-pjrt-compile]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/python/pjrt_ifrt/pjrt_executable.cc#L763

@@ -22,6 +22,16 @@ ANCHORS['Triton compiler']=('xla','xla/backends/gpu/codegen/triton/xtile_compile
 ANCHORS['Triton LLVM translation']=('xla','xla/backends/gpu/codegen/triton/xtile_compiler.cc','TranslateLLVMToLLVMIR(llvm_context.get(), triton_source.module()));')
 ANCHORS['GPU custom binary']=('xla','xla/backends/gpu/codegen/cubin_custom_kernel_compiler.cc','CubinCustomKernelCompiler::CompileToTargetBinary(')
 ANCHORS['Triton custom thunk']=('xla','xla/backends/gpu/codegen/triton/fusion.cc','return ThunkSequence::Of<CustomKernelThunk>(')
+ANCHORS['IFRT HloProgram']=('xla','xla/python/ifrt/hlo/hlo_program.h','class HloProgram : public RTTIExtends<HloProgram, Program> {')
+ANCHORS['IFRT PjRtCompiler']=('xla','xla/python/pjrt_ifrt/pjrt_compiler.cc','tsl::Future<LoadedExecutableRef> PjRtCompiler::CompileAndLoad(')
+ANCHORS['CPU execute']=('xla','xla/pjrt/cpu/cpu_client.cc','PjRtCpuLoadedExecutable::Execute(')
+ANCHORS['CPU execution context']=('xla','xla/pjrt/cpu/cpu_client.cc','cpu::Thunk::ExecuteParams execute_params = {')
+ANCHORS['CPU input dependencies']=('xla','xla/pjrt/cpu/cpu_client.cc','xla::ExecuteWhenReady(')
+ANCHORS['CPU thunk execution']=('xla','xla/backends/cpu/runtime/thunk_executor.cc','tsl::AsyncValueRef<ThunkExecutor::ExecuteEvent> ThunkExecutor::Execute(')
+ANCHORS['jvp_jaxpr']=('jax','jax/_src/interpreters/ad.py','def jvp_jaxpr(')
+ANCHORS['CPU HLO passes']=('xla','xla/service/cpu/cpu_compiler.cc','absl::Status CpuCompiler::RunHloPasses(HloModule* module, bool is_aot_compile,')
+ANCHORS['GPU HLO passes']=('xla','xla/service/gpu/gpu_compiler.cc','absl::StatusOr<std::unique_ptr<HloModule>> GpuCompiler::RunHloPasses(')
+ANCHORS['GPU kernel compiler']=('xla','xla/service/gpu/gpu_compiler.cc','    CubinCustomKernelCompiler kernel_compiler(')
 
 
 def source_metadata(root, names, fetch=False):

@@ -15,7 +15,7 @@ NEIGHBORS = dict(jax=('jaxlib', 'xla'), jaxlib=('jax', 'ifrt'), ifrt=('jaxlib', 
                  pjrt=('ifrt', 'runtime'), xla=('jaxlib', 'cpu', 'gpu'), cpu=('xla', 'pjrt'),
                  gpu=('xla', 'runtime'), tpu=('pjrt', 'jax'), runtime=('gpu', 'pjrt'))
 LABELS = dict(jax='JAX', jaxlib='jaxlib', ifrt='IFRT', pjrt='PJRT', xla='XLA / HLO',
-              cpu='CPU 后端', gpu='GPU 后端', tpu='TPU / libtpu', runtime='StreamExecutor / CUDA')
+              cpu='CPU 后端', gpu='GPU 后端', tpu='TPU / libtpu', runtime='设备运行时与驱动')
 
 
 def node(title, rows, *refs, tag='内部接口', color='program', owner=None, link=None):
@@ -63,319 +63,126 @@ def chain(s, ids, labels, kind='program'):
 
 
 def jax():
-    s = dict(key='jax', path=PATHS['jax'], title='JAX · 定义与产生、变换、消费的调用链',
-             summary='定义独立说明 Jaxpr；产生、变换、消费分块展开，以对象流与调用关系贯通。变换可按需跳过。',
-             foot='定义区只解释抽象与结构。操作区展示产生 → 按需变换 → 消费，并保留直接消费支路。Pallas 重新绑定交给当前 Trace；只有记录外层程序时才展开到 DynamicJaxprTrace。灰色附区跟踪 Module、executable 和数组；设备完成另行观察。',
-             nodes={}, sections=[], edges=[], paths=[], omit=set(), core_id='core',
-             avoid_endpoint_captions=True, layout='connected_views', canvas_width=23900)
+    s = dict(key='jax', path=PATHS['jax'], title='JAX · Jaxpr 的定义、产生、变换与消费',
+             summary='Jaxpr 用原语及其组合表达 JAX / Pallas 计算；同一程序可用于微分、批量化、解释和 lowering。',
+             foot='变换按调用需要选择。JVP 和 batching 构造新的计算；DCE 保留所需计算。lowering 的结果交给 jaxlib 继续编译。',
+             nodes={}, sections=[], edges=[], paths=[], details=[], omit=set(), core_id='core',
+             avoid_endpoint_captions=True, layout='component_views')
     n = s['nodes']
-    n['core'] = node('Jaxpr', ['all_invars / invars / outvars 界定程序输入输出。',
-        'eqns 保存 JaxprEqn；constvars / consts 表达已附常量。',
-        'avals、effects、DebugInfo 与 is_high 约束语义和来源。'], 'Jaxpr', tag='定义 · 研究对象')
-    for i, (tag, title, rows, refs) in enumerate(DEFINITIONS):
-        n[f'd{i}'] = node(title, rows, *refs, tag='定义 · '+tag, color='neutral')
-    for i, (tag, title, rows, refs) in enumerate(PRODUCERS):
-        n[f'p{i}'] = node(title, rows, *refs, tag='产生 · '+tag)
-    for i, (_, title, rows, refs) in enumerate(TRANSFORMS):
-        n[f't{i}'] = node(title, rows, *refs, tag='变换 · 独立可选分支', color='transform')
-    for i, (_, title, rows, result, result_rows, refs) in enumerate(CONSUMERS):
-        n[f'c{i}'] = node(title, rows, *refs, tag='消费 · 解释器 / lowering')
-        n[f'r{i}'] = node(result, result_rows, *refs, tag='消费结果', color='result')
-    n['eqn'] = node('JaxprEqn', ['invars / outvars 连接 Var 或 Literal。',
-        'primitive 标识操作；params 可以携带子 Jaxpr。', 'effects、source_info / ctx 保存方程语义和上下文。'], 'JaxprEqn', tag='定义 · 方程结构', color='neutral')
-    n['var'] = node('Var / Literal', ['Var 保存抽象类型，并通过变量身份建立值依赖。',
-        'Literal 携带字面值；它与常量变量的调用约定不同。'], 'Var', 'Literal', tag='定义 · 值与类型', color='neutral')
-    n['primitive'] = node('Primitive 与解释规则', ['primitive.bind 根据当前 Trace 分派。',
-        '抽象求值、batching、微分和 lowering 各有对应规则。'], 'Primitive', 'Primitive.bind', tag='定义 · 操作及其解释', color='neutral')
-    n['after'] = node('变换后的 Jaxpr 与附加信息', ['返回一个或多个 Jaxpr，以及 used_inputs、out_axes、residual 等。',
-        '变换产物仍受 Jaxpr 的类型、效果与良构性约束。'], 'dce_jaxpr', 'linearize_jaxpr', tag='变换结果', color='transform')
-    n['lower_rules'] = node('jaxpr_subcomp / lowering rules', ['逐方程读取输入 IR 值，根据 primitive 查找 lowering 规则。',
-        '规则返回 IR 结果值；写回方程输出的值环境。'], 'jaxpr_subcomp', 'register_lowering', tag='消费 · 原语规则')
-    n['frontend_arrays'] = node('jax.Array / ArrayImpl', ['用户可见的数组值，带有 dtype、shape 与 sharding。',
-        '实际数组与追踪中的 Tracer 分属不同对象。', '执行路径传递实际数组；追踪主要使用其抽象信息。'],
-        'ArrayImpl', tag='定义 · 前端值与存储', color='data', link='#input_arrays')
-    n['pytrees'] = node('PyTree / 函数展平', ['tree_flatten 将嵌套结构拆成 leaves 与 treedef。',
-        'flatten_fun 组织展平函数的输入输出约定。', 'PyTree 描述结构，Jaxpr 记录展平后计算的值依赖。'],
-        'tree_flatten', 'flatten_fun', tag='产生准备 · 调用结构', color='neutral', link='#p0')
-    n['placement'] = node('Mesh / NamedSharding', ['Mesh 给设备轴命名；NamedSharding 组织数组分片。',
-        '分片及布局参与 lowering 和运行时输入输出处理。'],
-        'Mesh', 'NamedSharding', tag='定义 · 放置上下文', color='neutral', link='#c3')
-    n['api_transforms'] = node('jit / grad / vmap', ['jit 组织暂存编译，grad 组织微分，vmap 组织批量化。',
-        '函数变换按需要组合；各自使用对应解释规则。', 'API 调用并不固定对应一次追踪、一次 Jaxpr 或一次编译。'],
-        'jit', 'grad', 'vmap', tag='变换入口 · 函数层协议', color='transform', link='#p0')
-    n['trace_types'] = node('Trace / Tracer', ['Trace 解释 primitive；Tracer 表示追踪期间的值。',
-        'DynamicJaxprTrace 将操作记录到 frame。', '最终 Jaxpr 不需要保留这些追踪实例。'],
-        'Trace', 'Tracer', 'DynamicJaxprTracer', tag='产生机制 · 解释与抽象值', color='neutral', link='#p1')
-    n['aval'] = node('aval / AbstractValue / ShapedArray', ['aval 定义值的抽象类型，不只是 shape。',
-        '抽象求值根据输入 aval 推导输出 aval 与 effects。', 'lowering 则在平台上下文中生成 IR，两类规则分开。'],
-        'AbstractValue', 'ShapedArray', 'default_process_primitive', tag='定义 · 类型与效果', color='neutral', link='#var')
-    n['stages'] = node('Traced / Lowered / Compiled', ['Traced 表示追踪结果，可继续 lower。',
-        'Lowered 暴露 lowering 结果，可继续 compile。',
-        'Compiled 提供编译后调用接口；它不是“设备已执行”的证明。',
-        '显式阶段 API 与普通 jit 调用、缓存复用按入口区分。'],
-        'Traced', 'Lowered', 'Compiled', tag='消费接口 · 显式阶段对象', color='neutral', link='#compile_cache')
-    n['partial_values'] = node('PartialVal / HiJAX 与 LoJAX', ['PartialVal 区分已知值与只有 aval 的未知值。',
-        '高层类型与 primitive 可按协议展开为低层 Jaxpr。',
-        '这种 JAX 内部转换不等于选择 StableHLO 或 Mosaic。'],
-        'PartialVal', 'HiType', 'Primitive.bind_with_trace', tag='变换约束 · 已知值与表示层次', color='neutral', link='#t4')
+    n['core'] = node('Jaxpr', ['表达 JAX / Pallas 代码的中间表示。',
+        '描述输入如何通过原语及其组合产生输出，', '以及计算中发生的可观察效果。'], 'Jaxpr', tag='定义 · 程序表示')
+    n['d0'] = node('输入、输出与常量', ['all_invars 保存全部输入变量。',
+        'constvars / consts 对应已附常量；invars 为其余输入。',
+        'outvars 引用变量或字面量，确定输出顺序。',
+        '本版本 ClosedJaxpr 与 Jaxpr 是同一个类。'], 'Jaxpr', 'ClosedJaxpr alias', tag='定义 · 程序边界', color='neutral')
+    n['eqn'] = node('JaxprEqn · 原语应用', ['invars / outvars 连接值依赖。',
+        'primitive 决定操作，params 保存静态参数或子 Jaxpr。',
+        'eqns 按解释顺序组成程序主体。'], 'JaxprEqn', 'Primitive', tag='定义 · 方程', color='neutral')
+    n['var'] = node('Var / Literal / aval', ['Var 表示值的身份，aval 描述抽象类型。',
+        'Literal 直接携带字面值。', '类型可包含 shape、dtype，也可表达 Ref 等。'], 'Var', 'Literal', 'AbstractValue', tag='定义 · 值与类型', color='neutral')
+    n['d3'] = node('effects 与良构性', ['effects 记录读写等可观察效果。',
+        '变量先定义后使用，同一变量只绑定一次。',
+        '方程输入输出须满足原语类型与效果规则。'], 'check_jaxpr', 'has_effects', tag='定义 · 语义约束', color='neutral')
 
-    n['caller'] = node('Python 函数中的 pl.pallas_call', ['调用者传入数组，并接收结果数组。',
-        'kernel、grid、BlockSpec 等描述所调用的计算。'], 'pallas_call', tag='产生 · Pallas 调用入口')
-    n['kernel'] = node('kernel 函数 + GridMapping + avals', ['get_grid_mapping 整理网格、块映射与调用约定。',
-        'kernel 使用 AbstractRef 等抽象输入参与追踪。'], 'get_grid_mapping', 'AbstractRef', tag='产生 · kernel 追踪输入')
-    n['outer_jaxpr'] = node('外层 Jaxpr / pallas_call 方程', ['普通方程 → pallas_call → 后续方程。',
-        'invars / outvars 连接外层数组值。', 'params.jaxpr 携带内层程序；GridMapping 等另行携带。',
-        'pallas_call_p.bind 将调用与参数交给外层 Trace。'], 'JaxprEqn', 'pallas_call_p.bind', tag='定义 · Jaxpr 的调用者实例', link='#core')
-    n['inner_jaxpr'] = node('内层 kernel Jaxpr', ['同样使用 core.Jaxpr，保存 kernel 方程与 effects。',
-        '通过输入 / 输出 Ref 的读写表达计算。', 'kernel Python 函数返回 None，输出由 Ref 写入。',
-        '追踪与 DCE 返回 kernel Jaxpr 和捕获的 consts。'], 'Jaxpr', '_trace_kernel_to_jaxpr', tag='定义 · Jaxpr 的 kernel 实例', link='#core')
-    n['outer_lowering'] = node('jaxpr_subcomp → Pallas lowering', ['输入：外层 IR 实参、规则上下文与 eqn.params。',
-        '_pallas_call_lowering 按平台和 interpret 模式分派。',
-        '此处展开 interpret=False 的 Mosaic TPU 路径。'], 'jaxpr_subcomp', 'register Pallas lowering', '_pallas_call_lowering', tag='消费 · 外层方程规则')
-    n['mosaic_module'] = node('Mosaic TPU MLIR Module', ['TPU 规则消费 kernel Jaxpr、GridMapping 和上下文。',
-        'lower_jaxpr_to_pipelined_module 构造独立 ir.Module。',
-        '该内层模块随后成为 custom_call 的序列化 payload。', 'Mosaic TPU MLIR 不是 LLO，也不是最终设备机器码。'],
-        'pallas_call_tpu_lowering_rule', 'lower_jaxpr_to_pipelined_module', tag='消费 kernel · 产生专用模块')
-    n['payload'] = node('CustomCallBackendConfig / payload', ['输入：消费区产生的 Mosaic TPU MLIR Module。',
-        '克隆 Module，运行版本化 mosaic-serde pass。',
-        'write_bytecode 写出模块字节；这里不是机器汇编。',
-        'to_json 将字节码编码进 custom_call_config.body。',
-        'payload 携带内层程序，与外层 operands 分别传递。'],
-        '_lower_mosaic_module_to_asm', 'CustomCallBackendConfig.to_json', 'lower_module_to_custom_call', tag='后续 · Module 序列化与封装', color='transform', link='#mosaic_module')
-    n['outer_module'] = node('外层 Module / stablehlo.custom_call', ['call_target_name = tpu_custom_call。',
-        'backend_config 携带序列化 kernel 与配置。', 'operands / results 接入外层其他 StableHLO 操作。',
-        'lowering 返回 IR 值；设备结果由之后的执行产生。'], 'emit tpu_custom_call', 'lower_jaxpr_to_module', tag='后续 · custom call 接入外层 IR')
-    n['mapping'] = node('GridMapping 配合 kernel Jaxpr', ['grid / block_mappings / scratch_avals 描述调用映射。',
-        'Jaxpr 定义 kernel 计算，GridMapping 组织其调用。',
-        '两者是独立参数，由 TPU lowering 一起消费。'], 'GridMapping', 'GridSpec', 'BlockSpec', tag='定义 · kernel 的调用约定', color='neutral', link='#inner_jaxpr')
-    n['transforms'] = node('Pallas 专用 JVP / batching 规则', ['JVP 消费 kernel Jaxpr 与切向信息，产生新程序。',
-        '规则同时更新 GridMapping、Ref 顺序和输出约定。',
-        'batching 也按专用规则处理调用；各自有适用约束。',
-        '重建后的调用重新绑定到外层解释环境。'],
-        '_pallas_call_jvp_rule', '_pallas_call_batching_rule', tag='变换 · 满足规则约束时应用', color='transform', link='#inner_jaxpr')
+    n['p0'] = node('Python 函数与抽象输入', ['展平函数输入输出，取得动态输入的 avals。',
+        '_trace_for_jit 把函数与抽象输入交给追踪器。'], '_trace_for_jit', 'flatten_fun', tag='产生 · 输入')
+    n['p1'] = node('DynamicJaxprTrace', ['Tracer 代表追踪中的值。',
+        '处理 primitive 调用，推导类型与 effects，记录方程。'], 'DynamicJaxprTrace', 'make_eqn', tag='产生 · 记录计算')
+    n['p2'] = node('JaxprStackFrame.to_jaxpr', ['汇总输入、输出、常量与方程。',
+        '构造 Jaxpr，并按追踪接口返回常量与输出类型。'], 'Frame.to_jaxpr', tag='产生 · 构造对象')
+    n['produced'] = node('追踪得到的 Jaxpr', ['追踪接口返回携带常量的程序与输出抽象类型。',
+        '可继续变换，也可直接解释、检查或 lower。'], 'trace_to_jaxpr_nocache', tag='产生 · 结果')
+    n['caller'] = node('pl.pallas_call 的 kernel 与配置', ['kernel、grid、BlockSpec 定义块内计算及调用方式。',
+        'get_grid_mapping 整理映射与 Ref 输入类型。'], 'pallas_call', 'get_grid_mapping', tag='产生 · Pallas 输入')
+    n['inner_jaxpr'] = node('内层 kernel Jaxpr', ['_trace_kernel_to_jaxpr 追踪 kernel 并运行 DCE。',
+        '从输入 Ref 读取，向输出 Ref 写入；函数返回 None。',
+        '结果仍是 core.Jaxpr，另返回允许捕获的常量。'], '_trace_kernel_to_jaxpr', tag='产生 · kernel 程序')
+    n['mapping'] = node('GridMapping', ['记录 grid、block mappings 与输入输出约定。',
+        '与 kernel Jaxpr 一起传递，指导后续变换和 lowering。'], 'GridMapping', 'get_grid_mapping', tag='产生 · 配套调用信息', color='neutral')
+    n['pallas_bind'] = node('pallas_call_p.bind', ['把 kernel Jaxpr、GridMapping 和数组实参交给当前 Trace。',
+        '在外层 Jaxpr 追踪中，记录为一条 pallas_call 方程。'], 'pallas_call_p.bind', 'Primitive.bind', tag='产生 · 外层调用')
+    n['outer_jaxpr'] = node('含 pallas_call 的外层 Jaxpr', ['方程输入输出连接调用者的数组值。',
+        'params 分别携带 kernel Jaxpr 与 GridMapping。'], 'JaxprEqn', 'pallas_call_p.bind', tag='产生 · 调用者程序')
 
-    n['compile_cache'] = node('compile_or_get_cached', ['输入：完整外层 Module、设备、编译选项与回调。',
-        '持久缓存命中时恢复可执行对象；否则按策略编译。',
-        '这里的恢复可包含反序列化与加载。'], 'compile_or_get_cached', tag='后续 · Module 编译缓存与策略')
-    n['backend_compile'] = node('backend_compile_and_load', ['常规后端调用 Client.compile_and_load。',
-        'CompileOnlyPyClient 有 compile 分支，不能视为执行。',
-        '下列主线展开常规编译并加载路径。'], 'backend_compile_and_load', tag='后续 · Module 编译调用边界')
-    n['compile'] = node('PyClient::CompileAndLoad', ['接收整个外层 Module 与编译选项。',
-        '函数内部克隆 Module，包装为 IFRT HloProgram。',
-        '将编译结果包装为 PyLoadedExecutable 返回。'], 'PyClient.CompileAndLoad', tag='外部接口 · 原生编译与加载', owner='jaxlib / IFRT', link='../jaxlib/mlir-module-centered-hub.svg#core')
-    n['loaded_exec'] = node('已加载程序 / 执行包装', ['编译或缓存返回的 executable 由执行包装持有。',
-        'ExecuteReplicated.xla_executable 供后续调用使用。',
-        '已加载程序与本次输入数组在执行入口汇合。'], 'compile_or_get_cached', 'ExecuteReplicated', tag='编译结果返回', color='result')
-    n['input_arrays'] = node('本次调用的数组输入', ['动态参数经 in_handler 组织为输入数组。',
-        '按需加入 effects / tokens，满足执行约定。'], 'ExecuteReplicated', tag='执行 · 实际数组与依赖', color='data', link='../ifrt/array-centered-hub.svg#core')
-    n['execute'] = node('ExecuteReplicated.__call__', ['调用 xla_executable.execute_sharded(input_bufs)。',
-        '带 effects / callbacks 时使用 token 路径。',
-        'jaxlib / IFRT / provider 负责后续执行提交。'], 'ExecuteReplicated', 'execute_sharded', tag='后续 · executable 与数组执行', color='data')
-    n['result_arrays'] = node('Python 可见结果数组', ['consume_with_handlers 按输出规则包装结果。',
-        '对象返回与设备数据就绪是不同观察时刻。'], 'ExecuteReplicated', tag='输出对象返回', color='output', link='../ifrt/array-centered-hub.svg#status')
-    n['produced'] = node('构造结果：Jaxpr + constvals', [
-        '输入与输出变量、方程、effects 汇总为程序对象。',
-        '普通追踪与 kernel 追踪都产生同一 Jaxpr 抽象。',
-        '调用方按约定附加常量，或将 constvals 单独传递。'],
-        'Frame.to_jaxpr', '_trace_kernel_to_jaxpr', tag='产生结果 · 持久程序', link='#core')
-    n['core']['rows'] = ['JAX 的显式程序表示：用方程与值依赖描述计算。',
-        '输入与输出界定程序边界；avals 与 effects 约束语义。',
-        '定义不依赖某一次 tracing、变换或后端编译。']
-    n['kernel']['title'] = 'kernel 追踪：函数 + 映射 + avals'
-    n['kernel']['rows'] = ['get_grid_mapping 整理网格、块映射与调用约定。',
-        '_trace_kernel_to_jaxpr 用 AbstractRef 输入追踪 kernel。',
-        '追踪及 DCE 返回 kernel Jaxpr 与捕获的 consts。']
-    n['kernel']['refs'] += ('_trace_kernel_to_jaxpr',)
-    n['kernel']['link'] = '#inner_jaxpr'
-    n['caller']['rows'] = ['kernel、grid 与 BlockSpec 等描述被调用的计算。',
-        '先追踪 kernel，得到内层 Jaxpr 与捕获常量。',
-        'pallas_call_p.bind 携带内层程序、映射与数组实参，',
-        '交给外层 Trace 收集 pallas_call 方程。']
-    n['caller']['refs'] += ('pallas_call_p.bind',)
-    n['caller']['link'] = '#outer_jaxpr'
-    n['inner_jaxpr']['rows'] = ['同样使用 core.Jaxpr，保存 kernel 方程与 effects。',
-        '通过输入 / 输出 Ref 的读写表达计算。', 'kernel Python 函数返回 None，输出由 Ref 写入。',
-        '它与外层 Jaxpr 是同一抽象的不同实例。']
-    n['t5']['tag'] = '共同实现机制 · 对象重建'
-    n['t5']['color'] = 'neutral'
-    n['t5']['rows'] = ['Jaxpr.replace / Jaxpr(...) 重建字段与程序对象。',
-        '具体变换按自身规则选择要重建的签名、方程和元数据。',
-        '这是构造机制，不与 DCE、微分等算法并列。']
-    n['transforms']['rows'] = ['输入：kernel Jaxpr + GridMapping + 切向 / 批维信息。',
-        'JVP 可重建 kernel；batching 按分支复用或改写程序 / 调用。',
-        '按需更新映射、Ref 与输出约定，并重新绑定调用。',
-        '输出程序与调用参数；各规则有适用约束。']
-    for key in ('t0','t1','t2','t3','t4','transforms'):
-        n[key]['link'] = '#core'
-    n['after']['link'] = '#core'
-    n['after']['title'] = '变换结果：Jaxpr 与附加信息'
-    n['after']['rows'] = ['通常得到改写或分拆的 Jaxpr，以及 used_inputs、out_axes、residual 等。',
-        'Pallas 专用分支也可复用 kernel，更新调用参数后重新绑定。',
-        '产物仍受 Jaxpr 的类型、效果与良构性约束。']
-    n['c0']['tag'] = '消费 · 解释 Jaxpr'
-    n['c1']['tag'] = '消费 · 校验 Jaxpr'
-    n['c2']['tag'] = '消费 · 打印 Jaxpr'
-    n['c3']['tag'] = '消费 · 普通 JAX lowering 入口'
-    n['c4']['title'] = 'lower_jaxpr_to_pipelined_module'
-    n['c4']['rows'] = ['输入：kernel Jaxpr + GridMapping / Ref 上下文。',
-        '按 Mosaic TPU 原语规则构造独立 MLIR Module。',
-        '这是 Pallas kernel 消费分支；普通 JAX 不必经过它。']
-    n['c4']['tag'] = '消费 · Pallas kernel lowering'
-    n['c4']['link'] = '#inner_jaxpr'
-    n['mosaic_module']['rows'] = ['结果：内层 kernel 的 Mosaic TPU MLIR Module。',
-        '包含 TPU 专用操作及 kernel 映射语义。',
-        '后续序列化为外层 custom_call 的 payload。',
-        'Mosaic TPU MLIR 不是 LLO，也不是最终设备机器码。']
-    n['mosaic_module']['tag'] = '消费结果 · kernel 的 MLIR Module'
-    n['mosaic_module']['link'] = '#payload'
-    n['r4']['title'] = '普通 lowering 与 Pallas 分支的关系'
-    n['r4']['rows'] = ['普通方程由对应的 primitive lowering 规则处理。',
-        '遇到 pallas_call 时才按模式与平台选择专用规则。',
-        'TPU 规则消费内层 kernel，并将调用接回外层 IR。',
-        '两类 Jaxpr 消费分别标出；不把所有调用串成必经路径。']
-    n['r4']['tag'] = '消费说明 · 按方程与平台分支'
-    n['r4']['link'] = '#outer_lowering'
-    n['stages']['tag'] = '后续接口 · Traced / Lowered / Compiled'
-    n['frontend_arrays']['tag'] = '相关输入 · 实际数组'
-    n['placement']['tag'] = '相关上下文 · 放置与分片'
-    n['api_transforms']['tag'] = '相关入口 · 函数层变换'
-    for key in ('c0','c1','c2','c3'):
-        n[key]['link'] = '#core'
-    n['r3']['link'] = '#compile_cache'
+    for i, (_, title, rows, refs) in enumerate(TRANSFORMS[:5]):
+        n[f't{i}'] = node(title, rows, *refs, tag='变换 · 按需应用', color='transform')
+    n['jvp'] = node('jvp_jaxpr · 前向微分', ['输入程序与切向非零标记，应用原语 JVP 规则。',
+        '追踪原值与切向计算，返回新 Jaxpr 和输出非零标记。'], 'jvp_jaxpr', tag='变换 · 构造导数计算', color='transform')
+    n['transform_input'] = node('程序与变换参数', ['根据微分、批量化或编译需要选择规则。',
+        '各规则分别处理类型、effects 和调用约定。'], 'jvp_jaxpr', 'batch_jaxpr2', tag='变换 · 输入', color='transform')
+    n['after'] = node('新程序与附加信息', ['返回改写或拆分后的 Jaxpr。',
+        'used_inputs、out_axes、residual 等供调用方衔接。'], 'dce_jaxpr', 'linearize_jaxpr', tag='变换 · 结果', color='transform')
+    n['transforms'] = node('Pallas 的 JVP / batching 规则', ['接收 kernel Jaxpr、映射和切向或批维信息。',
+        '按分支改写或复用 kernel，调整 Ref 顺序及 GridMapping。',
+        '重新绑定 pallas_call，返回调用方所需的数组结果。'],
+        '_pallas_call_jvp_rule', '_pallas_call_batching_rule', tag='变换 · kernel 与调用约定', color='transform')
 
-    n['produced']['title'] = '调用者程序：Jaxpr + constvals'
-    n['produced']['rows'] = ['由外层 frame 汇总输入、输出、方程与 effects。',
-        '普通调用者与包含 pallas_call 的调用者都使用 Jaxpr。',
-        '按调用约定附加常量，或将 constvals 单独传递。']
-    n['produced']['refs'] = ('Frame.to_jaxpr', 'Jaxpr')
-    n['outer_jaxpr']['tag'] = '产生结果 · 调用者程序实例'
-    n['inner_jaxpr']['tag'] = '产生结果 · kernel 程序实例'
-    n['mapping']['tag'] = '产生结果 · kernel 调用映射'
-    n['mapping']['refs'] += ('get_grid_mapping',)
-    n['caller']['rows'] = ['kernel、grid 与 BlockSpec 等描述被调用的计算。',
-        '先追踪 kernel，得到内层 Jaxpr 与捕获常量。',
-        '内层程序、映射和数组实参用于绑定 pallas_call。']
-    n['outer_jaxpr']['rows'] = ['这是包含 pallas_call 方程的调用者 Jaxpr 实例。',
-        'params.jaxpr 引用 kernel；params.grid_mapping 另存映射。',
-        'invars / outvars 连接调用者的数组值。',
-        '外层追踪收集该调用及前后方程，形成完整调用者程序。']
-    n['transforms']['rows'][0] = '输入：kernel Jaxpr、映射及数组 / 切向 / 批维信息。'
-    n['after']['rows'] = ['得到改写或分拆的 Jaxpr，以及 used_inputs、out_axes、residual 等。',
-        '程序仍满足 Jaxpr 的类型、效果与良构性约束。',
-        '调用方按各自协议选择需要解释或 lower 的程序。']
-    n['transform_input'] = node('按需进入 Jaxpr 变换', [
-        '输入：调用者 Jaxpr + 对应变换的参数。',
-        '各分支是可选算法，不是依次执行的五个步骤。',
-        '结果交回调用方，再按用途消费。'],
-        'dce_jaxpr', 'linearize_jaxpr', tag='变换入口 · 程序实例', color='transform', link='#core')
-    n['consume_input'] = node('待消费的调用者 Jaxpr', [
-        '接收刚产生的程序，或由变换返回的程序。',
-        '解释、校验、打印与 lowering 按需求独立选择。',
-        '下列连线展开读取同一类程序的不同接口。'],
-        'eval_jaxpr', 'check_jaxpr', 'lower_jaxpr_to_module',
-        tag='消费入口 · 程序实例', link='#core')
-    n['pallas_bind'] = node('pallas_call_p.bind → 当前 Trace', [
-        '输入：kernel Jaxpr、GridMapping、常量与数组实参。',
-        '原始调用或专用变换重建的调用按约定重新绑定。',
-        '当前 Trace 决定解释方式；记录外层程序时收集方程。',
-        '此图只在该记录场景展开到 DynamicJaxprTrace。'],
-        'pallas_call_p.bind', 'Primitive.bind', tag='产生机制 · 外层调用绑定')
-    n['kernel_after'] = node('专用规则内部的程序与调用参数', [
-        '规则内部复用或改写 kernel Jaxpr，并组织调用参数。',
-        '按需更新 GridMapping、Ref 顺序与输出约定。',
-        '重新 bind 调用；规则面向调用方的结果仍是数组值。'],
-        '_pallas_call_jvp_rule', '_pallas_call_batching_rule',
-        tag='变换内部产物 · 再绑定所需信息', color='transform')
-    n['execute']['rows'].insert(0,'输入：执行包装持有的 executable + 本次数组。')
-    n['execute']['link']='#input_arrays'
+    n['consume_input'] = node('待使用的 Jaxpr', ['消费者接收追踪结果或变换后的程序。',
+        '实际值、打印选项或 lowering 上下文由各接口提供。'], 'eval_jaxpr', 'lower_jaxpr_to_module', tag='消费 · 输入')
+    n['c0'] = node('eval_jaxpr → 输出值', ['以常量与实参建立值环境。',
+        '逐方程调用 primitive.bind，最后读取 outvars。',
+        '当前 Trace 决定这些操作如何解释。'], 'eval_jaxpr', tag='消费 · 解释')
+    n['c1'] = node('check_jaxpr → 校验结果', ['检查变量绑定、类型和原语约束。',
+        '成功返回 None；不满足约束则报告类型错误。'], 'check_jaxpr', tag='消费 · 校验', color='neutral')
+    n['c2'] = node('pretty_print → 可读文本', ['读取变量、方程、类型与效果。',
+        '按打印选项生成供阅读和诊断使用的文本。'], 'pretty_print', tag='消费 · 观察', color='neutral')
+    n['c3'] = node('lower_jaxpr_to_module', ['接收程序、平台、分片及 lowering 上下文。',
+        '创建模块和函数，调用 jaxpr_subcomp 处理方程。'], 'lower_jaxpr_to_module', tag='消费 · 构造 MLIR')
+    n['lower_rules'] = node('jaxpr_subcomp → 原语规则', ['从变量环境读取输入 IR 值。',
+        '调用原语的 lowering 规则，将结果绑定到输出变量。'], 'jaxpr_subcomp', 'register_lowering', tag='消费 · 逐方程转换')
+    n['r3'] = node('外层 MLIR Module', ['承载 StableHLO 等操作及程序入口。',
+        '作为 LoweringResult 的一部分返回，交给后续编译路径。'],
+        'lower_jaxpr_to_module', tag='消费 · 输出', color='result', link='../jaxlib/mlir-module-centered-hub.svg#core')
+    n['outer_lowering'] = node('pallas_call 的平台分派', ['读取内层 Jaxpr、GridMapping 和调用配置。',
+        '按 interpret、平台与后端选择 kernel lowering。'], '_pallas_call_lowering', tag='消费 · Pallas 方程')
+    n['mosaic_module'] = node('Mosaic TPU MLIR Module', ['TPU 规则调用 lower_jaxpr_to_pipelined_module。',
+        'kernel 方程与网格映射共同决定模块内容。'], 'pallas_call_tpu_lowering_rule', 'lower_jaxpr_to_pipelined_module', tag='消费 · kernel lowering 结果')
+    n['payload'] = node('序列化 kernel 模块', ['运行 mosaic-serde，写出版本化 MLIR 字节码。',
+        '编码到 custom_call 的 backend_config。'], '_lower_mosaic_module_to_asm', 'CustomCallBackendConfig.to_json', tag='消费 · 结果封装', color='transform')
+    n['outer_module'] = node('stablehlo.custom_call', ['tpu_custom_call 携带 kernel payload。',
+        '操作数与返回 IR 值接入完整外层 Module。'], 'emit tpu_custom_call', tag='消费 · 接回调用者')
 
-    # Definition is a separate static block. Three operation blocks retain
-    # cross-view object flow, including direct consumption without a transform.
-    section(s, '定义 · Jaxpr 是什么？', 'JAX core',
-            ['core'], ['eqn'], ['var'], ['primitive'],
-            ['d0'], ['d1'], ['d2'], ['d3'], ['aval'])
-    s['sections'][-1].update(id='view_definition',
-        question='独立定义语义、结构和约束；不作为调用链中的执行阶段。')
-    section(s, '产生 · 输入如何构成程序？', 'JAX tracing / Pallas tracing',
-            ['p0','p1','p2'], ['caller','kernel','produced'],
-            ['pallas_bind','inner_jaxpr','outer_jaxpr'],
-            ['pytrees','trace_types','mapping'], ['frontend_arrays','placement'])
-    s['sections'][-1].update(id='view_production',
-        question='函数与抽象输入经 Trace / frame 构造调用者程序；kernel 先追踪，再绑定到当前解释环境。')
-    section(s, '变换 · 按需改写或拆分程序', 'JAX interpreters / Pallas 专用规则',
-            ['transform_input'], ['t0','t1','t2'], ['t3','t4','transforms'],
-            ['after','kernel_after'], ['t5','partial_values','api_transforms'])
-    s['sections'][-1].update(id='view_transformation',
-        question='通用变换得到程序与元数据；Pallas 专用规则可复用或改写 kernel，再绑定调用。')
-    section(s, '消费 · 谁读取程序，得到什么？', 'JAX 解释、校验、打印与 lowering',
-            ['consume_input'], ['c0','c1','c2'], ['r0','r1','r2'],
-            ['c3','lower_rules','r3'], ['outer_lowering','c4','mosaic_module'], ['r4'])
-    s['sections'][-1].update(id='view_consumption',
-        question='解释、校验、打印与 lowering 并列；Pallas 只在相关方程和平台分支中展开。')
-    section(s, '消费结果的后续去向', 'MLIR Module → executable → 数组结果',
-            ['payload','outer_module','compile_cache','backend_compile','compile'],
-            ['stages','loaded_exec','input_arrays','execute','result_arrays'], external=True)
-    s['sections'][-1].update(id='downstream', auxiliary=True,
-        question='Pallas payload 接回完整外层 Module；只有完整模块交给编译。可执行对象与实际数组在执行入口汇合。')
+    sections = [
+        ('view_definition', '定义 · Jaxpr 表示什么？', 'JAX core',
+         '输入输出、原语方程、抽象类型与 effects 共同定义程序。',
+         [['core'], ['d0'], ['eqn'], ['var'], ['d3']]),
+        ('view_production', '产生 · 函数如何成为 Jaxpr？', 'JAX tracing / Pallas tracing',
+         '普通函数和 kernel 都通过追踪构造程序；Pallas 另带调用映射。',
+         [['p0','p1'], ['p2','produced'], ['caller','inner_jaxpr'], ['mapping','pallas_bind'], ['outer_jaxpr']]),
+        ('view_transformation', '变换 · 程序如何被改写？', 'JAX interpreters / Pallas 规则',
+         '构造微分与批量计算，拆分已知部分，消除无用计算或展开高层表示。',
+         [['transform_input'], ['jvp','t3'], ['t1','t2'], ['t0','t4'], ['after','transforms']]),
+        ('view_consumption', '消费 · 谁使用 Jaxpr？', 'JAX 解释器 / lowering',
+         '解释产生值，校验产生检查结果，打印产生文本，lowering 产生 MLIR。',
+         [['consume_input'], ['c0','c1'], ['c2','c3'], ['lower_rules','r3'],
+          ['outer_lowering','mosaic_module'], ['payload','outer_module']])]
+    for ident, title, owner, question, rows in sections:
+        section(s, title, owner, *rows)
+        s['sections'][-1].update(id=ident, question=question)
 
-    edge(s,'core','eqn','eqns · 持有方程','neutral')
-    edge(s,'eqn','var','invars / outvars · 引用值','neutral')
-    edge(s,'eqn','primitive','primitive / params','neutral')
-    chain(s,['p0','p1','p2','produced'],['函数 / avals','追踪方程 / frame','Jaxpr(...) + constvals'])
-    chain(s,['caller','kernel','inner_jaxpr','pallas_bind','p1'],
-          ['kernel 与输入约定','追踪 + DCE','内层程序与常量','记录外层调用时'])
-    s['edges'][-1]['optional']=True
-    edge(s,'kernel','mapping','构造调用映射')
-    edge(s,'mapping','pallas_bind','独立的映射参数')
-    edge(s,'produced','outer_jaxpr','含 pallas_call 的程序实例','neutral')
-    edge(s,'outer_jaxpr','inner_jaxpr','params.jaxpr · 内层程序','neutral')
-    edge(s,'outer_jaxpr','mapping','params.grid_mapping','neutral')
-
-    edge(s,'produced','consume_input','无需进一步变换 · 直接消费',optional=True)
+    edge(s, 'core','eqn','eqns 持有方程','neutral')
+    edge(s, 'eqn','var','方程引用输入与输出','neutral')
+    chain(s, ['p0','p1','p2','produced'], ['函数与 avals','记录方程与常量','构造 Jaxpr'])
+    chain(s, ['caller','inner_jaxpr','pallas_bind','outer_jaxpr'], ['追踪 kernel','kernel 与常量','外层追踪记录调用'])
+    edge(s, 'caller','mapping','整理网格与块映射')
+    edge(s, 'mapping','pallas_bind','独立的映射参数')
+    edge(s, 'produced','transform_input','程序与变换参数','transform',optional=True)
+    for key in ('jvp','t0','t1','t2','t3','t4'):
+        edge(s, 'transform_input',key,'选择相应规则','transform',optional=True)
+        edge(s, key,'after','程序与附加信息','transform')
+    edge(s, 'inner_jaxpr','transforms','kernel 与专用变换参数','transform',optional=True)
+    edge(s, 'transforms','pallas_bind','更新程序与映射后重新绑定','transform')
+    edge(s, 'after','consume_input','选择要使用的程序')
+    edge(s, 'produced','consume_input','直接使用追踪结果',optional=True)
     s['edges'][-1]['channel']='direct'
-    edge(s,'outer_jaxpr','consume_input','调用者程序与常量',optional=True)
-    edge(s,'produced','transform_input','调用者 Jaxpr + 变换参数','transform',optional=True)
-    for key in ('t0','t1','t2','t3','t4'):
-        edge(s,'transform_input',key,'按需选择算法','transform',optional=True)
-        edge(s,key,'after','新 Jaxpr + 附加信息','transform')
-    edge(s,'after','consume_input','选择待消费程序与常量')
-    edge(s,'inner_jaxpr','transforms','kernel 与专用变换输入','transform',optional=True)
-    edge(s,'mapping','transforms','对应的调用映射','transform',optional=True)
-    chain(s,['transforms','kernel_after','pallas_bind'],
-          ['组织程序与调用参数','按更新后的约定重新绑定'],'transform')
-    for i in range(4):
-        edge(s,'consume_input',f'c{i}',('解释程序','检查程序','打印程序','程序与平台上下文')[i],
-             'program' if i in (0,3) else 'neutral',optional=True)
-    for i in range(3):
-        edge(s,f'c{i}',f'r{i}',('解释所得值','校验通过 / 类型错误','格式化文本')[i],
-             'output' if i==0 else 'neutral')
-    chain(s,['c3','lower_rules','r3'],['程序与 lowering 上下文','普通规则的 IR 值汇入模块'])
-    edge(s,'lower_rules','outer_lowering','遇到 pallas_call 方程',optional=True)
-    chain(s,['outer_lowering','c4','mosaic_module','payload','outer_module','r3'],
-          ['非解释模式 · TPU kernel 规则','构造内层 MLIR Module',
-           'kernel Module 序列化','payload 接入 custom call','IR 值接回完整外层 Module'])
-    s['edges'][-5]['optional']=True
-    s['edges'][-3]['kind']='transform'
-    chain(s,['r3','compile_cache','backend_compile','compile','loaded_exec'],
-          ['完整外层 Module + 编译选项','未命中 / 无缓存 · 按策略','常规后端调用','PyLoadedExecutable 返回'])
-    s['edges'][-1]['kind']='result'
-    edge(s,'compile_cache','loaded_exec','缓存命中 · 恢复 executable','result',optional=True)
-    edge(s,'loaded_exec','execute','执行包装持有程序','neutral')
-    edge(s,'input_arrays','execute','本次实参数组 / tokens','data')
-    edge(s,'execute','result_arrays','输出处理与包装','output')
-
-    # Checked graph paths make the cross-block call/object chain reviewable.
-    for key in ('t0','t1','t2','t3','t4'):
-        s['paths'].append(['produced','transform_input',key,'after','consume_input'])
-    for key in ('c0','c1','c2','c3'):
-        s['paths'].append(['produced','consume_input',key])
-    s['paths'].extend([
-        ['caller','kernel','inner_jaxpr','pallas_bind','p1','p2','produced','outer_jaxpr','consume_input'],
-        ['inner_jaxpr','transforms','kernel_after','pallas_bind','p1'],
-        ['consume_input','c3','lower_rules','outer_lowering','c4','mosaic_module','payload','outer_module','r3','compile_cache'],
-        ['r3','compile_cache','backend_compile','compile','loaded_exec','execute','result_arrays'],
-        ['input_arrays','execute','result_arrays']])
-
+    edge(s, 'outer_jaxpr','consume_input','包含 kernel 调用的外层程序',optional=True)
+    for key, label in (('c0','提供常量与实参'),('c1','检查结构与类型'),('c2','读取程序结构'),('c3','提供 lowering 上下文')):
+        edge(s, 'consume_input',key,label,'neutral' if key in ('c1','c2') else 'program',optional=True)
+    chain(s, ['c3','lower_rules','r3'], ['逐方程转换','IR 值与操作汇入模块'])
+    edge(s, 'lower_rules','outer_lowering','遇到 pallas_call',optional=True)
+    chain(s, ['outer_lowering','mosaic_module','payload','outer_module','r3'],
+          ['TPU 原生分支','模块字节码','payload 与调用配置','接入外层模块'])
+    s['edges'][-4]['optional']=True
     return s
 
 
@@ -660,7 +467,7 @@ def diagrams():
     result=[apply_tpu_views(apply_runtime_views(apply_compiler_views(s))) for s in result]
     # Colors describe the kind of flow / object, independently of the four views.
     observation_colors={
-        'jax':dict(c0='data',r0='output',c1='neutral',r1='neutral',c2='neutral',r2='neutral',r3='program',r4='program'),
+        'jax':dict(c0='data',c1='neutral',c2='neutral',r3='program'),
         'jaxlib':dict(c2='neutral',r2='neutral',c3='neutral',r3='neutral',r1='program'),
         'ifrt':dict(c2='neutral',r2='completion',r3='neutral'),
         'pjrt':dict(c2='neutral',r2='completion',c3='neutral',r3='neutral'),

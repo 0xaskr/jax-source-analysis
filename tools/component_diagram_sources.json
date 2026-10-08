@@ -59,6 +59,12 @@
     },
     {
       "repo": "xla",
+      "path": "xla/backends/cpu/runtime/thunk_executor.cc",
+      "sha256": "10b50662219dc3035534db47a09a992513504b72e87478ac3f446e2da2bf74b7",
+      "size_bytes": 33418
+    },
+    {
+      "repo": "xla",
       "path": "xla/backends/gpu/codegen/cubin_custom_kernel_compiler.cc",
       "sha256": "e07d4a8c341228c05df8d380c9e72930cda89ece6abaccb2b651dd99cf45c421",
       "size_bytes": 6966
@@ -143,6 +149,12 @@
     },
     {
       "repo": "xla",
+      "path": "xla/pjrt/cpu/cpu_client.cc",
+      "sha256": "7e4bca4c7c71f87f11202c8080160147fb96545dd1e33feeb49fc1e8f89cfab2",
+      "size_bytes": 89739
+    },
+    {
+      "repo": "xla",
       "path": "xla/pjrt/pjrt_client.h",
       "sha256": "3ab220dd21e3411e0f5b5bc77b7757d624f95e3f84c4071d28b1bd567da23224",
       "size_bytes": 78017
@@ -158,6 +170,12 @@
       "path": "xla/python/ifrt/array_spec.h",
       "sha256": "87a960c85b728ea89f11afe902594c0759571b2c8a9b8d30284c8a9ff508a417",
       "size_bytes": 4056
+    },
+    {
+      "repo": "xla",
+      "path": "xla/python/ifrt/hlo/hlo_program.h",
+      "sha256": "de791d0d0f0e331cc19698375e0121a13a633b867cdbf237385d961d3cdfea98",
+      "size_bytes": 4084
     },
     {
       "repo": "xla",
@@ -188,6 +206,12 @@
       "path": "xla/python/pjrt_ifrt/pjrt_client.cc",
       "sha256": "37d5c513d0e490b2864089751c2aaf20266ebb1a3eb6bdc6aeed98bd62057b6e",
       "size_bytes": 85247
+    },
+    {
+      "repo": "xla",
+      "path": "xla/python/pjrt_ifrt/pjrt_compiler.cc",
+      "sha256": "98a5f62ce1ad00be3cc1cf10f123d8d1fb01b2eb13a22865e0378d77bf2b7eb4",
+      "size_bytes": 7987
     },
     {
       "repo": "xla",

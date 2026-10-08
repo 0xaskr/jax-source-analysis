@@ -1,130 +1,91 @@
-# XLA GPU：LLVM IR、Triton 分支与目标编译
+# XLA GPU 后端：LLVM IR
 
-[查看 SVG](gpu-ir-centered-hub.svg) · [定位核心概念](gpu-ir-centered-hub.svg#core) · [返回总览](../overview/overview-software-stack-components-layered.svg#gpu_ir)
+GPU 后端用 LLVM IR 表达 kernel 的低层计算：数据运算、内存访问和控制流，以及目标相关的线程操作、地址空间和 kernel 入口约定。它由 HLO 的代码生成路径产生，经 LLVM 优化和目标代码生成得到设备代码，最后与执行计划共同组成 `GpuExecutable`。
 
-本图的唯一核心概念是 **GPU LLVM IR**。
-原生代码生成和 Triton 编译都可以产生这一表示；设备库调用则进入执行计划。
-后半部分以 NVIDIA 目标代码生成为例，并单独展开 Triton 独立 kernel 的编译路径。
+[查看 SVG](gpu-ir-centered-hub.svg) · [软件栈总览](../overview/overview-software-stack-components-layered.md)
 
-图区导航：[定义](gpu-ir-centered-hub.svg#view_definition) · [产生](gpu-ir-centered-hub.svg#view_production) · [变换](gpu-ir-centered-hub.svg#view_transformation) · [消费](gpu-ir-centered-hub.svg#view_consumption) · [后续结果](gpu-ir-centered-hub.svg#downstream)。定义块只说明静态 LLVM 结构。Triton 的 MLIR passes 放在产生块，因为它们负责产生本图研究的 LLVM IR；LLVM 链接和优化才属于该核心对象的变换。
+## 1. 定义：表示了什么
 
-## 定义：主模块和独立 kernel 都是 LLVM 程序
+[`llvm::Module`][module] 持有函数、全局值和元数据；函数体由基本块与指令组成。GPU 目标的 triple、DataLayout、调用约定、属性和 intrinsic 进一步说明这些函数怎样在设备上执行。
 
-[`llvm::Module`][module] 管理函数、全局值与元数据；函数中的指令表达待编译 GPU 程序。
-target triple、data layout、kernel 标记及设备特性共同参与目标代码生成。
-一个 Module 可以承载常规模块代码，也可以是独立 kernel 的编译单元。
+| 内容 | 在 LLVM 程序中的表达 |
+|---|---|
+| kernel 内的计算 | 算术、比较、控制流及函数调用等指令。 |
+| 数据访问 | 指针、加载与存储、地址空间及对齐信息。 |
+| 并行执行 | 目标相关的线程索引、同步等操作，以及 kernel 入口标记和属性。 |
+| 目标要求 | triple、DataLayout、设备能力和影响优化的函数属性。 |
 
-| 对象 | 在图中的角色 | 应保持的区别 |
-| --- | --- | --- |
-| GPU LLVM IR | 唯一核心概念，位于 [`core`](gpu-ir-centered-hub.svg#core) | 程序表示，尚未等同于设备二进制 |
-| TritonKernelSource / MLIR Module | Triton 分支的编译输入与中间表示 | 由后续 pipeline 和翻译产生 LLVM IR |
-| ThunkSequence | kernel、库调用及相关工作的执行计划 | 运行组织信息与 LLVM 指令分开 |
-| PTX / cubin | NVIDIA 路径中的目标代码产物 | PTX 与最终设备二进制处于不同环节 |
+一个 LLVM Module 可以承载一组函数，也可以只作为某个 kernel 的独立编译单元。[`CompileModuleToLlvmIr`][emission] 同时组织代码生成、存储规划和 thunk 执行计划。kernel 的 LLVM 程序描述内部计算，thunk 记录 kernel 怎样启动，以及它与设备库、复制和其他工作的关系。
 
-Triton IR 没有被列为第二个核心概念；本图关注它如何作为一条生产路径连接到 GPU LLVM IR。
+## 2. 产生：从 HLO 的实现选择到 LLVM Module
 
-<a id="产生原生triton-与设备库三条分支"></a>
+### 后端组织代码生成
 
-## 产生：原生与 Triton 如何形成 LLVM IR
+[`GpuCompiler::RunBackend`][backend] 根据 HLO 和目标设备进入编译流程。[`CompileModuleToLlvmIr`][emission] 先准备 BufferAssignment 和输出信息，再构造 `IrEmitterContext`、`ThunkEmitter`，调用 `EmitHloEntryComputation`。
 
-产生区由 [`GpuCompiler::RunBackend`][backend] 组织后端编译，HLO、设备与存储等信息进入 [`CompileModuleToLlvmIr`][emission]。
-`IrEmitterContext` 与 `ThunkEmitter` 共同组织代码生成结果、常量和执行工作。
-图中 [`p0`](gpu-ir-centered-hub.svg#p0) 按 HLO 与目标配置选择分支，一个可执行程序可以组合多种分支。
+`IrEmitterContext` 向生成器提供 HLO、存储分配、设备描述、目标 triple、DataLayout 和 kernel 编译器。生成器按运算选择适合的实现；需要现场生成的 kernel 形成 LLVM 编译单元，cuBLAS、cuDNN 等设备库调用则直接形成相应 thunk。源码还会单独检查常量模块，非空时调用 `CompileToTargetBinary` 编译。
 
-| 分支 | 主要输入 | 产物及去向 |
-| --- | --- | --- |
-| 原生 emitter，[`native`](gpu-ir-centered-hub.svg#native) | HLO、目标配置与发射上下文 | LLVM 函数、kernel 与相关常量 |
-| Triton fusion，[`p1`](gpu-ir-centered-hub.svg#p1) | 选中的 fusion、块级参数和设备信息 | Triton MLIR 经编译得到 LLVM kernel 与包装信息 |
-| 设备库旁路，[`library`](gpu-ir-centered-hub.svg#library) | 适合库实现的 HLO 与调用配置 | cuBLAS、cuDNN 等调用直接进入 thunks，不作为 LLVM 产生步骤 |
+### Triton 路径如何产生 LLVM
 
-设备库分支不要求现场为每个操作生成 LLVM kernel。
-[`thunks`](gpu-ir-centered-hub.svg#thunks) 因而接收普通代码生成、设备库和独立 kernel 的工作结果，不能只从 LLVM Module 推出完整执行计划。
+[`TritonFusion::GenerateTritonKernelAndWrapper`][fusion] 从 fusion 配置中取得 `BlockLevelParameters`，调用 `CreateTritonModule` 构造 `TritonKernelSource`。这个阶段的载体是 MLIR Module，随后由 [`CompileTritonToLlvm`][to-llvm] 调用 [`CompileTritonToLLVM`][triton-compiler]。
 
-<a id="变换triton-到-llvm与-llvm-目标优化"></a>
+| 调用 | 输入 | 处理与结果 |
+|---|---|---|
+| `CreateTritonModule` | HLO fusion、块级参数和设备描述。 | 生成内核的 MLIR 表示，并整理为 Triton 编译输入。 |
+| [`CreateTritonXlaPipeline`][xla-pipeline] | Triton 模块和 XLA 相关编译选项。 | 处理 XLA/Triton 接入需要的合法化与重写。 |
+| [`CreateTritonPipeline`][target-pipeline] | 模块、设备能力、warp/CTA/stage 配置。 | 按目标运行低层 MLIR pipeline。 |
+| [`TranslateLLVMToLLVMIR` 的调用][translate] | 经上述 pass 处理的 MLIR Module。 | 生成原生 `llvm::Module`。 |
 
-### Triton 分支的实际接口
+`CompileTritonToLLVM` 还检查共享内存等资源要求，整理目标信息，并返回 `TritonWrapperResult`。其中的 `LlvmKernelSource` 持有 LLVMContext 和 Module，其他字段携带线程维度、共享内存及 TMA 等元信息，供后续 kernel 包装使用。
 
-[`TritonFusion::GenerateTritonKernelAndWrapper`][fusion] 从 fusion 配置取得 `BlockLevelParameters`，调用 `CreateTritonModule` 形成 `TritonKernelSource`。
-它再调用 `KernelCompiler::CompileTritonToLlvm`；CUDA 实现的[对应入口][to-llvm] 可以在线程池执行编译任务。
+上述 MLIR passes 是 LLVM IR 的产生过程。进入下一节时，处理对象才是已经生成的 `llvm::Module`。
 
-实际编译由 [`CompileTritonToLLVM`][triton-compiler] 接收 kernel 名称、HLO、设备信息、块级参数、目标 triple、data layout 和 MLIR 模块。
-主图 `p1 → t2 → t0 → t1 → triton_result → produced` 将其内部过程展开为：
+## 3. 变换：链接设备实现并优化 LLVM 程序
 
-1. [`CreateTritonXlaPipeline`][xla-pipeline] 组织 XLA / 高层操作的合法化与相关整理。
-2. [`CreateTritonPipeline`][target-pipeline] 按 CUDA 或 ROCm 目标、warp / CTA / stage 等配置建立目标 pipeline。
-3. 运行 MLIR passes 后，通过 [`TranslateLLVMToLLVMIR` 的调用][translate] 得到 LLVM Module。
-4. 保留目标属性、launch、shared memory 等元数据，形成 `TritonWrapperResult`。
+[`LinkAndOptimizeModule`][optimize] 接收 LLVM Module、设备能力、调试选项、设备 bitcode 路径、模块链接器和 `TargetMachine`。它先调用目标链接器，根据需要补入设备函数实现，再通过 `PassBuilder` 建立分析和优化 pipeline。
 
-`TritonWrapperResult` 除代码外还携带后续包装、启动所需的信息。
-它的返回不意味着 kernel 已启动，也不要求把所有生成代码合并到同一个全局 LLVM 主模块。
-[`produced`](gpu-ir-centered-hub.svg#produced) 汇总原生和 Triton 两种来源的 LLVM 程序实例；[`d1`](gpu-ir-centered-hub.svg#d1) 与 [`d2`](gpu-ir-centered-hub.svg#d2) 在产生区说明 Triton 输入容器及块级配置。它们解释来源，没有扩展 LLVM 核心概念的静态定义。
+优化依据目标信息与配置改变函数体、控制流和指令组合。函数返回状态，更新后的程序仍保存在输入 Module 中，接着用于目标代码生成。若启用 LLVM dump，编译器可以记录相应 pass 前后的文本。
 
-<a id="llvm-层的链接与优化"></a>
+Triton 生成的独立 LLVM kernel 在提交目标编译前，还会按 XLA 的调用方式整理包装函数、参数与 launch 属性。线程维度、共享内存和参数列表同时保留为编译元信息，后续构造 thunk 时继续使用。
 
-## 变换：LLVM 层的链接与优化
+## 4. 消费：从 LLVM 程序到设备可执行代码
 
-[`LinkAndOptimizeModule`][optimize] 读取 GPU LLVM Module、TargetMachine 与选项，按需链接设备 bitcode，再运行 LLVM 优化。
-这是图中 [`t3`](gpu-ir-centered-hub.svg#t3) 的程序变换，结果位于 [`after`](gpu-ir-centered-hub.svg#after)，仍是供目标代码生成消费的 LLVM 程序。
-Triton 的 MLIR pass pipeline 与这里的 LLVM 优化属于不同表示层，诊断时应记录各自的输入输出阶段。
-常规模块路径中的 `c0 → t3 → after → ptx` 展开目标编译内部的 LLVM 处理。图中 `produced → consume_input` 表示选择消费者，不表示编译路径可以跳过内部链接与优化；直接验证和观察则可以使用已有 LLVM 程序。
+### 从 kernel 编译器进入目标代码生成
 
-## 消费：两条目标编译路径
+生成器把 LLVM 编译单元交给 `KernelCompiler::CompileToTargetBinary`。CUDA 的 [`CubinCustomKernelCompiler`][custom-binary] 接收 `LlvmKernelSource`，直接编译或安排到线程池，并通过 future 返回二进制。
 
-<a id="常规模块路径1319"></a>
+它使用的 LLVM 编译回调由 [`CompileToBackendResult`][kernel-compiler] 构造：回调调用 [`GpuCompiler::CompileSingleModule`][single]，后者验证 LLVM Module，再委派目标二进制编译。Triton 独立 kernel 也经过这条调用链。
 
-### 常规模块路径
+NVIDIA 实现是 [`NVPTXCompiler::CompileTargetBinary`][nvptx]。通常的 LLVM 输入分支调用 `nvptx::CompileToPtx`，在其中完成链接、LLVM 优化和 PTX 生成，再将 PTX 交给 compilation provider 编译或链接为 cubin。
 
-[`GpuCompiler::CompileSingleModule`][single] 接收单个 LLVM Module、HLO 配置与设备描述，按配置验证和打印 IR，再委派目标二进制编译。
-NVIDIA 分支进入 [`NVPTXCompiler::CompileTargetBinary`][nvptx]，在通常的 LLVM 编译分支中执行链接与优化、生成 PTX，再由 compilation provider 编译或链接得到 cubin 等结果；源码另有加载调试 LLVM / PTX 的选项。
+```text
+LlvmKernelSource
+  → CubinCustomKernelCompiler::CompileToTargetBinary
+  → 注入的编译回调 → GpuCompiler::CompileSingleModule
+  → NVPTXCompiler::CompileTargetBinary
+      → 链接与 LLVM 优化 → PTX → 设备二进制
+```
 
-具体读图路径是 `produced → consume_input → c1 → c0 → t3 → after → ptx`。LLVM Module 在 [`ptx`](gpu-ir-centered-hub.svg#ptx) 被目标代码生成消费；后续 `ptx → device_compile → binary → executable` 处理目标汇编、设备二进制和可执行对象，灰色区域明确其对象已经离开 LLVM IR。
+这条目标代码生成流程以 NVIDIA 为例；其他 GPU 目标使用各自的实现和二进制格式。调试选项还可以让编译器读取指定 LLVM/PTX 文件。
 
-[`binary`](gpu-ir-centered-hub.svg#binary) 表示 `BackendCompileResult` 中的目标代码及编译信息。
-`binary → executable` 与 `thunks → executable` 在 [`executable`](gpu-ir-centered-hub.svg#executable) 汇合：二进制与 thunks、常量和存储约定共同构成 `GpuExecutable`。
-ROCm 使用自己的目标后端；图中的 PTX / cubin 不能外推为全部 GPU 平台的统一产物。
+### 编译结果如何进入 GpuExecutable
 
-<a id="triton-独立-kernel-路径2022"></a>
+`CompileSingleModule` 返回 `BackendCompileResult`，回调从中取出二进制。接下来按编译对象的用途组织结果：
 
-### Triton 独立 kernel 路径
+| 编译对象 | 消费二进制的位置 | 放入整体程序的方式 |
+|---|---|---|
+| Triton 等独立 kernel | [`CustomKernelThunk` 的构造][custom-thunk]。 | 将二进制、kernel 名称、参数、线程与 block 维度、共享内存等组织为一次工作，加入 ThunkSequence。 |
+| 常量模块 | [`CompileModuleToLlvmIr`][emission] 中的 `constants_binary`。 | 作为后端结果的 binary，直接传给 `GpuExecutable::Create`。 |
 
-Triton fusion 的 `Emit` 后续逻辑取得独立 LLVM 模块，对包装函数、参数和 launch 属性作处理，再调用 `KernelCompiler::CompileToTargetBinary`。
-CUDA 的 [`CubinCustomKernelCompiler::CompileToTargetBinary`][custom-binary] 接收 `LlvmKernelSource`，返回包含二进制字节的 future；它可以直接编译，也可以安排到线程池。
+[`GpuExecutable::Create`][executable-create] 汇合常量模块二进制、ThunkExecutor、常量信息、输出信息、存储分配及目标设备描述。独立 kernel 的代码由相应 thunk 持有，设备库调用也已包含在执行计划中。设备实现随后完成 PJRT 包装与加载。
 
-接着，[`CustomKernelThunk` 的构造位置][custom-thunk] 把 kernel 二进制、参数、launch 维度、共享内存和相关元数据组织为可执行工作。
-结果回到 `ThunkSequence`，再随整体计划进入可执行对象。
-图中 `consume_input → kernel_compile → kernel_binary → thunks → executable` 表达这一条独立路径。`kernel_binary → thunks` 是编译结果的汇合，不是再次执行 Triton 的高层优化。
-collective fusion 在源码中还有专门处理分支，本图不展开其内部实现。
+运行时调用可执行对象时，才绑定实际 Buffer、kernel 参数和 stream，并提交工作；这部分见 [设备运行时与驱动](../stream-executor/submission-centered-hub.md)。
 
-<a id="观测与执行边界"></a>
+[`LLVM verifier` 的调用][verify] 和 IR dump 是另外两类消费者：前者返回 IR 合法性检查结果，后者保存阶段文本，用于检查代码生成和优化。
 
-### 并列的验证、观察与执行边界
+---
 
-[`LLVM verifier` 的调用位置][verify] 可报告目标编译前的非法 LLVM IR；dump 则记录某个编译阶段的文本。
-这些证据用于判断程序如何生成、优化，不能单独证明真实 GPU 的吞吐、并发重叠或完成时间。
-图中 `consume_input → c2 → r2` 保留直接验证入口，`c1 → c2` 则标明常规模块编译内部的验证；`c1 / after → c3 → r3` 说明编译选项控制的 dump 和优化后 hook。这些消费者不会把 Module 变成运行时设备 Buffer。
-
-| 需要回答的问题 | 应查看的对象或位置 |
-| --- | --- |
-| 某 HLO 为什么进入 Triton？ | fusion 配置、块级参数与分派上下文 |
-| Triton 是否已产出 LLVM？ | `CompileTritonToLLVM` 与返回的 LLVM kernel source |
-| 二进制属于主模块还是独立 kernel？ | `CompileSingleModule` 与 `CompileToTargetBinary` 各自调用链 |
-| 库调用和 kernel 如何组合？ | ThunkSequence 与可执行对象构造 |
-| 何时提交、何时完成？ | [StreamExecutor 执行提交文档](../stream-executor/submission-centered-hub.md) |
-
-编译产物返回后，执行时才由相应运行时绑定 Buffer、kernel 参数和 stream，并向设备提交工作。
-
-## 源码版本与证据范围
-
-| 源码树 | 固定提交 |
-| --- | --- |
-| XLA | `dcf304bc5dca1932b99f740b911dbd73631a1a69` |
-| LLVM | `75a45c373407c13a44c7abb28a78d891a97fe665` |
-
-版本依据为 [`upstream-sources.lock`](../../../upstream-sources.lock)，链接复用 SVG 内嵌源码锚点。
-文件证据见[组件清单](../../../tools/component_diagram_sources.json)及[overview 清单](../../../tools/overview_flow_sources.json)。
-本页核对的是 XLA 中的 Triton 接入和固定 LLVM 定义，未声称枚举 Triton 全部内部 pass，也没有运行 GPU 编译或设备性能实验。
-
-继续阅读：[HLO](hlo-centered-hub.md) · [CPU LLVM IR](cpu-llvm-ir-centered-hub.md) · [执行提交](../stream-executor/submission-centered-hub.md) · [组件索引](../index.md)。
+本文按 [`upstream-sources.lock`](../../../upstream-sources.lock) 中的 XLA `dcf304bc`、LLVM `75a45c37` 核对。链接指向完整固定提交；内容来自源码检查，未运行 GPU 编译或设备实验。生成和校验方法见[图文维护](../index.md#图文维护)。
 
 [module]: https://github.com/llvm/llvm-project/blob/75a45c373407c13a44c7abb28a78d891a97fe665/llvm/include/llvm/IR/Module.h#L67
 [backend]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/service/gpu/gpu_compiler.cc#L2943
@@ -141,3 +102,5 @@ collective fusion 在源码中还有专门处理分支，本图不展开其内�
 [custom-binary]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/backends/gpu/codegen/cubin_custom_kernel_compiler.cc#L91
 [custom-thunk]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/backends/gpu/codegen/triton/fusion.cc#L202
 [verify]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/service/gpu/gpu_compiler.cc#L2727
+[executable-create]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/service/gpu/gpu_compiler.cc#L3038
+[kernel-compiler]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/service/gpu/gpu_compiler.cc#L2844

@@ -8,14 +8,14 @@
 
 | 组件 | 核心抽象 | 含义 | 生命周期 |
 |---|---|---|---|
-| JAX | [Jaxpr](overview-software-stack-components-layered.svg#outer) | 用于表达jax/pallas 代码的中间表示, 描述输入如何通过原语及其组合产生输出 | 由 Python 函数和抽象输入经[追踪][src-trace]产生，经过[自动微分（如 JVP）][src-jvp-jaxpr]、[批处理（vmap）][src-batch-jaxpr]、[部分求值][src-partial-eval-jaxpr]和[死代码消除][src-dce]等变换；随后由 JAX 的 [lowering][src-lower] 按原语规则生成外层 MLIR Module，交给原生编译路径。 |
+| JAX | [Jaxpr](overview-software-stack-components-layered.svg#outer) | 用于表达jax/pallas 代码的中间表示, 描述输入如何通过原语及其组合产生输出 | 由 Python 函数和抽象输入经[trace][src-trace]产生，经过[自动微分（如 JVP）][src-jvp-jaxpr]、[批处理（vmap）][src-batch-jaxpr]、[部分求值][src-partial-eval-jaxpr]和[死代码消除][src-dce]等变换；随后由 JAX 的 [lowering][src-lower] 按原语规则生成外层 MLIR Module，交给原生编译路径。 |
 | jaxlib | [MLIR Module（StableHLO/Mosaic）](overview-software-stack-components-layered.svg#binding_module) | 以 [MLIR Module][src-module-op] 为容器，使用 [StableHLO][src-stablehlo-add]、[Mosaic 等专用 IR][src-mosaic-module] 表示计算图的中间表示。 | 由 [JAX][src-lower]/[Pallas lowering][src-pallas-lowering] 从 Jaxpr 产生; jaxlib 把MLIR module 封装成ifrt:HloProgram, ifrt通过调用pjrt交给具体的设备后端的编译接口。|
 | IFRT | [Array](overview-software-stack-components-layered.svg#ifrt_array) | 跨设备的逻辑数组。[`ifrt::Array`][src-ifrt-array] 通过 `ArraySpec` 描述元素类型、形状、分片和布局；| 将输入数据对应的设备 Buffer 与类型、形状、分片信息[组合为逻辑数组][src-array-create]，供 [LoadedExecutable 执行][src-ifrt-execute]；执行返回时，再将输出 Buffer [组织为新的逻辑数组][src-ifrt-outputs]。 |
 | PJRT | [PjRtBuffer](overview-software-stack-components-layered.svg#pjrt_buffer) | 对[设备上的数据存储的统一抽象][src-pjrt-buffer]，描述所属设备、内存空间、数据形状与布局，并提供所有权和[就绪状态][src-ready]的管理接口。 | 在接收[输入数据][src-buffer-from-host]或准备输出存储时创建，可按需要[复制][src-buffer-copy]或复用；作为 [PjRtLoadedExecutable][src-pjrt-execute] 的执行输入和输出，返回的输出 Buffer 由 IFRT [组织为逻辑数组][src-ifrt-outputs]，不再使用时[释放存储引用][src-buffer-delete]。 |
 | XLA | [HLO（HloModule）](overview-software-stack-components-layered.svg#hlo) | 用于优化、规划和代码生成的计算图。[`HloModule`][src-hlo] 包含入口及其他 `HloComputation`，由 `HloInstruction` 表达计算和依赖，并携带形状、布局及分片等约束。 | 由 [StableHlo 导入][src-import]产生，经 [HLO pass pipeline][src-hlo-passes] 规范化并进行目标相关优化，再交给 [CPU][src-cpu-backend]／[GPU 后端][src-gpu-backend]组织存储规划、目标代码与执行计划，形成相应 `Executable`。 |
 | XLA CPU 后端 | [LLVM IR](overview-software-stack-components-layered.svg#cpu_ir) | 面向 CPU 代码生成的低层中间表示。描述具体的数据运算，内存访问和控制流，并携带目标平台与数据布局信息。 | 由 CPU后端根据优化后的HLO、存储规划和目标信息生成，经 [LLVM 优化][src-cpu-ir-passes]后交给[目标代码生成][src-cpu-machine-code]得到对象文件；链接后的函数库与 thunk 执行计划共同组成 `CpuExecutable`。 |
 | XLA GPU 后端 | [LLVM IR](overview-software-stack-components-layered.svg#gpu_ir) | 面向 GPU kernel 代码生成的[低层中间表示][src-llvm-module]，描述 kernel 内的数据运算、内存访问和控制流，并通过目标相关的指令与约定表达线程协作、地址空间和 kernel 入口。 | 由 [GPU 后端][src-gpu-emit]根据优化后的 HLO、存储规划和目标设备信息生成，按需链接设备 bitcode，经 [LLVM 优化][src-gpu-ir-passes]和目标代码生成得到设备代码；其中 [NVIDIA 路径][src-nvptx-binary]生成 PTX 并编译为 cubin。设备代码与存储规划、thunk 执行计划共同组成 [`GpuExecutable`][src-gpu-backend]，交回 PJRT。 |
-| TPU provider / libtpu | [LLO（待版本证据）](overview-software-stack-components-layered.svg#tpu_boundary) | 本概览保留的 TPU 私有程序表示研究项。当前固定公开源码尚不能确认 LLO 的结构、语义和约束；Mosaic TPU MLIR 是另一种已知表示。 | 公开可确认的[编译边界][src-pjrt-program]是：程序与选项进入 TPU provider，返回已加载可执行对象供 PJRT 执行。LLO 在内部从何产生、经过哪些变换、由谁消费，仍待固定版本证据。 |
+| TPU provider / libtpu | [HLO/LLO](overview-software-stack-components-layered.svg#tpu_boundary) | 本概览保留的 TPU 私有程序表示研究项。当前固定公开源码尚不能确认 LLO 的结构、语义和约束；Mosaic TPU MLIR 是另一种已知表示。 | 公开可确认的[编译边界][src-pjrt-program]是：程序与选项进入 TPU provider，返回已加载可执行对象供 PJRT 执行。LLO 在内部从何产生、经过哪些变换、由谁消费，仍待固定版本证据。 |
 | 目标汇编表示 | [ASM](overview-software-stack-components-layered.svg#asm) | 以目标指令及其操作数描述计算、数据访问和控制转移的可读程序表示，可面向硬件指令集或 PTX 等虚拟指令集。 | 由编译器的目标代码生成产生，经汇编或[进一步目标编译][src-nvptx-binary]转换为机器代码，供后续链接和加载；也可由已有机器代码反汇编得到，供开发者检查代码生成结果和分析性能。 |
 | 设备运行时与驱动 | [执行提交](overview-software-stack-components-layered.svg#submit) | 一次程序运行的请求与[执行上下文][src-cpu-submit]，关联已加载程序、输入输出存储、执行参数和依赖关系，描述执行什么、使用哪些数据以及何时可以执行。 | 由 [PJRT 执行接口][src-pjrt-execute]进入具体后端，结合可执行对象和输入 Buffer [准备所需存储][src-cpu-execute]，按执行计划和依赖关系[调度计算、通信与数据搬运][src-thunk-execute]；执行结果写入输出 Buffer，并向上层传播[完成或错误状态][src-ready]。 |
 | 指令集接口与硬件 | [ISA](overview-software-stack-components-layered.svg#isa) | 软件与硬件之间的指令级语义约定，规定指令及其编码、寄存器等可见状态，以及执行指令时的计算、访存和控制转移行为。 | 由处理器体系结构规范定义，并随[架构版本与扩展演进][doc-isa-evolution]；编译器依据目标支持的[指令与特性][src-cpu-target]生成[机器代码][src-cpu-machine-code]，硬件按相应指令语义执行程序，更新寄存器、内存和控制状态。 |
@@ -26,13 +26,13 @@
 
 ## 2. 从 Python 函数到可执行程序
 
-一次需要编译的 JAX 调用，先把 Python 函数转换成程序表示，再生成目标设备可以执行的代码。编译结果可以复用；后续调用能够复用已有结果时，就从第三章的执行流程继续。
+一次需要编译的 JAX 调用，会先把 Python 函数转换成各种IR，再生成目标设备可以执行的代码。编译结果可以复用；后续调用能够复用已有结果时，就从第三章的执行流程继续。
 
-下面讨论 JAX 通过 jaxlib、IFRT 和 PJRT 调用设备后端的路径。文中的设备后端实现，也就是源码和图中常见的 provider，负责实现具体设备的编译、加载和执行接口。
+下面讨论 JAX 通过 jaxlib、IFRT 和 PJRT 调用设备后端的路径。文中的设备后端实现，也就是源码和图中常见的 device backend，负责实现具体设备的编译、加载和执行接口。
 
 ### 2.1 追踪和函数变换：构造 Jaxpr
 
-JAX 追踪 Python 函数时，用抽象输入记录运算。抽象输入保留形状、元素类型等信息，追踪得到的 Jaxpr 则记录输入、常量、原语方程、输出和 effects。每个变量的 `aval` 描述其抽象类型，方程说明这些变量如何参与计算。相关定义在 [`Jaxpr`][src-jaxpr]、[`JaxprEqn`][src-eqn] 和 [`Var`][src-var] 中，追踪入口之一是 [`trace_to_jaxpr_dynamic`][src-trace]。
+JAX 追踪 Python 函数时，根据输入的shape和dtype等抽象信息，创建Tracer， 代表动态输入参与函数调用中，并将过程中发生的原语运算记录为jaxpr，追踪得到的 Jaxpr 则记录输入、常量、原语方程、输出和 effects。每个变量的 `aval` 描述其抽象类型，方程说明这些变量如何参与计算。相关定义在 [`Jaxpr`][src-jaxpr]、[`JaxprEqn`][src-eqn] 和 [`Var`][src-var] 中，追踪入口之一是 [`trace_to_jaxpr_dynamic`][src-trace]。
 
 Jaxpr 承接 JAX 的函数变换。不同变换处理的问题不同：
 

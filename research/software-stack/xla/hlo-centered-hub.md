@@ -1,113 +1,88 @@
-# XLA：围绕 HLO 的程序结构与编译流转
+# XLA：HLO（HloModule）
 
-[查看 SVG](hlo-centered-hub.svg) · [定位核心概念](hlo-centered-hub.svg#core) · [返回总览](../overview/overview-software-stack-components-layered.svg#component_xla)
+HLO 是 XLA 内部表达张量计算程序的中间表示。`HloModule` 把运算、数据依赖和控制流组织在一起，并携带形状、分片、布局及编译配置。XLA 在这一层逐步确定计算如何实现，再交给设备后端生成代码和执行计划。
 
-本文对应图中的唯一核心概念 **HLO / HloModule**：XLA 用它表示待优化和编译的程序。
-图中的 pass、后端入口、存储规划与可执行对象围绕这一程序表示展开。
-CPU LLVM IR、GPU LLVM IR 在各自组件文档中继续说明。
+[查看 SVG](hlo-centered-hub.svg) · [软件栈总览](../overview/overview-software-stack-components-layered.md)
 
-图区导航：[定义](hlo-centered-hub.svg#view_definition) · [产生](hlo-centered-hub.svg#view_production) · [变换](hlo-centered-hub.svg#view_transformation) · [消费](hlo-centered-hub.svg#view_consumption) · [后续结果](hlo-centered-hub.svg#downstream)。左侧定义块保持静态；右侧对象链从已有 HLO 出发，按需变换后交给并列消费者，也保留直接观察的旁路。后端消费内部的调度后变换通过跨区箭头展开。
+## 1. 定义：表示了什么
 
-## 定义：HloModule 表达什么
+[`HloModule`][module] 持有一个入口计算和其他被引用的计算。每个 [`HloComputation`][computation] 包含一组 [`HloInstruction`][instruction]，并指定根指令作为结果。模块的入口计算定义程序输入与输出，其他计算可以用于函数调用、循环、条件分支或 fusion 的内部实现。
 
-[`HloModule`][module] 管理入口与嵌套 computation，并持有模块配置。
-[`HloComputation`][computation] 组织指令与根结果；[`HloInstruction`][instruction] 通过操作数和使用者关系连接计算。
-入口 computation 给出整个模块的调用边界和输出；调用、控制流及 fusion 可以引用嵌套 computation。
+| 结构 | 表示的内容 |
+|---|---|
+| `HloModule`、`HloModuleConfig` | 完整程序、入口计算、编译配置和输入输出布局等约定。 |
+| `HloComputation` | 一段由指令组成的计算，以及它的参数和根结果。 |
+| `HloInstruction` | 操作码、操作数、结果形状、属性及被调用的计算。`operands` 和 `users` 连接数据依赖。 |
+| Shape、Layout、Sharding | 值的元素类型和形状、内存排列、设备间的分布方式。 |
+| 控制依赖和副作用 | 计算的额外顺序要求，以及可能影响外部状态的行为。 |
 
-| 结构 | 语义与约束 | 图中位置 |
-| --- | --- | --- |
-| Module / Computation | 模块配置、入口、嵌套计算与根结果 | [`d0`](hlo-centered-hub.svg#d0) |
-| Instruction / Opcode | 操作码、操作数、结果 shape、专属属性、控制依赖 | [`d1`](hlo-centered-hub.svg#d1) |
-| Shape / Layout / Sharding | 类型、形状、存储布局和分片等约束 | [`d2`](hlo-centered-hub.svg#d2) |
-| 合法性 | 所处阶段及 verifier 配置要求的不变量 | [`d3`](hlo-centered-hub.svg#d3) |
+[`HloVerifier`][verifier] 根据验证配置检查模块中的不变量，部分检查对布局敏感。一个变换在某阶段是否合法，既取决于运算语义，也取决于该阶段已确定的布局、分片和调用约定。
 
-`HloModule` 是程序对象；`HloModuleProto` 是它的序列化描述。
-两者都不承载运行时设备 Buffer 的实际内容。
-数据依赖之外还存在控制依赖、效果及后端约束，因此不能仅凭纯数据 DAG 判断重写是否合法。
+## 2. 产生：从前端表示构造 HLO
 
-## 产生：从编译输入构造模块
+### 从 MLIR 导入
 
-产生区 [`p0`](hlo-centered-hub.svg#p0) 对应 [`ConvertMlirHloToHloModule`][import]：
+[`ConvertMlirHloToHloModule`][import] 接收 `mlir::ModuleOp` 和 `MlirToHloConversionOptions`，调用 `ConvertMlirHloToHlo` 导出 `HloProto`，构建并补充 `HloModuleConfig`，最后调用 [`HloModule::CreateFromProto`][from-proto]。输出是新的 `HloModule`，其中的计算和指令已按 HLO 的对象关系组织。
 
-1. 接收 `mlir::ModuleOp` 和 `MlirToHloConversionOptions`。
-2. 调用 `ConvertMlirHloToHlo` 生成 `HloProto`。
-3. 从 proto 构建默认 `HloModuleConfig`，再导入 MLIR 模块属性中的配置。
-4. 调用 `HloModule::CreateFromProto`，返回 `StatusOr<unique_ptr<HloModule>>`。
+具体设备入口还会补充设备分配和编译配置。例如 CPU 的 [`SetupMlirCompilation`][cpu-mlir] 调用 `MlirToXlaComputation`，先得到 `XlaComputation` 中的 HLO proto；`PjRtCpuClient` 的编译流程再通过 [`CreateFromProto` 调用][cpu-create]构造模块，并由 [`JitCompile`][cpu-jit] 进入 HLO passes 和后端编译。
 
-这条链解释 MLIR 与 HLO 的表示转换，不能把输入 MLIR 模块与输出 `HloModule` 当成同一对象。
-与上游输入的衔接见 [jaxlib 的 MLIR Module 文档](../jaxlib/mlir-module-centered-hub.md)。
+```text
+前端 MLIR Module
+  → 导出 HLO proto，并准备编译配置
+  → HloModule::CreateFromProto
+  → HloModule、HloComputation 与 HloInstruction
+```
 
-[`p1`](hlo-centered-hub.svg#p1) 单独表示 [`CreateFromProto`][from-proto] 的构造入口：输入已有 `HloModuleProto` 与 config，重建计算、指令及引用关系。
-[`p2`](hlo-centered-hub.svg#p2) 则保留直接组织模块的方式：构造模块，再通过 [`AddEntryComputation`][entry] 等接口添加已经构建的计算。
-这些是不同构造入口，无须依次经过；它们汇入 [`produced`](hlo-centered-hub.svg#produced) 表示具体程序实例，其结构遵守定义区的 [`core`](hlo-centered-hub.svg#core)。
+这里的前端输入来自 jaxlib/IFRT/PJRT 传递的 Module。上游的 `ifrt::HloProgram` 包装的是 MLIR Module，HLO 对象在导入阶段才构造，参见 [jaxlib 文档](../jaxlib/mlir-module-centered-hub.md)。
 
-## 变换：由配置决定的 pass 与挂点
+### 从序列化描述或计算对象构造
 
-[`HloPassPipeline::RunImpl`][pipeline] 接收模块和 `execution_threads`，读取 debug options，再调用内部 pass 调度。
-固定源码中同时有接受 `HloModule*` 与 `unique_ptr<HloModule>&` 的入口，适配原地更新及允许替换模块的情形。
-调用结果为 `StatusOr<bool>`：错误与“是否改变”分别表达，变换后的程序保留在模块对象中。
+`CreateFromProto` 也可以直接接收已有 `HloModuleProto` 和配置，重建计算、指令与引用关系。另一种入口是创建 `HloModule`，再用 [`AddEntryComputation`][entry] 等接口加入已经构建的 `HloComputation`。这两类入口常用于还原程序、测试或编译器内部构造。
 
-| 变换入口 | 输入与规则 | 结果 |
-| --- | --- | --- |
-| [`AlgebraicSimplifier`][simplifier] | HLO 与简化选项；按操作语义和布局相关条件重写 | 更新 HLO，并报告是否改变 |
-| [`HloDCE`][dce] | HLO 与死参数等选项；移除满足删除条件的无用指令、计算 | 更新 HLO，并报告是否改变 |
-| [`Clone`][clone] | 模块与复制选项 | 新的模块及计算对象 |
-| [`ReplaceComputations`][replace] | 当前模块与计算替换映射 | 重接 computation 的使用关系 |
+## 3. 变换：逐步确定计算的实现
 
-主图 `produced → transform_input → t0 → after` 表示 pipeline 的调用与结果，`t0 → t1 / t2 → after` 展开所配置 pass。
-`AlgebraicSimplifier` 和 `HloDCE` 是可展开的实例，虚线表示按配置进入；图没有规定所有平台都执行同一份 pass 列表。
-[`after`](hlo-centered-hub.svg#after) 仍是 HLO，表示变换后的状态，不增加第二个核心概念。
-复制及计算替换由 `transform_input → t3 → after` 单独表达；随后 `after → consume_input` 将变换结果交给消费者。
+[`HloPassPipeline::RunImpl`][pipeline] 接收模块和 `execution_threads`，读取调试选项，按配置调用各个 pass。返回的 `StatusOr<bool>` 表达错误或“是否发生修改”，变换结果保留在模块中；接收 `unique_ptr<HloModule>&` 的重载还允许替换整个模块。
 
-### PRE / POST_SCHEDULER 的实际位置
+### 运算重写、分片、融合和布局
 
-[`register_hlo_module_transformation`][registration] 注册 `(bytes) -> bytes | None` 回调。
-输入是序列化 `HloModuleProto`；返回 bytes 表示提交更新后的模块，返回 `None` 表示保留当前程序。
-CPU 使用直接注册入口，插件后端经 PJRT C API 扩展注册，能否使用取决于相应支持。
+| 变换 | 输入与规则 | 改变了什么 |
+|---|---|---|
+| [`AlgebraicSimplifier`][simplifier] | HLO 指令、代数简化选项及布局条件。 | 按允许的等价规则替换局部计算，减少或重组运算。 |
+| [`HloDCE`][dce] | 指令使用关系、根结果和副作用等约束。 | 删除无用指令或计算，按选项处理死参数。 |
+| 分片与分区 | 全局计算、分片要求和设备配置。 | 确定各设备负责的计算，并按需要加入通信。 |
+| fusion | 可合并的运算及目标后端的代价与实现约束。 | 将多条运算组织为后续生成 kernel 的计算单元。 |
+| 布局分配 | 形状、目标操作要求和输入输出约定。 | 确定张量在内存中的排列，必要时引入转换。 |
 
-[`hook`](hlo-centered-hub.svg#hook)、[`callback`](hlo-centered-hub.svg#callback) 与 [`hook_result`](hlo-centered-hub.svg#hook_result) 表示调用阶段关联与回调往返，不是所有后端在 `RunBackend` 之前统一完成的一段顺序流程。
-固定 CPU 源码把 [`PRE_SCHEDULER`][cpu-pre] 加入 HLO pass pipeline；[`POST_SCHEDULER`][cpu-post] 在调度后运行，随后才创建 `BufferAssignment`。
-GPU 在自己的 [`post-scheduler-xla-transforms` pipeline][gpu-post] 调用该挂点，后面仍有其他处理。
-图中 `t0 → hook` 专指 CPU pipeline 内的 PRE 调用，回调后接续原 pipeline；`c0 / c1 → hook` 则对应后端调度后的 POST，回调后接续该后端的后续处理与规划。由此应按目标后端核对挂点位置，不能仅按名称推出后续阶段的完整顺序。
+分片、fusion 和布局的具体 pass 及顺序由后端选定，见 [CPU 的 HLO pipeline][cpu-passes]和 [GPU 的 HLO pipeline][gpu-passes]。`HloModule` 仍表示计算程序，但越靠近代码生成，其中的实现约束越具体。
 
-## 消费：编译、验证和序列化
+### 复制、替换和自定义变换
 
-[`consume_input`](hlo-centered-hub.svg#consume_input) 接受变换后的 HLO，也接受可直接观察或已经满足目标后端前置条件的已有程序。`produced → consume_input` 不表示任何未优化、未合法化的 HLO 都能直接进入目标代码生成。
+[`Clone`][clone] 复制模块及其中的计算；[`ReplaceComputations`][replace] 根据替换表更新计算的使用关系。它们用于编译器内部组织程序，输入是已有模块与相应选项或映射，输出是新模块或修改后的当前模块。
 
-目标编译有两个并列消费者：
+本工作区 JAX 分支还提供 [`register_hlo_module_transformation`][registration]。回调接收序列化 `HloModuleProto`，返回新的字节时更新程序，返回 `None` 时保留原模块。CPU 在 [调度前的 pipeline][cpu-pre] 和 [调度后的 pipeline][cpu-post] 调用对应变换；调度后的调用位于 BufferAssignment 之前。GPU 也有自己的 [调度后调用位置][gpu-post]。使用这类接口时，需要按后端确认它所在的编译阶段。
 
-- [`c0`](hlo-centered-hub.svg#c0)：HLO 交给 [`CpuCompiler::RunBackend`][cpu-backend]，进入 CPU 后端并返回可执行结果。
-- [`c1`](hlo-centered-hub.svg#c1)：HLO 与 GPU 目标信息交给 [`GpuCompiler::RunBackend`][gpu-backend]，进入 GPU 代码生成及执行计划组织。
+## 4. 消费：生成代码与执行计划
 
-[`plan`](hlo-centered-hub.svg#plan) 表示目标后端内部的调度和存储规划。
-[`BufferAssignment`][assignment] 描述逻辑值如何安排存储分配，是编译计划；执行时的设备 Buffer 属于另一个生命周期。
-后端产物继续由 provider 包装到上层可执行对象，运行时输入数据不会沿图中的程序编译箭头流转。
+### 设备后端
 
-[`c2`](hlo-centered-hub.svg#c2) 和 [`c3`](hlo-centered-hub.svg#c3) 保留与编译并列的观察消费者；它们直接消费已有 HLO，不要求先跑目标后端：
+[`CpuCompiler::RunBackend`][cpu-backend] 和 [`GpuCompiler::RunBackend`][gpu-backend] 消费已经完成相应 HLO 处理的模块，同时读取目标设备信息和编译选项。它们继续安排调度、存储和代码生成，返回后端 Executable。
 
-| 消费者 | 输入 | 输出与能说明的内容 |
-| --- | --- | --- |
-| [`HloVerifier`][verifier] | HLO 与验证配置 | 状态或诊断，检查选定不变量 |
-| [`ToString`][text] | HLO 与打印选项 | 可阅读的 HLO 文本 |
-| [`ToProto`][proto] | 当前模块 | 供传输、保存或再构造的程序描述 |
+调度确定计算的执行顺序；[`BufferAssignment`][assignment] 记录各个值使用哪些分配和切片，供代码生成与运行时按照同一约定访问存储。随后，后端为需要的计算生成 LLVM IR 或选择设备库实现，并组织 thunk 执行计划。
 
-验证通过不等于数值正确性或设备执行已验证；文本与 proto 也不等于运行轨迹。
-追踪变换时，应同时记录输入阶段、目标配置以及变换前后模块，避免把不同后端的 dump 直接当成相邻阶段。
+| 后端 | HLO 的主要去向 | 编译结果 |
+|---|---|---|
+| CPU | host kernel、嵌套计算函数及库调用。 | 函数库、存储规划、常量和 thunk 等组成 `CpuExecutable`。 |
+| GPU | 目标 kernel、Triton 生成路径及设备库调用。 | 设备代码、存储规划、常量和 thunk 等组成 `GpuExecutable`。 |
 
-## 源码版本与证据范围
+设备实现随后将这些产物包装并加载为 PJRT 可执行对象。运行时调用它们时，才把本次输入 Buffer 与已确定的程序和存储安排组合起来。代码生成细节分别见 [CPU LLVM IR](cpu-llvm-ir-centered-hub.md) 和 [GPU LLVM IR](gpu-ir-centered-hub.md)。
 
-本页使用 SVG 内嵌 `source_anchors` 对应的固定提交链接：
+### 验证、打印和序列化
 
-| 源码树 | 固定提交 |
-| --- | --- |
-| XLA | `dcf304bc5dca1932b99f740b911dbd73631a1a69` |
-| JAX 工作区分支 | `361c43e072cce92b7d3e9bdaf4dd16db26c49043` |
+[`HloVerifier`][verifier] 读取模块并返回验证状态或诊断；[`ToString`][text] 输出 HLO 文本；[`ToProto`][proto] 生成可保存、传输和重新构造的程序描述。这些接口也能直接处理已有 HLO，用于检查 pass 前后的变化。
 
-版本依据为 [`upstream-sources.lock`](../../../upstream-sources.lock)。
-本地引用文件由[组件证据清单](../../../tools/component_diagram_sources.json)及[overview 证据清单](../../../tools/overview_flow_sources.json)约束。
-这里确认的是固定源码的接口、调用与对象关系，没有据此声称 CPU 或 GPU 执行结果，也没有将该 JAX 分支的扩展接口视为任意版本都具备的能力。
+---
 
-继续阅读：[CPU LLVM IR](cpu-llvm-ir-centered-hub.md) · [GPU LLVM IR](gpu-ir-centered-hub.md) · [PJRT Buffer](../pjrt/buffer-centered-hub.md) · [组件索引](../index.md)。
+版本依据为 [`upstream-sources.lock`](../../../upstream-sources.lock)：XLA `dcf304bc`，JAX 工作区分支 `361c43e0`。源码链接使用完整固定提交。本文只核对源码中的对象和调用，未运行 CPU/GPU 编译或设备计算。生成和校验方法见[图文维护](../index.md#图文维护)。
 
 [module]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/hlo/ir/hlo_module.h#L95
 [computation]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/hlo/ir/hlo_computation.h#L87
@@ -130,3 +105,8 @@ GPU 在自己的 [`post-scheduler-xla-transforms` pipeline][gpu-post] 调用该�
 [verifier]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/service/hlo_verifier.h#L485
 [text]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/hlo/ir/hlo_module.h#L505
 [proto]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/hlo/ir/hlo_module.h#L554
+[cpu-mlir]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/pjrt/cpu/cpu_client.cc#L276
+[cpu-create]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/pjrt/cpu/cpu_client.cc#L989
+[cpu-jit]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/pjrt/cpu/cpu_client.cc#L764
+[cpu-passes]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/service/cpu/cpu_compiler.cc#L1183
+[gpu-passes]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/service/gpu/gpu_compiler.cc#L2304

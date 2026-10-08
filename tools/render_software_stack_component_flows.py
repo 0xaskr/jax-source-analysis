@@ -23,11 +23,7 @@ VIEW_IDS = ('view_definition','view_production','view_transformation','view_cons
 
 
 def component_view_plan(spec):
-    """Size generic component blocks from their row counts and column counts.
-
-    This is intentionally separate from the fixed JAX layout: changing another
-    component's content must not move JAX's existing nodes or flow captions.
-    """
+    """Size the four research views from their card rows and column counts."""
     parts={part['id']:part for part in spec['sections']}
     if len(parts)!=len(spec['sections']) or not set(VIEW_IDS)<=parts.keys():
         raise ValueError('component_views requires four uniquely named research views')
@@ -84,8 +80,8 @@ class ComponentDiagram(Diagram):
         if generic_views:
             core=spec['nodes'][spec['core_id']]['title']
             reading=spec.get('view_reading',[
-                '唯一核心：'+core+'。定义独立；右侧按产生、变换、消费组织可确认的对象关系。',
-                '连线区分源码可见调用、可选分支与证据边界。编号只索引关系，交叉拱桥表示互不连接。'])
+                '研究对象：'+core+'。左侧说明含义与结构，右侧展示构造、变换和使用它的接口。',
+                '沿连线上的对象与操作名称阅读；虚线表示可选分支或返回关系，交叉拱桥表示互不连接。'])
             if len(reading)!=2:raise ValueError('view_reading must contain two guide lines')
             for y,line in zip((418,471),reading):self.text(184,y,line,29 if y==418 else 28,self.muted)
             links=[('定义','#view_definition'),('产生','#view_production'),('变换','#view_transformation'),('消费','#view_consumption')]
@@ -367,7 +363,7 @@ class ComponentDiagram(Diagram):
                 raise ValueError(f'{self.spec["key"]} relation {code} {a} → {b}: {error}') from error
             points=compact([p]+route+[q])
             self.edge(points,kind,dashed=kind in DASHED or e['optional'],bridge_over=occupied,width=3.5)
-            if not self.caption(points,code+' · '+e['label'],kind):
+            if not self.caption(points,e['label'],kind):
                 raise ValueError(f'No readable flow caption: {self.spec["key"]} {a} → {b}: {e["label"]}')
             self.relations.append(dict(e,code=code,points=points))
 
@@ -377,11 +373,11 @@ class ComponentDiagram(Diagram):
         columns=max(3,min(6,int((self.w-380)//3190))) if self.spec.get('layout')=='component_views' else 6 if connected else 3
         pitch=(self.w-380)/columns if connected else 3190
         for i,line in enumerate(self.wrap(self.spec['foot'],self.w-500 if connected else 9300,28)):self.text(190,y+i*42,line,28,self.muted)
-        y+=150;self.text(190,y,'关系索引 · 点击两端定位节点',38,bold=True)
+        y+=150;self.text(190,y,'接口与对象关系 · 点击名称定位',38,bold=True)
         for i,e in enumerate(self.relations):
             col,row=i%columns,i//columns;x=190+col*pitch;yy=y+85+row*160
             a,b=e['source'],e['target'];color=self.colors[e['kind']]
-            for line,href in [(e['code']+' · '+self.spec['nodes'][a]['title'],'#'+a),('→ '+self.spec['nodes'][b]['title'],'#'+b)]:
+            for line,href in [(self.spec['nodes'][a]['title'],'#'+a),('→ '+self.spec['nodes'][b]['title'],'#'+b)]:
                 self.text(x,yy,line,26,color,href=href);yy+=38
             self.text(x,yy,e['label'],25,self.muted)
         foot_y=y+125+math.ceil(len(self.relations)/columns)*160
