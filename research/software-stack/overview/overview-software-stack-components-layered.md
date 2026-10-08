@@ -1,26 +1,24 @@
-# JAX 软件栈：分层架构、编译与执行
+# JAX 软件栈：从jax到 tpu/cpu/gpu
 
-本文是[分层架构 SVG](overview-software-stack-components-layered.svg) 的配套说明，按图中的模块、核心概念和跨组件接口展开。图内可以点击组件标题进入详细图，点击端口或底部索引定位具体节点。
+本文是[分层架构 SVG](overview-software-stack-components-layered.svg) 的配套说明
 
-图文覆盖 PJRT-backed IFRT 的常规分片数组路径、CPU/GPU 的公开编译路径，以及 TPU provider 的公开输入输出边界。Pallas 部分展开 `interpret=False` 的 Mosaic TPU lowering 路径。这里记录的是固定版本的源码关系；没有通过图示声称完成 CPU 执行、TPU 模拟、离线 TPU 编译或真实 TPU 执行。
+## 1. 不同组件的核心抽象概念
 
-## 1. 模块与唯一核心概念
+每个组件选取一个核心抽象概念，并围绕此进行展开，从该概念描述了哪些东西以及具体的数据结构如何表示？数据结构如何产生？会经过哪些变换？会被哪些组件消费？ 这四个角度来进行探索。
 
-每个模块只选一个核心概念。编译后端容器中的 CPU、GPU、TPU 分别计为一个模块；结构成员、API、辅助表示、编译产物和返回对象围绕该概念展开。
-
-| 模块 | 唯一核心概念 | 主要职责与边界 |
-|---|---|---|
-| JAX | [Jaxpr](overview-software-stack-components-layered.svg#outer) | 追踪函数，组织程序变换，消费方程并生成外层 MLIR Module。 |
-| jaxlib | [MLIR Module（StableHLO）](overview-software-stack-components-layered.svg#binding_module) | 提供原生绑定，接收编译输入，连接 Python 与 IFRT。 |
-| IFRT | [Array](overview-software-stack-components-layered.svg#ifrt_array) | 表示逻辑数组；此图展开其 PJRT-backed 实现。 |
-| PJRT | [PjRtBuffer](overview-software-stack-components-layered.svg#pjrt_buffer) | 表示设备存储，连接编译、加载、执行与具体 provider。 |
-| XLA | [HLO（HloModule）](overview-software-stack-components-layered.svg#hlo) | 导入、优化和规划程序，再交给目标后端。 |
-| XLA CPU 后端 | [LLVM IR](overview-software-stack-components-layered.svg#cpu_ir) | 将低层程序编译为目标代码，并形成 CPU 可执行产物。 |
-| XLA GPU 后端 | [LLVM IR](overview-software-stack-components-layered.svg#gpu_ir) | 展开设备代码生成；Triton 路径与设备库调用作为相关分支。 |
-| TPU provider / libtpu | [LLO（待版本证据）](overview-software-stack-components-layered.svg#tpu_boundary) | 标记私有表示的证据边界；公开接口不能确定其结构和转换位置。 |
-| 目标汇编表示 | [ASM](overview-software-stack-components-layered.svg#asm) | 观察目标程序的文本表示，不承担独立运行时职责。 |
-| 设备运行时与驱动 | [执行提交](overview-software-stack-components-layered.svg#submit) | 汇合已加载程序、输入存储、执行选项和依赖。 |
-| 指令集接口与硬件 | [ISA](overview-software-stack-components-layered.svg#isa) | 约束目标指令的语义，由硬件执行程序并更新状态。 |
+| 组件 | 核心抽象 | 含义 | 生命周期 |
+|---|---|---|---|
+| JAX | [Jaxpr](overview-software-stack-components-layered.svg#outer) | 用于表达jax/pallas 代码的中间表示, 描述输入如何通过原语及其组合产生输出 | 由 Python 函数和抽象输入经[追踪][src-trace]产生，经过[自动微分（如 JVP）][src-jvp-jaxpr]、[批处理（vmap）][src-batch-jaxpr]、[部分求值][src-partial-eval-jaxpr]和[死代码消除][src-dce]等变换；随后由 JAX 的 [lowering][src-lower] 按原语规则生成外层 MLIR Module，交给原生编译路径。 |
+| jaxlib | [MLIR Module（StableHLO/Mosaic）](overview-software-stack-components-layered.svg#binding_module) | 以 [MLIR Module][src-module-op] 为容器，使用 [StableHLO][src-stablehlo-add]、[Mosaic 等专用 IR][src-mosaic-module] 表示计算图的中间表示。 | 由 [JAX][src-lower]/[Pallas lowering][src-pallas-lowering] 从 Jaxpr 产生; jaxlib 把MLIR module 封装成ifrt:HloProgram, ifrt通过调用pjrt交给具体的设备后端的编译接口。|
+| IFRT | [Array](overview-software-stack-components-layered.svg#ifrt_array) | 跨设备的逻辑数组。[`ifrt::Array`][src-ifrt-array] 通过 `ArraySpec` 描述元素类型、形状、分片和布局；| 将输入数据对应的设备 Buffer 与类型、形状、分片信息[组合为逻辑数组][src-array-create]，供 [LoadedExecutable 执行][src-ifrt-execute]；执行返回时，再将输出 Buffer [组织为新的逻辑数组][src-ifrt-outputs]。 |
+| PJRT | [PjRtBuffer](overview-software-stack-components-layered.svg#pjrt_buffer) | 对[设备上的数据存储的统一抽象][src-pjrt-buffer]，描述所属设备、内存空间、数据形状与布局，并提供所有权和[就绪状态][src-ready]的管理接口。 | 在接收[输入数据][src-buffer-from-host]或准备输出存储时创建，可按需要[复制][src-buffer-copy]或复用；作为 [PjRtLoadedExecutable][src-pjrt-execute] 的执行输入和输出，返回的输出 Buffer 由 IFRT [组织为逻辑数组][src-ifrt-outputs]，不再使用时[释放存储引用][src-buffer-delete]。 |
+| XLA | [HLO（HloModule）](overview-software-stack-components-layered.svg#hlo) | 用于优化、规划和代码生成的计算图。[`HloModule`][src-hlo] 包含入口及其他 `HloComputation`，由 `HloInstruction` 表达计算和依赖，并携带形状、布局及分片等约束。 | 由 [StableHlo 导入][src-import]产生，经 [HLO pass pipeline][src-hlo-passes] 规范化并进行目标相关优化，再交给 [CPU][src-cpu-backend]／[GPU 后端][src-gpu-backend]组织存储规划、目标代码与执行计划，形成相应 `Executable`。 |
+| XLA CPU 后端 | [LLVM IR](overview-software-stack-components-layered.svg#cpu_ir) | 面向 CPU 代码生成的低层中间表示。描述具体的数据运算，内存访问和控制流，并携带目标平台与数据布局信息。 | 由 CPU后端根据优化后的HLO、存储规划和目标信息生成，经 [LLVM 优化][src-cpu-ir-passes]后交给[目标代码生成][src-cpu-machine-code]得到对象文件；链接后的函数库与 thunk 执行计划共同组成 `CpuExecutable`。 |
+| XLA GPU 后端 | [LLVM IR](overview-software-stack-components-layered.svg#gpu_ir) | 面向 GPU kernel 代码生成的[低层中间表示][src-llvm-module]，描述 kernel 内的数据运算、内存访问和控制流，并通过目标相关的指令与约定表达线程协作、地址空间和 kernel 入口。 | 由 [GPU 后端][src-gpu-emit]根据优化后的 HLO、存储规划和目标设备信息生成，按需链接设备 bitcode，经 [LLVM 优化][src-gpu-ir-passes]和目标代码生成得到设备代码；其中 [NVIDIA 路径][src-nvptx-binary]生成 PTX 并编译为 cubin。设备代码与存储规划、thunk 执行计划共同组成 [`GpuExecutable`][src-gpu-backend]，交回 PJRT。 |
+| TPU provider / libtpu | [LLO（待版本证据）](overview-software-stack-components-layered.svg#tpu_boundary) | 本概览保留的 TPU 私有程序表示研究项。当前固定公开源码尚不能确认 LLO 的结构、语义和约束；Mosaic TPU MLIR 是另一种已知表示。 | 公开可确认的[编译边界][src-pjrt-program]是：程序与选项进入 TPU provider，返回已加载可执行对象供 PJRT 执行。LLO 在内部从何产生、经过哪些变换、由谁消费，仍待固定版本证据。 |
+| 目标汇编表示 | [ASM](overview-software-stack-components-layered.svg#asm) | 以目标指令及其操作数描述计算、数据访问和控制转移的可读程序表示，可面向硬件指令集或 PTX 等虚拟指令集。 | 由编译器的目标代码生成产生，经汇编或[进一步目标编译][src-nvptx-binary]转换为机器代码，供后续链接和加载；也可由已有机器代码反汇编得到，供开发者检查代码生成结果和分析性能。 |
+| 设备运行时与驱动 | [执行提交](overview-software-stack-components-layered.svg#submit) | 一次程序运行的请求与[执行上下文][src-cpu-submit]，关联已加载程序、输入输出存储、执行参数和依赖关系，描述执行什么、使用哪些数据以及何时可以执行。 | 由 [PJRT 执行接口][src-pjrt-execute]进入具体后端，结合可执行对象和输入 Buffer [准备所需存储][src-cpu-execute]，按执行计划和依赖关系[调度计算、通信与数据搬运][src-thunk-execute]；执行结果写入输出 Buffer，并向上层传播[完成或错误状态][src-ready]。 |
+| 指令集接口与硬件 | [ISA](overview-software-stack-components-layered.svg#isa) | 软件与硬件之间的指令级语义约定，规定指令及其编码、寄存器等可见状态，以及执行指令时的计算、访存和控制转移行为。 | 由处理器体系结构规范定义，并随[架构版本与扩展演进][doc-isa-evolution]；编译器依据目标支持的[指令与特性][src-cpu-target]生成[机器代码][src-cpu-machine-code]，硬件按相应指令语义执行程序，更新寄存器、内存和控制状态。 |
 
 图中 JAX 和 jaxlib 居中；IFRT/PJRT、XLA/编译后端、ASM/设备运行时左右并列；硬件位于底部。这个分布同时表达组件职责和调用关系，纵向位置不代表所有请求都必须依次经过每个框。
 
@@ -360,3 +358,28 @@ A–C 的源码入口分别见 [`register_lowering`][src-ext-lowering]、[`custo
 [src-tpu-lowering]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/pallas/mosaic/pallas_call_registration.py#L393
 [src-trace]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/interpreters/partial_eval.py#L2133
 [src-var]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/core.py#L539
+
+[src-array-create]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/python/pjrt_ifrt/pjrt_array.cc#L158
+[src-array-disassemble]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/python/pjrt_ifrt/pjrt_array.cc#L353
+[src-buffer-copy]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/pjrt/pjrt_client.h#L1306
+[src-buffer-from-host]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/pjrt/pjrt_client.h#L966
+[src-cpu-emit]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/service/cpu/cpu_compiler.cc#L1882
+[src-cpu-ir-passes]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/backends/cpu/codegen/ir_compiler.cc#L354
+[src-cpu-machine-code]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/backends/cpu/codegen/ir_compiler.cc#L477
+[src-cpu-submit]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/pjrt/cpu/cpu_client.cc#L1809
+[src-cpu-target]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/backends/cpu/codegen/ir_compiler.cc#L255
+[src-gpu-emit]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/service/gpu/compile_module_to_llvm_ir.cc#L212
+[src-gpu-ir-passes]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/service/gpu/llvm_gpu_backend/gpu_backend_lib.cc#L252
+[src-llvm-module]: https://github.com/llvm/llvm-project/blob/75a45c373407c13a44c7abb28a78d891a97fe665/llvm/include/llvm/IR/Module.h#L67
+[src-module-op]: https://github.com/llvm/llvm-project/blob/75a45c373407c13a44c7abb28a78d891a97fe665/mlir/include/mlir/IR/BuiltinOps.td#L33
+[src-nvptx-binary]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/service/gpu/nvptx_compiler.cc#L583
+[src-pjrt-program]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/pjrt/c/pjrt_c_api.h#L739
+[src-stablehlo-add]: https://github.com/openxla/stablehlo/blob/7b1b15781ccbd770f50c7eef4b0c3e03834649fd/stablehlo/dialect/StablehloOps.td#L831
+[src-thunk-execute]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/backends/cpu/runtime/thunk_executor.cc#L248
+[doc-isa-evolution]: https://developer.arm.com/community/arm-community-blogs/b/architectures-and-processors-blog/posts/arm-a-profile-architecture-developments-2025
+
+[src-jvp-jaxpr]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/interpreters/ad.py#L1044
+[src-batch-jaxpr]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/interpreters/batching.py#L416
+[src-partial-eval-jaxpr]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/interpreters/partial_eval.py#L655
+
+[src-buffer-delete]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/pjrt/pjrt_client.h#L1273
