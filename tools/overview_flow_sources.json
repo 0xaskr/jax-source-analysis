@@ -61,6 +61,11 @@
       "path": "xla/service/buffer_assignment.h",
       "sha256": "c6f986b95130d533b612406b5ca5b797021e1bdbc4428dfd7e35047d9c19f912",
       "size_bytes": 52292
+    },
+    {
+      "path": "xla/pjrt/c_api_client/pjrt_c_api_client.cc",
+      "sha256": "e5495cce5fb909f1111e682098d04734b0d33c0b712b9d4408f2ca635c5845ad",
+      "size_bytes": 210893
     }
   ]
 }

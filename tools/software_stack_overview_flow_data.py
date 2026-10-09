@@ -382,15 +382,16 @@ NODES.update({
         "detail": "../xla/gpu-ir-centered-hub.svg",
     },
     "tpu_boundary": {
-        "tag": "私有阶段的证据边界", "title": "LLO（待版本证据）",
-        "rows": ["公开提交接口不能证明内部 IR 的结构。", "内部 passes、转换位置与产物布局待确认。", "Mosaic TPU MLIR 不能据此称为 LLO。", "此节点说明未知范围，不表示已确认的转换阶段。"],
+        "tag": "TC 低层程序 · 内部答复 #76", "title": "原生 LLO",
+        "rows": ["区域 / 循环 / 指令 / 值 / 局部存储。", "HLO 直接产生；Mosaic 经 MLIR llo 桥接。", "调度、寄存器分配与打包形成 TC 程序。", "SC 另走 MLO / LLVM 路线。"],
+        "external_ref": ("内部答复 · issue #76 ↗", "https://github.com/elbertwang/libtpu-agent/issues/76#issuecomment-6064434151"),
         "color": "unknown", "dashed": True,
         "detail": "../libtpu/llo-boundary-centered-hub.svg",
     },
     "tpu_loaded": {
-        "tag": "公开返回边界 · provider 实现", "title": "TPU 的 PjRtLoadedExecutable",
-        "rows": ["provider 通过 PJRT 接口返回可执行对象。", "实现编译产物加载、设备关联和执行接口。", "上层继续包装成 IFRT / Python 可执行对象。"],
-        "refs": ("PjRtLoadedExecutable",), "color": "unknown", "dashed": True,
+        "tag": "程序封装与 PJRT 返回", "title": "TPU 的 PjRtLoadedExecutable",
+        "rows": ["封装 TC / 可选 SC 程序及编译元数据。", "provider 加载程序，关联设备并提供执行能力。", "上层继续包装成 IFRT / Python 可执行对象。"],
+        "refs": ("PjRtLoadedExecutable", "C API compile call"), "color": "result",
     },
     "asm_code": {
         "tag": "编译产物 · 可观察的目标代码", "title": "目标代码 / 对象文件",
@@ -418,8 +419,9 @@ NODES["cpu"].update(tag="消费 / 产物 · XLA CPU", title="CpuExecutable / CPU
     rows=["LLVM 编译与链接得到目标代码。", "结合任务、thunk 或库实现计算。", "CpuExecutable 集成代码、内存与执行计划。", "返回 XLA 产物节点，再交 provider 包装。"])
 NODES["gpu"].update(tag="消费 / 产物 · XLA GPU", title="GpuExecutable / 代码与库调用",
     rows=["目标代码与库调用共同组成执行计划。", "NVIDIA 路径可生成 PTX / 目标二进制。", "GpuExecutable 汇集代码、元数据和执行计划。", "库调用保留旁路，不必生成自有 kernel。"])
-NODES["tpu"].update(tag="输入边界 · TPU provider / libtpu", title="外层 Module + 可选 Mosaic payload",
-    rows=["接收 Module + CompileOptions。", "外层 custom_call 可携带 Mosaic kernel payload。", "公开接口支持编译 / 加载；内部过程保持不透明。"], dashed=True)
+NODES["tpu"].update(tag="编译输入与后端分流 · libtpu", title="TPU HLO / Mosaic / SC 分流",
+    rows=["程序与选项经 C API 进入插件。", "HLO 优化后按 TC / SC 路线分流。", "Mosaic payload 在相应后端继续 lowering。"],
+    refs=("C API compile call",), color="program", dashed=False)
 NODES["asm"].update(tag="可观察表示", title="ASM",
     rows=["助记符、寄存器与地址等形式表达目标程序。", "是程序表示或观察形式，不是独立运行时组件。", "不将 ASM → ISA 画成每条路径的强制转换。"])
 NODES["memory"].update(title="寄存器 / 内存 / 互连",

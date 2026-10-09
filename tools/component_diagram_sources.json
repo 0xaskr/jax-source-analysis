@@ -12,6 +12,10 @@
     "xla": {
       "repository": "openxla/xla",
       "revision": "dcf304bc5dca1932b99f740b911dbd73631a1a69"
+    },
+    "jax": {
+      "repository": "0xaskr/jax",
+      "revision": "361c43e072cce92b7d3e9bdaf4dd16db26c49043"
     }
   },
   "files": [
@@ -272,6 +276,54 @@
       "path": "xla/tpu/tpu_ops_c_api.h",
       "sha256": "e5b11ae2d27ba7eb33c7eece23b976740d2162e7958a62ce68068faa319d8222",
       "size_bytes": 16826
+    },
+    {
+      "repo": "xla",
+      "path": "xla/pjrt/c_api_client/pjrt_c_api_client.cc",
+      "sha256": "e5495cce5fb909f1111e682098d04734b0d33c0b712b9d4408f2ca635c5845ad",
+      "size_bytes": 210893
+    },
+    {
+      "repo": "jax",
+      "path": "docs/pallas/design/design.md",
+      "sha256": "58f8eafd9a9e15b319bb9c21058f368d7fe2649c123aaef397c1f6307459dc1b",
+      "size_bytes": 23997
+    },
+    {
+      "repo": "jax",
+      "path": "docs/pallas/tpu/details.rst",
+      "sha256": "e4ec9e3b3e8e275e561f2a93a46beff51c35773ea9e9bea85aab5969800d948e",
+      "size_bytes": 17452
+    },
+    {
+      "repo": "jax",
+      "path": "jax/_src/tpu_custom_call.py",
+      "sha256": "b15cf00b0d4268515469c02d352b7a3629f7e86402ef7a9a4d65827e9ee085b7",
+      "size_bytes": 39741
+    },
+    {
+      "repo": "jax",
+      "path": "jax/_src/xla_bridge.py",
+      "sha256": "2714a314144e77fa1795e1a46a1492ce52f42c1b5c49eb6d4271f62d453713ad",
+      "size_bytes": 45624
+    },
+    {
+      "repo": "xla",
+      "path": "xla/hlo/ir/hlo_schedule.h",
+      "sha256": "32f1055ade64dbe6e9fd57c1156897e13ea1393791c93918641328978fcfaa93",
+      "size_bytes": 10963
+    },
+    {
+      "repo": "xla",
+      "path": "xla/service/latency_hiding_scheduler.cc",
+      "sha256": "f8a839a68e6048f6012dac718fe9d9bd76c09b0d062dc73e8823742c63cb5a95",
+      "size_bytes": 187034
+    },
+    {
+      "repo": "xla",
+      "path": "xla/tsl/profiler/utils/xplane_schema.cc",
+      "sha256": "fc0a8f73fe06129229e2b219f04a0a97f8c5e25f7cdde8f928d9f4f8dcf9c56c",
+      "size_bytes": 29000
     }
   ]
 }

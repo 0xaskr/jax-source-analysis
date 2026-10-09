@@ -17,10 +17,12 @@
 | XLA | [HLO（HloModule）](overview-software-stack-components-layered.svg#hlo) | 用于优化、规划和代码生成的计算图。[`HloModule`][src-hlo] 包含入口及其他 `HloComputation`，由 `HloInstruction` 表达计算和依赖，并携带形状、布局及分片等约束。 | 由 [StableHlo 导入][src-import]产生，经 [HLO pass pipeline][src-hlo-passes] 规范化并进行目标相关优化，再交给 [CPU][src-cpu-backend]／[GPU 后端][src-gpu-backend]组织存储规划、目标代码与执行计划，形成相应 `Executable`。 |
 | XLA CPU 后端 | [LLVM IR](overview-software-stack-components-layered.svg#cpu_ir) | 面向 CPU 代码生成的低层中间表示。描述具体的数据运算，内存访问和控制流，并携带目标平台与数据布局信息。 | 由 CPU后端根据优化后的HLO、存储规划和目标信息生成，经 [LLVM 优化][src-cpu-ir-passes]后交给[目标代码生成][src-cpu-machine-code]得到对象文件；链接后的函数库与 thunk 执行计划共同组成 `CpuExecutable`。 |
 | XLA GPU 后端 | [LLVM IR](overview-software-stack-components-layered.svg#gpu_ir) | 面向 GPU kernel 代码生成的[低层中间表示][src-llvm-module]，描述 kernel 内的数据运算、内存访问和控制流，并通过目标相关的指令与约定表达线程协作、地址空间和 kernel 入口。 | 由 [GPU 后端][src-gpu-emit]根据优化后的 HLO、存储规划和目标设备信息生成，按需链接设备 bitcode，经 [LLVM 优化][src-gpu-ir-passes]和目标代码生成得到设备代码；其中 [NVIDIA 路径][src-nvptx-binary]生成 PTX 并编译为 cubin。设备代码与存储规划、thunk 执行计划共同组成 [`GpuExecutable`][src-gpu-backend]，交回 PJRT。 |
-| TPU provider / libtpu | [HLO/LLO](overview-software-stack-components-layered.svg#tpu_boundary) | 本概览保留的 TPU 私有程序表示研究项。当前固定公开源码尚不能确认 LLO 的结构、语义和约束；Mosaic TPU MLIR 是另一种已知表示。 | 公开可确认的[编译边界][src-pjrt-program]是：程序与选项进入 TPU provider，返回已加载可执行对象供 PJRT 执行。LLO 在内部从何产生、经过哪些变换、由谁消费，仍待固定版本证据。 |
+| TPU TensorCore 后端（libtpu） | [原生 LLO](overview-software-stack-components-layered.svg#tpu_boundary) | TC 后端的低层程序表示，用区域、循环、指令、值、局部存储和同步依赖描述设备计算。 | 编译普通 HLO 时，TC 后端直接生成原生 LLO；编译 Mosaic TC 内核时，则先生成 MLIR llo，再转换为原生 LLO。随后，TC 后端完成 LLO 优化、指令调度、寄存器分配和指令束打包，生成 TC 程序。程序经封装和加载后，上层通过 PJRT 可执行对象发起执行。|
 | 目标汇编表示 | [ASM](overview-software-stack-components-layered.svg#asm) | 以目标指令及其操作数描述计算、数据访问和控制转移的可读程序表示，可面向硬件指令集或 PTX 等虚拟指令集。 | 由编译器的目标代码生成产生，经汇编或[进一步目标编译][src-nvptx-binary]转换为机器代码，供后续链接和加载；也可由已有机器代码反汇编得到，供开发者检查代码生成结果和分析性能。 |
 | 设备运行时与驱动 | [执行提交](overview-software-stack-components-layered.svg#submit) | 一次程序运行的请求与[执行上下文][src-cpu-submit]，关联已加载程序、输入输出存储、执行参数和依赖关系，描述执行什么、使用哪些数据以及何时可以执行。 | 由 [PJRT 执行接口][src-pjrt-execute]进入具体后端，结合可执行对象和输入 Buffer [准备所需存储][src-cpu-execute]，按执行计划和依赖关系[调度计算、通信与数据搬运][src-thunk-execute]；执行结果写入输出 Buffer，并向上层传播[完成或错误状态][src-ready]。 |
 | 指令集接口与硬件 | [ISA](overview-software-stack-components-layered.svg#isa) | 软件与硬件之间的指令级语义约定，规定指令及其编码、寄存器等可见状态，以及执行指令时的计算、访存和控制转移行为。 | 由处理器体系结构规范定义，并随[架构版本与扩展演进][doc-isa-evolution]；编译器依据目标支持的[指令与特性][src-cpu-target]生成[机器代码][src-cpu-machine-code]，硬件按相应指令语义执行程序，更新寄存器、内存和控制状态。 |
+
+TPU 这一行聚焦 TensorCore（TC）后端，以原生 LLO 为核心抽象。HLO 已在 XLA 一行说明，是 TC 后端的上游程序表示；SparseCore（SC）另走 MLO/LLVM 路线，在图和下文中作为独立分支说明。Mosaic TPU MLIR、其 lowering 中的 MLIR `llo` 方言与原生 LLO 分属不同表示。
 
 图中 JAX 和 jaxlib 居中；IFRT/PJRT、XLA/编译后端、ASM/设备运行时左右并列；硬件位于底部。这个分布同时表达组件职责和调用关系，纵向位置不代表所有请求都必须依次经过每个框。
 
@@ -95,11 +97,31 @@ GPU LLVM IR 按需链接设备 bitcode，并经过 [LLVM 优化][src-gpu-ir-pass
 
 ISA 规定这些指令的编码、操作语义，以及寄存器和内存等软件可见状态的变化。它由处理器体系结构定义，并随架构版本和扩展演进。编译器根据目标支持的指令与特性生成机器代码，硬件实现这些指令语义。CPU 后端通过 [`TargetMachine`][src-cpu-target] 选择目标能力；架构演进可参考 [Arm 的 ISA 更新说明][doc-isa-evolution]。PTX 定义的是虚拟指令集，还需要转换为目标 GPU 的机器代码。[PTX 规范][doc-ptx]给出了这一层的定义。
 
-### 2.7 TPU 编译可以从公开源码确认到哪里
+### 2.7 TPU TensorCore 后端：原生 LLO 的产生与编译
 
-TPU 编译请求经 PJRT 进入 TPU provider，输入包括程序和编译选项。程序可能包含第四章介绍的 Mosaic 内核载荷。编译与加载完成后，provider 通过 `PjRtLoadedExecutable` 接口提供执行能力。可以检查的接口包括 [`PJRT_Program`][src-pjrt-program]和 [`PjRtLoadedExecutable`][src-pjrt-loaded]。
+JAX 的 [`make_tpu_client`][src-tpu-client] 按需加载并初始化 `libtpu.so` 的 PJRT 插件，取得 Client。上层继续使用 IFRT/PJRT 的接口；具体的 TPU 编译、加载与执行由这个 provider 实现。
 
-当前固定的公开源码没有给出 libtpu 内部完整的编译流水线。第一章保留的 LLO 项，其结构、变换和消费位置仍缺少对应版本的证据。Mosaic TPU MLIR 是公开可见的 Pallas lowering 产物，应按自己的定义讨论。已有信息汇总在 [TPU 编译接口详细图](../libtpu/llo-boundary-centered-hub.svg)中。
+程序到达 [`PjRtCApiClient::CompileAndLoad`][src-capi-compile] 后，`InitializeArgsAndCompile` 序列化编译选项，并调用 `SerializeProgram` 处理程序。MLIR 输入按插件报告的 StableHLO、Shardy 版本序列化；`XlaComputation` 输入则序列化为 HLO proto。程序字节与格式组成 `PJRT_Program`，经插件的 `PJRT_Client_Compile` 入口提交。成功返回的 `PJRT_LoadedExecutable` 被包装为 `PjRtCApiLoadedExecutable`，继续交回 IFRT 和 jaxlib。这里传递的是编译输入与执行能力，尚未传入本次运行的数组数据。参见 [程序序列化][src-capi-program]和 [编译参数构造与调用][src-capi-compile-call]。
+
+**TPU 内部仍使用 XLA 的 HLO 类层次。** 按 [libtpu-agent 的内部源码答复][issue-tpu-answer]，程序以 `HloModule`、`HloComputation` 和 `HloInstruction` 表达，TPU 的布局、窗口、内存空间和执行线程信息由相应配置承载。后端进行规范化、SPMD、布局、融合、异步改写、调度和存储规划；具体阶段可重复或按选项改变。
+
+TC 的低层程序有两条来源。普通张量 HLO 由 emitter 直接生成原生 LLO；Pallas 的 `tpu_custom_call` 携带 Mosaic TPU MLIR，Mosaic 先将其降为 MLIR `llo` 方言，再通过桥接构建器写入外层原生 LLO。两条路线在**原生 LLO**汇合，之后共同经历低层优化、指令调度、寄存器与局部存储分配、指令束打包和代码生成。
+
+```text
+普通 HLO ── emitter ───────────────────────────────┐
+                                                  ↓
+                                             原生 LLO → TC 程序
+                                                  ↑
+Mosaic TPU MLIR ── lowering → MLIR llo ── 桥接构建器 ┘
+
+SC HLO / Mosaic SC ── MLO / sparse_core → LLVM IR → SC 程序
+```
+
+原生 LLO 用区域、循环、指令、值、局部存储和同步依赖描述 TC 程序。它不同于 Mosaic 输入，也不同于 Mosaic 路线中的 MLIR `llo`。固定版本的 [Pallas 设计文档][src-pallas-mosaic-design]确认 Mosaic 会生成 LLO；两种 LLO 的细分及 SC 独立路线来自上述内部答复。默认的 Mosaic TC 内核接入外层设备程序，SC 程序则在可执行对象中与 TC 程序协同。
+
+HLO 调度与运行时调度也要分开。编译器生成的完整 [`HloSchedule`][src-hlo-schedule]规定各非 fusion computation 内的 HLO 指令顺序；[`BufferAssignment`][src-buffer-assignment]描述编译期存储方案。更低层的指令、寄存器和 DMA 安排需要由目标后端继续完成。执行时，provider 再将真实 Buffer 绑定到已编译程序，并提交设备工作。一个 HLO 操作可以降低成许多底层指令，不能把 HLO 序列直接理解为硬件指令的逐周期时间表。
+
+详细的组件分工、对象定义及产生、变换和消费关系见 [原生 LLO 说明](../libtpu/llo-boundary-centered-hub.md)。内部答复没有提供可绑定到 wheel 的源码 revision，也没有公开私有类名；文中的“emitter”“桥接构建器”是职责名称。图和正文将这类转述与固定公开源码分开标注。
 
 ### 2.8 编译结果如何回到 JAX
 
@@ -153,7 +175,11 @@ IFRT 接收到的是按数组组织的输入，而 PJRT 执行接口需要按设
 
 CPU 路径中，`CpuPjRtRawLoadedExecutable::Execute` 构造 Buffer 表，再用 `Thunk::ExecuteParams` 传入函数库、实际存储、线程池和通信上下文等信息。`ThunkExecutor::Execute` 根据执行计划选择顺序执行或按依赖调度，调用生成的计算函数和库。参见 [CPU 执行入口][src-cpu-execute]、[执行上下文构造][src-cpu-submit]和 [`ThunkExecutor`][src-thunk-execute]。
 
-GPU 路径由运行时和驱动组织 kernel 启动、设备库调用、通信与数据搬运。以 CUDA 为例，stream 组织工作顺序，event 可以表达不同 stream 之间的依赖；这些机制决定工作何时能够执行。参见 [CUDA 异步执行说明][doc-cuda-async]和 [运行提交详细图](../stream-executor/submission-centered-hub.svg)。TPU 的提交和依赖管理由相应 provider 实现。
+GPU 路径由运行时和驱动组织 kernel 启动、设备库调用、通信与数据搬运。以 CUDA 为例，stream 组织工作顺序，event 可以表达不同 stream 之间的依赖；这些机制决定工作何时能够执行。参见 [CUDA 异步执行说明][doc-cuda-async]和 [运行提交详细图](../stream-executor/submission-centered-hub.svg)。
+
+TPU 的公开调用入口可继续追到 [`PjRtCApiLoadedExecutable::Execute`][src-capi-execute]：它将按设备组织的输入转换为 `PJRT_Buffer` 参数列表，连同执行选项交给插件的 `PJRT_LoadedExecutable_Execute`。插件返回输出 Buffer；调用方请求完成状态时，还返回逐设备完成事件，C++ 包装层通过 `ConvertCEventToCppFuture` 将其转换为 Future。包装层准备的输出列表是句柄容器，设备存储的分配和实际提交仍由 provider 负责。
+
+按[内部答复][issue-tpu-answer]，TPU 运行时收集输入依赖，依据存储与别名方案准备输出和临时空间，把实际 Buffer 地址绑定到已加载程序，再提交设备。设备程序驱动循环、DMA、计算和等待；主机通常不逐个解释 HLO，但需要的 host 回调或卸载仍由相应主机路径参与。一次 DMA 完成、输出对象返回和逐设备执行完成是不同的观察点。
 
 ### 3.5 输出返回和数据就绪
 
@@ -211,6 +237,8 @@ Pallas 的 GPU 路径按配置选择 Mosaic GPU、Triton 或已注册的平台�
 JAX 固定在 `361c43e072cce92b7d3e9bdaf4dd16db26c49043`，XLA 固定在 `dcf304bc5dca1932b99f740b911dbd73631a1a69`。文中的源码链接指向这些固定提交，其他依赖以 [`upstream-sources.lock`](../../../upstream-sources.lock)、[`source-archives.lock`](../../../source-archives.lock) 和[环境锁](../../../env/environment.lock.json)为准。
 
 在线文档用于补充概念和使用方式，具体类、函数与调用顺序以工作区固定源码为准。对照实际运行结果时，应同时核对运行时二进制版本；与所引用源码不一致的结果标记为 `VERSION-SKEW`。
+
+libtpu 内部路线引用 [issue #76 的答复][issue-tpu-answer]及[后续更正][issue-tpu-corrections]，属于未绑定具体 wheel 的内部实现转述。经[逐项追问][issue-tpu-followup]，bot 修正了内存空间编号、调度保证、异步事件范围及离线编译前提等表述。本文保留这些边界；本次未进行离线 TPU 编译、TPU 模拟或真实 TPU 执行。
 
 ### 5.2 重建配套图
 
@@ -311,3 +339,14 @@ python3 -B tools/diagram_environment.py run tools/render_overview_software_stack
 [doc-llvm-objdump]: https://www.llvm.org/docs/CommandGuide/llvm-objdump.html
 [doc-ptx]: https://docs.nvidia.com/cuda/parallel-thread-execution/
 [doc-cuda-async]: https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/asynchronous-execution.html
+[src-tpu-client]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/jax/_src/xla_bridge.py#L205
+[src-capi-program]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/pjrt/c_api_client/pjrt_c_api_client.cc#L608
+[src-capi-compile-call]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/pjrt/c_api_client/pjrt_c_api_client.cc#L644
+[src-capi-compile]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/pjrt/c_api_client/pjrt_c_api_client.cc#L763
+[src-capi-execute]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/pjrt/c_api_client/pjrt_c_api_client.cc#L3421
+[src-pallas-mosaic-design]: https://github.com/0xaskr/jax/blob/361c43e072cce92b7d3e9bdaf4dd16db26c49043/docs/pallas/design/design.md#L515
+[issue-tpu-overview]: https://github.com/elbertwang/libtpu-agent/issues/76
+[src-hlo-schedule]: https://github.com/openxla/xla/blob/dcf304bc5dca1932b99f740b911dbd73631a1a69/xla/hlo/ir/hlo_schedule.h#L153
+[issue-tpu-answer]: https://github.com/elbertwang/libtpu-agent/issues/76#issuecomment-6064434151
+[issue-tpu-followup]: https://github.com/elbertwang/libtpu-agent/issues/76#issuecomment-6064481581
+[issue-tpu-corrections]: https://github.com/elbertwang/libtpu-agent/issues/76#issuecomment-6064767267

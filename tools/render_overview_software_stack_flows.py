@@ -19,6 +19,7 @@ import urllib.request
 from render_overview_software_stack_components import Diagram, SOURCE_METADATA
 from render_pallas_inner_outer import metadata as pallas_metadata
 from software_stack_overview_flow_data import CORE_CONCEPTS, NODES
+from software_stack_tpu_views import TPU_INTERNAL_EVIDENCE
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -52,6 +53,8 @@ EXTRA_ANCHORS = {
     "CPU RunBackend": ("xla", "xla/service/cpu/cpu_compiler.cc", "absl::StatusOr<std::unique_ptr<Executable>> CpuCompiler::RunBackend("),
     "GPU RunBackend": ("xla", "xla/service/gpu/gpu_compiler.cc", "absl::StatusOr<std::unique_ptr<Executable>> GpuCompiler::RunBackend("),
     "PJRT Buffer readiness": ("xla", "xla/pjrt/pjrt_client.h", "virtual Future<> GetReadyFuture() = 0;"),
+    "Mosaic to LLO design": ("jax", "docs/pallas/design/design.md", "Mosaic consumes (mostly) standard dialect MLIR and emits LLO to be"),
+    "C API compile call": ("xla", "xla/pjrt/c_api_client/pjrt_c_api_client.cc", "InitializeArgsAndCompile(PjRtCApiClient* api_client, const PJRT_Api* c_api,"),
 }
 
 
@@ -112,9 +115,10 @@ def metadata(root, fetch=False, *, extra_anchors=None):
         meta["source_anchors"][name] = {"repo": kind, "path": path, "line": hits[0], "needle": needle,
             "href": f"https://github.com/{host}/blob/{meta['source_pins'][kind]}/{path}#L{hits[0]}"}
     meta.pop("path", None)
-    meta["evidence_scope"] = "Pinned JAX Git objects and checksum-verified pinned XLA source files; source inspection only, no compilation or device execution"
+    meta["evidence_scope"] = "Public anchors: pinned JAX/XLA source inspection. TPU internals: separately attributed bot account without a build mapping. No compilation or device execution."
     meta["xla_source_files"] = lock["files"]
-    meta["implementation_scope"] = "PJRT-backed IFRT, ordinary sharded array execution; CPU/GPU public compiler path and opaque TPU provider boundary"
+    meta["implementation_scope"] = "PJRT-backed IFRT; CPU/GPU public compiler paths; TPU public interfaces with separately attributed, unversioned internal architecture account"
+    meta["external_evidence"] = [TPU_INTERNAL_EVIDENCE]
     return meta
 
 
@@ -137,7 +141,7 @@ HEADINGS = {
     "ifrt": ("IFRT · 面向框架的逻辑数组与程序", "框架运行时接口", "主抽象 Array；此图展开 PJRT-backed 实现，编译、加载、执行与结果包装分别表达。", "../ifrt/array-centered-hub.svg"),
     "pjrt": ("PJRT · 设备、存储与可执行程序接口", "设备运行时接口", "主抽象 Buffer；Client、LoadedExecutable 与 Buffer 的行为由具体 provider 实现。", "../pjrt/buffer-centered-hub.svg"),
     "xla": ("XLA · HLO 优化与编译规划", "编译器子系统", "HloModule 经变换和规划交给目标后端；后端产物在 Executable 节点汇合并返回 provider。", "../xla/hlo-centered-hub.svg"),
-    "backend": ("编译后端 · 按目标设备分流", "目标后端", "CPU / GPU 属于 XLA；TPU 经 provider / libtpu，公开接口与内部证据边界分开。", None),
+    "backend": ("编译后端 · 按目标设备分流", "目标后端", "TPU 内部路线据 issue #76 转述；普通 HLO / Mosaic TC 汇合，SC 单列旁路。", None),
     "asm": ("目标汇编表示 · ASM 与代码观察", "可观察表示", "汇编文本是代码表示或观察形式，不是每条编译 / 执行路径必经的软件组件。", None),
     "runtime": ("设备运行时与驱动 · 程序和数据汇合", "运行时实现", "已加载程序 × 输入 Buffer × 执行选项 / 依赖；输出对象和完成状态分别返回。", "../stream-executor/submission-centered-hub.svg"),
     "hardware": ("指令集接口与硬件 · ISA 约束执行", "硬件 / 指令契约", "设备执行目标工作、读写存储并报告状态；程序表示与硬件指令不作一一对应。", None),
@@ -237,7 +241,7 @@ class ComponentFlowDiagram(Diagram):
         self.node_data = NODES
         self.concept_modules = {}
         self.port_usage, self.global_routes, self.sidebars, self.caption_boxes = {}, [], [], []
-        self.description = "沿用浅色分层架构图的组件分布：JAX 与 jaxlib 居中，IFRT/PJRT、XLA/编译后端、ASM/设备运行时左右并列，硬件居下。每个模块只突出一个核心概念，CPU、GPU、TPU 后端分别计为一个模块。保留编译产物逐层返回、执行与输出对象往返、Pallas 内外层程序及命名接口。"
+        self.description = "沿用浅色分层架构图的组件分布：JAX 与 jaxlib 居中，IFRT/PJRT、XLA/编译后端、ASM/设备运行时左右并列，硬件居下。每个模块只突出一个核心概念，CPU、GPU、TPU TensorCore 后端分别计为一个模块；SparseCore 单列分支。保留编译产物逐层返回、执行与输出对象往返、Pallas 内外层程序及命名接口。"
         self.text(180, 100, self.title, 68, bold=True)
         self.text(184, 170, "每个模块只突出一个核心概念，周围展开定义、产生、变换与消费；跨框端口标出接口、对象与方向。", 34, self.muted)
         for i, (label, color, dashed) in enumerate([
@@ -249,8 +253,8 @@ class ComponentFlowDiagram(Diagram):
             x = 185 + i * 1390
             self.edge([(x, 250), (x + 88, 250)], color, dashed=dashed, end=False, width=4)
             self.text(x + 111, 263, label, 32, self.muted)
-        self.text(184, 339, "填色与粗边框只用于核心概念；CPU / GPU / TPU 各一个。线色区分流程，拱桥表示交叉，右上角标出组件角色。", 30, self.muted)
-        self.text(184, 397, "范围：PJRT-backed IFRT · 常规分片数组执行 · Pallas 展开 Mosaic TPU 路径 · 固定源码检查。", 29, self.muted)
+        self.text(184, 339, "填色与粗边框只用于核心概念；CPU / GPU / TPU TC 各一个。线色区分流程，拱桥表示交叉，右上角标出组件角色。", 30, self.muted)
+        self.text(184, 397, "范围：PJRT-backed IFRT · 常规分片数组执行 · Pallas / Mosaic TPU · 固定公开源码 + TPU 内部答复。", 29, self.muted)
 
     def frame(self, name):
         x, y, w, h = self.components[name]
@@ -295,6 +299,8 @@ class ComponentFlowDiagram(Diagram):
                 self.text(x + 27, baseline, part, 29, self.muted, owner=key)
                 baseline += 42
         links = [("源码 · " + ref, self.ref(ref)) for ref in content.get("refs", ())]
+        if content.get("external_ref"):
+            links.append(content["external_ref"])
         if content.get("detail"):
             links.append(("进入组件详细图 ↗", content["detail"]))
         for i, (label, link) in enumerate(links):
@@ -457,7 +463,8 @@ class ComponentFlowDiagram(Diagram):
             self.text(x + 45, y + 39, "→ " + self.node_data[b]["title"], 25, self.colors[relation["kind"]], href="#" + b)
         self.text(1300, 21300, "接口签名省略部分所有权模板、StatusOr 与可选参数；各层的 LoadedExecutable 是不同包装对象。", 29, self.muted)
         self.text(1300, 21365, "固定源码：JAX 361c43e072cc · XLA dcf304bc5dca。源码文件与接口锚点已核验；图示不构成设备执行证据。", 29, self.muted)
-        self.text(1300, 21430, "Pallas 的 Mosaic payload 是外层 custom_call 的编译期数据；TPU 私有表示及转换阶段仍需独立版本证据。", 29, self.muted)
+        self.text(1300, 21430, "Mosaic TPU MLIR、MLIR llo 与原生 LLO 分属不同表示；TPU 内部结构据 #76 转述，未绑定具体 libtpu 构建。", 29, self.muted)
+        self.text(1300, 21495, "内部答复的核对与更正 ↗", 29, self.colors['unknown'], href=TPU_INTERNAL_EVIDENCE['corrections_url'])
 
     def save(self, path):
         if set(self.concept_modules.values()) != set(CORE_CONCEPTS):
@@ -472,6 +479,7 @@ class ComponentFlowDiagram(Diagram):
             ["module", "binding_module", "py_compile", "ifrt_program", "ifrt_compile", "pjrt_compile", "provider", "import", "hlo", "passes", "plan", "cpu_lowering", "cpu_ir", "cpu", "executable", "pjrt_loaded", "ifrt_loaded", "py_loaded"],
             ["plan", "gpu_lowering", "gpu_ir", "gpu", "executable"],
             ["provider", "tpu", "tpu_loaded", "pjrt_loaded"],
+            ["provider", "tpu", "tpu_boundary", "tpu_loaded", "pjrt_loaded"],
             ["dispatch", "py_execute", "ifrt_execute", "pjrt_execute", "submit", "runtime", "hardware"],
             ["submit", "handles", "pjrt_outputs", "ifrt_outputs", "py_outputs", "outputs"],
             ["outer", "lower", "mosaic", "payload", "module"],
@@ -546,7 +554,7 @@ def render(meta, *, diagram_type=ComponentFlowDiagram):
     for col, (label, href) in enumerate([
         ("XLA / CPU 后端 ↗", "../xla/cpu-llvm-ir-centered-hub.svg"),
         ("XLA / GPU 后端 ↗", "../xla/gpu-ir-centered-hub.svg"),
-        ("provider / TPU 后端 ↗", "../libtpu/llo-boundary-centered-hub.svg"),
+        ("TPU TensorCore 后端（libtpu） ↗", "../libtpu/llo-boundary-centered-hub.svg"),
     ]):
         x = bx + 105 + col * STEP
         d.base.append(f'<rect x="{x}" y="{by+165}" width="1270" height="2435" rx="20" fill="#ffffff" stroke="#c4cfd7" stroke-width="2"/>')
@@ -560,7 +568,7 @@ def render(meta, *, diagram_type=ComponentFlowDiagram):
         "ifrt": "Array → Buffer 是实现映射；ExecuteResult.outputs 与按 fill_status 填充的 status 分开。",
         "pjrt": "Buffer 表示设备存储；PjRtLoadedExecutable 消费这些 Buffer，并返回输出 Buffer 与可请求的完成 future。",
         "xla": "BufferAssignment 是编译期存储规划；CPU/GPU 后端必须先产出 Executable，再由 provider 包装和加载。",
-        "backend": "GPU 设备库保留旁路；TPU 内部证据节点仅作边界说明，不将其串成已确认的私有编译阶段。",
+        "backend": "GPU 库调用与 SC 编译保留旁路；TPU 私有路线据内部答复，职责名称不冒充私有源码符号。",
         "asm": "ASM 是表示，ISA 是语义契约；观察到目标代码或汇编文本不等于已验证实际设备执行。",
         "runtime": "输出句柄可以先返回；设备完成 / 错误随后更新 readiness。IFRT Array 与 PyArray 在上层分别包装。",
         "hardware": "源码结构图；未据此声称 CPU 执行、TPU 模拟、离线 TPU 编译或真实 TPU 执行。",
@@ -602,8 +610,9 @@ def render(meta, *, diagram_type=ComponentFlowDiagram):
         ("gpu_lowering", "gpu_ir", "program", "代码生成路径"),
         ("gpu_ir", "gpu", "program", "目标代码"),
         ("gpu_lowering", "gpu", "program", "设备库旁路"),
-        ("tpu_boundary", "tpu", "unknown", "边界说明"),
-        ("tpu", "tpu_loaded", "program", "公开接口的输入 / 输出"),
+        ("tpu", "tpu_boundary", "unknown", "TC：普通 HLO / Mosaic"),
+        ("tpu_boundary", "tpu_loaded", "unknown", "TC：代码生成与封装"),
+        ("tpu", "tpu_loaded", "unknown", "SC：MLO / LLVM（可选）"),
         ("asm_code", "asm", "neutral", "观察"),
         ("asm", "asm_tools", "neutral", "读取"),
         ("runtime_program", "submit", "program", "程序"),

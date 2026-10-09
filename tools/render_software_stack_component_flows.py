@@ -115,7 +115,7 @@ class ComponentDiagram(Diagram):
         title=self.wrap(n['title'],w-66,size)
         body=[line for row in n['rows'] for line in self.wrap(row,w-66,29)]
         links=[('源码 · '+name,self.ref(name)) for name in n['refs']]
-        if n.get('link'):links.append(('进入相关图 / 接口说明 ↗',n['link']))
+        if n.get('link'):links.append((n.get('link_label', '进入相关图 / 接口说明 ↗'),n['link']))
         if key in self.spec['details']:links.append(('定位主图核心概念 ↑','#'+self.spec['core_id']))
         h=180+len(title)*49+len(body)*42+len(links)*35
         return size,title,body,links,h
@@ -383,8 +383,13 @@ class ComponentDiagram(Diagram):
         foot_y=y+125+math.ceil(len(self.relations)/columns)*160
         pins=' · '.join(r+' '+pin[:12] for r,pin in self.meta['source_pins'].items())
         self.text(190,foot_y,'固定源码：'+pins,25,self.muted)
-        self.text(190,foot_y+45,'证据：固定源码检查与 SVG 静态校验；未执行编译、CPU / GPU / TPU 计算、TPU 模拟或性能测试。',25,self.muted)
+        evidence_note=self.spec.get('evidence_note', '证据：固定源码检查与 SVG 静态校验；未执行编译、CPU / GPU / TPU 计算、TPU 模拟或性能测试。')
+        self.text(190,foot_y+45,evidence_note,25,self.muted)
         self.h=foot_y+110
+        for item in self.spec.get('external_evidence', []):
+            if item.get('corrections_url'):
+                self.text(190,self.h-20,'内部答复的核对与更正 ↗',25,self.colors['unknown'],href=item['corrections_url'])
+                self.h+=45
 
     def save(self,path):
         if self.spec['core_id'] not in self.boxes:raise ValueError('Missing unique core concept')
@@ -408,6 +413,9 @@ class ComponentDiagram(Diagram):
                                  if self.spec.get('layout')=='component_views' else 'overview-style static Jaxpr definition and three connected operation views'
                                  if self.spec.get('layout')=='connected_views' else 'overview-style four primary Jaxpr research views with auxiliary downstream objects'
                                  if self.spec.get('layout')=='four_views' else 'overview-style component workflow with four-view references'))
+        if self.spec.get('external_evidence'):
+            self.meta['external_evidence']=self.spec['external_evidence']
+            self.meta['evidence']='Pinned public source inspection and separately attributed internal implementation account; no compilation or device execution'
         if self.spec.get('layout') in {'four_views','connected_views','component_views'}:
             self.meta['research_views']={part['id']:dict(title=part['title'],
                 nodes=[key for row in part['rows'] for key in row if key]+part.get('details',[]))
