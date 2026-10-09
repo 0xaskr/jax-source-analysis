@@ -1,6 +1,7 @@
 # JAX 软件栈：从jax到 tpu/cpu/gpu
 
 > 本文由文章作者提出大纲，AI完成，并且经由作者进行润色，去AI味和审阅，作者对文章内容负责。
+> 本文面向有一定jax软件栈开发经验的人群，对于初学者请配合AI理解对应概念。
 
 本文是[分层架构 SVG](overview-software-stack-components-layered.svg) 的配套说明, 请配合图片进行阅读。
 
